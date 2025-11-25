@@ -4,6 +4,7 @@
 # Model Visualization Platform
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 `MVPapp` is an R package that bundles the
@@ -45,7 +46,7 @@ internal discussions more efficiently.**
 ## Install devtools first if required
 # install.packages(devtools)
 
-devtools::install_github("Boehringer-Ingelheim/MVPapp", build_vignettes = TRUE)
+devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
 ```
 
 Once installed, launch MVP using the following commands:
@@ -63,7 +64,7 @@ Alternatively, you may run `MVPapp` directly *without* installation
 (requires additional packages):
 
 ``` r
-shiny::runGitHub("MVPapp", username = "Boehringer-Ingelheim", subdir = "inst/shiny", launch.browser = TRUE)
+shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 ```
 
 ## Getting Started
@@ -372,7 +373,7 @@ demographics. 
 ### Providing external models and changing default settings
 
 Please see the article on [Supplying Passworded
-Models](https://boehringer-ingelheim.github.io/MVPapp/articles/supply-passwords.html),
+Models](https://stevechoy.github.io/MVPapp/articles/supply-passwords.html),
 or access the vignette on this topic in R
 (`vignette("supply-passwords", package = "MVPapp"`) for instructions on
 how to provide external models on App start-up.
@@ -380,7 +381,7 @@ how to provide external models on App start-up.
 ### Effective Exploratory Data Analysis (EDA)
 
 Please see the article on [Effective Exploratory Data Analysis
-(EDA)](https://boehringer-ingelheim.github.io/MVPapp/articles/data-exploration.html),
+(EDA)](https://stevechoy.github.io/MVPapp/articles/data-exploration.html),
 or access the vignette on this topic in R
 (`vignette("data-exploration", package = "MVPapp"`) for a short guide on
 using MVP to perform quick EDA.

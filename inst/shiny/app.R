@@ -47,7 +47,7 @@ if(standalone_mode) {
 #######################
 
 ## The following parameter settings are needed if the user is directly downloading and launching MVPapp, i.e.:
-## shiny::runGitHub("MVPapp", username = "Boehringer-Ingelheim", subdir = "inst/shiny", launch.browser = TRUE)
+## shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 
 if(!exists("insert_watermark"))    {insert_watermark    <- TRUE}
 if(!exists("authentication_code")) {authentication_code <- NA_character_}
@@ -2246,7 +2246,7 @@ ui <- shiny::navbarPage(
            ),
            shinydashboard::box(width = 12,
                                title = 'Usage Instructions', status = 'primary', solidHeader = TRUE,
-                               p('Please refer to the ', a(href = "https://github.com/Boehringer-Ingelheim/MVPapp", "MVPapp GitHub page", target = "_blank"), ' to get started. An abbreviated usage instruction is included below.'),
+                               p('Please refer to the ', a(href = "https://github.com/stevechoy/MVPapp", "MVPapp GitHub page", target = "_blank"), ' to get started. An abbreviated usage instruction is included below.'),
                                htmltools::br(),
                                p('1. Choose a pre-set model from the "Select Model" option in the "Simulation" page, or enter your own', a(href = "https://mrgsolve.org/", "mrgsolve", target = "_blank"), ' code by selecting "Blank Template" in the list of models. Alternatively a user-supplied .cpp file can be uploaded (and edited) via the "Upload .cpp File" drop-down option.'),
                                p('2. Click "Generate Model" after any necessary code adjustments. Interactive boxes will be generated for each parameter. For model comparison, repeat for Model 2. Note: check the Console below the code editor for potential errors in the code if no parameter value boxes are generated.'),
@@ -2259,7 +2259,7 @@ ui <- shiny::navbarPage(
            ),
            shinydashboard::box(width = 12,
                                title = 'Known Issues', status = 'primary', solidHeader = TRUE,
-                               p('For bug reports or general feedback, please ', a(href = "https://github.com/Boehringer-Ingelheim/MVPapp/issues", "submit an issue on GitHub.", target = "_blank"), ''),
+                               p('For bug reports or general feedback, please ', a(href = "https://github.com/stevechoy/MVPapp/issues", "submit an issue on GitHub.", target = "_blank"), ''),
                                p(
                                  tags$ul(
                                    tags$li("Batch runs: changing any multipliers will reset both upper and lower bounds together. Workaround with first adjusting the multipliers, then the reference, and then finally the bounds."),
@@ -2277,7 +2277,7 @@ ui <- shiny::navbarPage(
            ),
            shinydashboard::box(width = 12,
                                title = 'Authors / Contact Info', status = 'primary', solidHeader = TRUE,
-                               p(a(href = "mailto:steve.choy@boehringer-ingelheim.com?subject=Model%20Visualization%20Platform%20(MVP)%20Feedback", "Steve Choy", target = "_blank"), ' (Project Lead & Developer, 2023-2025) '),
+                               p(a(href = "mailto:steve.choy@outlook.com?subject=Model%20Visualization%20Platform%20(MVP)%20Feedback", "Steve Choy", target = "_blank"), ' (Project Lead & Developer, 2023-2025) '),
                                p("Jin Gyu Kim (Developer, 2023)"),
                                htmltools::br(),
                                p('Please cite this work as ', a(href = "https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.70023", "Choy et al (2025).", target = "_blank"), '')
@@ -2292,7 +2292,7 @@ ui <- shiny::navbarPage(
            ),
            shinydashboard::box(width = 12,
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-                               p('Please visit the ', a(href = "https://github.com/Boehringer-Ingelheim/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
+                               p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
                                p('v0.3.3 (2025-07-31) - NHANES updated to include 2021-2023. BMI filter for external databases. Minor bug fixes.'),
                                p('v0.3.2 (2025-06-13) - Added spider plots sub-tab for batch runs.'),
@@ -2340,53 +2340,6 @@ ui <- shiny::navbarPage(
                                p('v0.1.0  (2023-08-09) - Stable release with model comparison and console messages.')
            )
   ),                  # end of tabPanel
-  if(!internal_version) {
-    ## Page 7 Legal ----
-    tabPanel('Impressum', icon = icon('gavel'),
-             shinydashboard::box(width = 12,
-                                 title = 'Legal Disclaimer', status = 'primary', solidHeader = TRUE,
-                                 p('This App has been created for personal use only. The use of any result generated is in any case the sole risk and responsibility of the user. Decisions in drug development should not solely rely on the App as information provided by the App does not replace scientific judgement. There is no guarantee for the accuracy of the provided results. When using the App you automatically agree with this disclaimer and the legal notices.'),
-                                 p('The authors reserves the right not to be responsible for the topicality, correctness, completeness or quality of the information provided. Liability claims regarding damage caused by the use of any information provided, including any kind of information which is incomplete or incorrect, will therefore be rejected. All offers are not-binding and without obligation. Parts of the pages or the complete publication including all offers and information might be extended, changed or partly or completely deleted by the author without separate announcement.')
-             ),
-             shinydashboard::box(width = 12,
-                                 title = 'Impressum', status = 'primary', solidHeader = TRUE, collapsible = TRUE,
-                                 p('Boehringer Ingelheim Pharma GmbH & Co. KG'),
-                                 p('Binger Strasse 173'),
-                                 p('D-55216 Ingelheim am Rhein'),
-                                 htmltools::br(),
-                                 p('Handelsregister'),
-                                 p('Registergericht Mainz HR A 22206'),
-                                 htmltools::br(),
-                                 p('vertreten durch die Komplementärin Boehringer Ingelheim Deutschland GmbH'),
-                                 htmltools::br(),
-                                 p('Geschäftsführung:'),
-                                 p('Dr. Sabine Nikolaus (Vorsitzende),'),
-                                 p('Martin Beck, Jan Faßbender, Christjan Knudsen, Andreas Krüger;'),
-                                 htmltools::br(),
-                                 p('Vorsitzende des Aufsichtsrates: Dr. Elke Simon;'),
-                                 p('Sitz: Ingelheim am Rhein; Registergericht Mainz: HR B 23260'),
-                                 htmltools::br(),
-                                 p('USt.Id.-Nr. DE 143290578'),
-                                 htmltools::br(),
-                                 p('Telefon: +49 61 32 77 0'),
-                                 p('Telefax: +49 61 32 77 30 00'),
-                                 p('E-Mail: press@boehringer-ingelheim.com'),
-                                 htmltools::br(),
-                                 p('Die Boehringer Ingelheim Pharma GmbH & Co. KG ist nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.'),
-                                 htmltools::br(),
-                                 p('Zuständige Aufsichtsbehörden'),
-                                 p('Standort Ingelheim am Rhein:'),
-                                 p('Landesamt für Soziales, Jugend und Versorgung in Mainz'),
-                                 p('Rheinallee 97 - 101'),
-                                 p('55118 Mainz'),
-                                 htmltools::br(),
-                                 p('Standort Biberach an der Riss:'),
-                                 p('Regierungspräsidium Tübingen'),
-                                 p('Konrad-Adenauer-Straße 20'),
-                                 p('72072 Tübingen)'),
-             )
-    )
-  },
   useShinydashboardMVP(),
   #tags$script(src = "https://kit.fontawesome.com/<you>.js"),
 ) # end of ui
