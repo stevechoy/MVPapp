@@ -10,7 +10,7 @@
 # Set standalone_mode = TRUE to run app.R as standalone app without loading MVPapp
 # (i.e. not using run_mvp())
 #-------------------------------------------------------------------------------
-standalone_mode <- TRUE
+standalone_mode <- FALSE
 
 #######################
 if(standalone_mode) {
@@ -2876,7 +2876,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#E5E3DE', 'color': '#003366'});",
+                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF'});",
                       "}"),
                     pageLength = 10,
                     lengthMenu = c(5, 10, 20, 25, 50, 100),
@@ -2902,7 +2902,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#E5E3DE', 'color': '#003366'});",
+                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF'});",
                       "}")
                   )
     )
@@ -3070,7 +3070,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#E5E3DE', 'color': '#003366'});",
+                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF'});",
                       "}")))
   })
   
@@ -6225,7 +6225,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#E5E3DE', 'color': '#003366', 'border-color': '#003366'});",
+                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF', 'border-color': '#99CCFF'});",
                       "}")
                   ))
   })
@@ -6237,7 +6237,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#E5E3DE', 'color': '#003366', 'border-color': '#003366'});",
+                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF', 'border-color': '#99CCFF'});",
                       "}")
                   ))
   })
