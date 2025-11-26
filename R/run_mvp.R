@@ -15,7 +15,7 @@
 #' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.
 #' @param authentication_code Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.
 #' @param internal_version Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.
-#' @param use_bi_styling Logical. Default FALSE. Set to TRUE to insert BI logo.
+#' @param use_bi_styling Logical. Default FALSE. Set to TRUE to insert BI logo (deprecated - currently inactive).
 #' @param pw_models_path Character. Default NA_character_. Provide a path to source password-gated models.
 #' @param show_debugging_msg Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
 #' @param ... [shiny::runApp()] parameters, [shiny::shinyApp()] parameters,
