@@ -2151,7 +2151,7 @@ check_matrix <- function(input_model_object,
 #' @param iiv_sim_input  a dataframe containing TIME column
 #' @param yvar           name of column to do the quantile calculation on
 #' @param lower_quartile lower quantile for yvar, default 0.025  (2.5%)
-#' @param upper_quartile lower quantile for yvar, default 0.0975 (97.5%)
+#' @param upper_quartile upper quantile for yvar, default 0.0975 (97.5%)
 #' @param dp             decimal places for rounding
 #'
 #' @returns a dataframe
