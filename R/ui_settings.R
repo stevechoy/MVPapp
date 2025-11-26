@@ -496,8 +496,8 @@ bi_logo <- htmltools::img(src = "BI_Logo_Green.png",
 #' @export
 navbar_bg_color <-   htmltools::tags$head(
   htmltools::tags$style(
-    htmltools::HTML('.navbar-static-top {background-color: #E5E3DE;}',
-                    '.navbar-default .navbar-nav>.active>a {background-color: #E5E3DE;}',
+    htmltools::HTML('.navbar-static-top {background-color: #003366;}',
+                    '.navbar-default .navbar-nav>.active>a {background-color: #003366;}',
                     '.navbar-default .navbar-nav>li>a:hover {background-color: transparent;}',
                     # '#param_output_model_1 {font-size: 10px; }', 
                     # '#param_output_model_1 {font-size: 12px; }',
@@ -540,14 +540,14 @@ navbar_bg_color <-   htmltools::tags$head(
 shinydashboard_box_format <- htmltools::tags$style(htmltools::HTML("
                                          .box.box-solid.box-primary>.box-header {
                                             color:#fff;
-                                            background:#E5E3DE
+                                            background:#003366
                                                               }
                                           
                                           .box.box-solid.box-primary{
-                                          border-bottom-color:#E5E3DE;
-                                          border-left-color:#E5E3DE;
-                                          border-right-color:#E5E3DE;
-                                          border-top-color:#E5E3DE;
+                                          border-bottom-color:#003366;
+                                          border-left-color:#003366;
+                                          border-right-color:#003366;
+                                          border-top-color:#003366;
                                           }
                                           
                                           .popover{
