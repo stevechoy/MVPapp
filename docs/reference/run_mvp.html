@@ -17,7 +17,7 @@ to it's state prior to calling run_mvp."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,7 +92,7 @@ to it's state prior to calling <code>run_mvp</code>.</p>
 
 
 <dt id="arg-use-bi-styling">use_bi_styling<a class="anchor" aria-label="anchor" href="#arg-use-bi-styling"></a></dt>
-<dd><p>Logical. Default FALSE. Set to TRUE to insert BI logo.</p></dd>
+<dd><p>Logical. Default FALSE. Set to TRUE to insert BI logo (deprecated - currently inactive).</p></dd>
 
 
 <dt id="arg-pw-models-path">pw_models_path<a class="anchor" aria-label="anchor" href="#arg-pw-models-path"></a></dt>
@@ -111,7 +111,7 @@ or parameters to pass to the Shiny app.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>If the user wishes to run the App outside of the function (e.g. preparing for
-deployment on Posit Connect), this can be done by accessing inst/shiny/app.R,
+deployment on Posit Connect), this can be done by accessing shiny/app.R,
 which is located inside the folder of where the package was installed, and modify
 debug_mode = TRUE (and setting these options there as required).</p>
     </div>
@@ -121,7 +121,7 @@ debug_mode = TRUE (and setting these options there as required).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><a href="https://boehringer-ingelheim.github.io/MVPapp/articles/supply-passwords.html">https://boehringer-ingelheim.github.io/MVPapp/articles/supply-passwords.html</a></p></div>
+    <div class="dont-index"><p><a href="https://stevechoy.github.io/MVPapp/articles/supply-passwords.html" class="external-link">https://stevechoy.github.io/MVPapp/articles/supply-passwords.html</a></p></div>
     </div>
 
     <div class="section level2">
@@ -132,7 +132,7 @@ debug_mode = TRUE (and setting these options there as required).</p>
 <span class="r-in"><span><span class="fu">run_mvp</span><span class="op">(</span>authentication_code <span class="op">=</span> <span class="st">"some_password"</span><span class="op">)</span> <span class="co"># Password-lock the site,</span></span></span>
 <span class="r-in"><span><span class="co"># could be useful in deployment</span></span></span>
 <span class="r-in"><span><span class="fu">run_mvp</span><span class="op">(</span>pw_models_path <span class="op">=</span> <span class="st">"path/to/your/private/models.R"</span><span class="op">)</span> <span class="co"># see</span></span></span>
-<span class="r-in"><span><span class="co"># "inst/shiny/passworded_models_example.R" on how to set one up</span></span></span>
+<span class="r-in"><span><span class="co"># "shiny/passworded_models_example.R" on how to set one up</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

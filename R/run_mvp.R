@@ -23,7 +23,7 @@
 #'
 #' @details
 #' If the user wishes to run the App outside of the function (e.g. preparing for
-#' deployment on Posit Connect), this can be done by accessing inst/shiny/app.R,
+#' deployment on Posit Connect), this can be done by accessing shiny/app.R,
 #' which is located inside the folder of where the package was installed, and modify
 #' debug_mode = TRUE (and setting these options there as required).
 #'
@@ -34,12 +34,12 @@
 #' run_mvp(authentication_code = "some_password") # Password-lock the site,
 #' # could be useful in deployment
 #' run_mvp(pw_models_path = "path/to/your/private/models.R") # see
-#' # "inst/shiny/passworded_models_example.R" on how to set one up
+#' # "shiny/passworded_models_example.R" on how to set one up
 #' }
 #' @note
 #' Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
 #' @seealso
-#' \url{https://boehringer-ingelheim.github.io/MVPapp/articles/supply-passwords.html}
+#' \url{https://stevechoy.github.io/MVPapp/articles/supply-passwords.html}
 #' @export
 run_mvp <- function(appDir              = system.file("shiny", package = "MVPapp"),
                     insert_watermark    = TRUE,

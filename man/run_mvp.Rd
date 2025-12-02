@@ -24,7 +24,7 @@ run_mvp(
 
 \item{internal_version}{Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.}
 
-\item{use_bi_styling}{Logical. Default FALSE. Set to TRUE to insert BI logo.}
+\item{use_bi_styling}{Logical. Default FALSE. Set to TRUE to insert BI logo (deprecated - currently inactive).}
 
 \item{pw_models_path}{Character. Default NA_character_. Provide a path to source password-gated models.}
 
@@ -43,7 +43,7 @@ to it's state prior to calling \code{run_mvp}.
 }
 \details{
 If the user wishes to run the App outside of the function (e.g. preparing for
-deployment on Posit Connect), this can be done by accessing inst/shiny/app.R,
+deployment on Posit Connect), this can be done by accessing shiny/app.R,
 which is located inside the folder of where the package was installed, and modify
 debug_mode = TRUE (and setting these options there as required).
 }
@@ -57,9 +57,9 @@ run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to shiny
 run_mvp(authentication_code = "some_password") # Password-lock the site,
 # could be useful in deployment
 run_mvp(pw_models_path = "path/to/your/private/models.R") # see
-# "inst/shiny/passworded_models_example.R" on how to set one up
+# "shiny/passworded_models_example.R" on how to set one up
 }
 }
 \seealso{
-\url{https://boehringer-ingelheim.github.io/MVPapp/articles/supply-passwords.html}
+\url{https://stevechoy.github.io/MVPapp/articles/supply-passwords.html}
 }

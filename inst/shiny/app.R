@@ -505,6 +505,47 @@ ui <- shiny::navbarPage(
                                     )          # end of box
                                   ) # end of fluidRow
                          ), # end of corr plot tabPanel
+                         tabPanel('Covariate Histograms',
+                                  fluidRow(
+                                    shinydashboard::box(width = 12,
+                                                        title = 'Data Exploration', status = 'primary', solidHeader = TRUE, collapsible = FALSE,
+                                                        plotOutput('dataset_page_plot_hist', height = '600px') %>%
+                                                          shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                        downloadButton("download_hist_plot", "Download Non-Interactive Plot")),
+                                    shinydashboard::box(width = 12,
+                                                        title = 'Plotting Options', status = 'primary', solidHeader = TRUE, collapsible = TRUE,
+                                                        column(width = 9,
+                                                               selectizeInput('var_hist', 'Select Covariates (Note: Unique by ID, and coerced to numeric)',
+                                                                              choices = NULL,
+                                                                              multiple = TRUE)
+                                                        ),
+                                                        column(width = 3,
+                                                               numericInput('bin_size', 'Bin width: ', 5, min = 1, step = 1)
+                                                        )
+                                    ), # end of box
+                                    shinydashboard::box(width = 12,
+                                                        title = 'Download Options', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = FALSE,
+                                                        column(width = 6,
+                                                               textInput('plotlyd_hist_filename', plotly_filename_label, value = paste0(today_numeric(), '_hist_plot')),
+                                                               shinyBS::bsPopover('plotlyd_hist_filename', title = plotly_filename_label, content = bspop_plotly_file_name_label, placement = 'left', trigger = "focus")
+                                                        ),
+                                                        column(width = 2,
+                                                               selectInput('plotlyd_hist_format', label = plotly_format_label,
+                                                                           choices = c("png","pdf","jpeg","svg"),
+                                                                           selected = 'png',
+                                                                           selectize = FALSE)
+                                                        ),
+                                                        column(width = 2,
+                                                               numericInput('plotlyd_hist_width', plotly_width_label, value = NULL, min = 1, step = 10),
+                                                               shinyBS::bsPopover('plotlyd_hist_width', title = plotly_width_label, content = bspop_plotly_width_height_corr, placement = 'left', trigger = "focus")
+                                                        ),
+                                                        column(width = 2,
+                                                               numericInput('plotlyd_hist_height', plotly_height_label, value = NULL, min = 1, step = 10),
+                                                               shinyBS::bsPopover('plotlyd_hist_height', title = plotly_height_label, content = bspop_plotly_width_height_corr, placement = 'left', trigger = "focus")
+                                                        )
+                                    )          # end of box
+                                  ) # end of fluidRow
+                         ), # end of histogram plot tabPanel                         
                        ) # end of tabBox
              ) # end of mainPanel
            ) # end of sidebarLayout
@@ -2293,6 +2334,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.3.4 (2025-12-02) - Covariate histograms feature in Data Exploration.'),
                                p('v0.3.3 (2025-07-31) - NHANES updated to include 2021-2023. BMI filter for external databases. Minor bug fixes.'),
                                p('v0.3.2 (2025-06-13) - Added spider plots sub-tab for batch runs.'),
                                p('v0.3.1 (2025-06-11) - Weight-based dosing now apply for batch runs and variability plots.'),
@@ -2716,6 +2758,11 @@ server <- function(input, output, session) {
     updateSelectizeInput(session,
                          "var_corr",
                          choices = names(nmdataset_for_plot()) %>% sort())
+    
+    updateSelectizeInput(session,
+                         "var_hist",
+                         choices = names(nmdataset_for_plot()) %>% sort(),
+                         selected = NULL)
     
     updateSelectizeInput(session,
                          "facet_by",
@@ -3486,6 +3533,47 @@ server <- function(input, output, session) {
         }
         dev.off()
       })
+    }
+  )
+  
+  ## UI: output$dataset_page_plot_hist ----
+  histogram_plot <- reactive({
+    if (shiny::req(input$var_hist[1]) %in% names(nmdataset_for_plot())) {
+      
+      draw_histogram_plot(input_df         = nmdataset_for_plot(),
+                            hist_variables   = input$var_hist,
+                            bin_size         = input$bin_size,
+                            debug            = show_debugging_msg)
+    }
+  })
+  
+  output$dataset_page_plot_hist <- renderPlot({
+    
+    if (id_is_in_dataset()) {
+      histogram_plot()
+    } else {
+      ggplot2::ggplot() +
+        ggplot2::labs(title = unsupported_dataset) +
+        ggplot2::theme(panel.background = ggplot2::element_blank(),
+                       plot.title = ggplot2::element_text(color = model_1_color, size = 16)) +
+        add_watermark(watermark_toggle = insert_watermark)
+    }
+  })
+  
+  
+  #### Histogram Plot download section
+  output$download_hist_plot <- downloadHandler(
+    filename = function() {
+      paste0(input$plotlyd_hist_filename, ".", input$plotlyd_hist_format)
+    },
+    content = function(file) {
+      ggplot2::ggsave(file,
+                      plot = histogram_plot() + add_watermark(watermark_toggle = insert_watermark),
+                      device = input$plotlyd_hist_format,
+                      units = "px",
+                      width = input$plotlyd_hist_width,
+                      height = input$plotlyd_hist_height
+      )
     }
   )
   

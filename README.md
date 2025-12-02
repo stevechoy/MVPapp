@@ -167,8 +167,9 @@ rename these columns using the code editor.
 ![](www/ncaexample.png)
 
 4.  Quick data exploration are provided by the “General Plot”, “Ind.
-    Plot”, and “Corr. Plot” tabs (tip: clicking on the legend can toggle
-    each subgroup on/off when the plot is interactive):
+    Plot”, “Corr. Plot”, and “Covariate Histograms” tabs (tip: clicking
+    on the legend can toggle each subgroup on/off when the plot is
+    interactive):
 
 General plots are flexible plots that can handle continuous/continuous,
 continuous/discrete (Box plot option), and discrete/discrete (Box plot
@@ -189,6 +190,12 @@ Correlation plots are grouped by ID and are useful to explore potential
 correlations between covariates.
 
 ![](www/corr_plot.png)
+
+Covariate histogram plots are a quick way to check for outliers in the
+datasets (plots are distinct by ID, which usually displays the
+baseline).
+
+![](www/hist.png)
 
 **Note: once a dataset is uploaded, its display can be toggled on other
 pages by checking the “Overlay Dataset” checkbox in the “Plotting
@@ -389,7 +396,8 @@ using MVP to perform quick EDA.
 ### Run MVP as a regular Shiny App
 
 To run MVP without calling `run_mvp()`, navigate to the path of the
-installed `MVPapp` package, open `inst/shiny/app.R`, and set
+installed `MVPapp` package (path can be obtained by running
+`system.file(package = 'MVPapp')`), open `shiny/app.R`, and set
 `standalone_mode <- TRUE`. Then you would be able to run the App as-is.
 Change back to `standalone_mode <- FALSE` to allow passing of options
 via `run_mvp()` again.

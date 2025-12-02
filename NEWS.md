@@ -1,3 +1,9 @@
+# MVPapp 0.3.4 (2025-12-02)
+
+## Features
+
+* Covariate histograms feature in Data Exploration (#1).
+
 # MVPapp 0.3.3 (2025-07-31)
 
 ## Features

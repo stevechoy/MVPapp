@@ -111,6 +111,10 @@ Correlation between variables can be quickly assessed in this tab, using the `GG
 
 `r "\U0001F4A1"` Any variables with more than <=10 unique values are assumed to be categorical and converted into a factor for plotting.
 
+## Covariate Histograms
+
+Covariate distributions can be quickly evaluated in this tab to check for outliers. Note that columns of character type would be coerced into numerics to support plotting of histograms.
+
 ## Summary
 
 The Data Input page of MVP offers the ability to effortlessly review the data, assisting sanity checks and easily pinpoint outliers or potential errors. While this does not replace a more rigorous (i.e. scripted) EDA, the provided features serves as a great "first-pass" and should massively reduce turnaround time of queries back to data programmers.

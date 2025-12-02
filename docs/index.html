@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -77,7 +77,7 @@
 <code class="sourceCode R"><span><span class="co">## Install devtools first if required</span></span>
 <span><span class="co"># install.packages(devtools)</span></span>
 <span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"Boehringer-Ingelheim/MVPapp"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"stevechoy/MVPapp"</span>, build_vignettes <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>Once installed, launch MVP using the following commands:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Boehringer-Ingelheim/MVP" class="external-link">MVPapp</a></span><span class="op">)</span></span>
@@ -88,7 +88,7 @@
 <span><span class="co"># run_mvp(insert_watermarks = FALSE)</span></span></code></pre></div>
 <p>Alternatively, you may run <code>MVPapp</code> directly <em>without</em> installation (requires additional packages):</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/runUrl.html" class="external-link">runGitHub</a></span><span class="op">(</span><span class="st">"MVPapp"</span>, username <span class="op">=</span> <span class="st">"Boehringer-Ingelheim"</span>, subdir <span class="op">=</span> <span class="st">"inst/shiny"</span>, launch.browser <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">shiny</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/shiny/man/runUrl.html" class="external-link">runGitHub</a></span><span class="op">(</span><span class="st">"MVPapp"</span>, username <span class="op">=</span> <span class="st">"stevechoy"</span>, subdir <span class="op">=</span> <span class="st">"inst/shiny"</span>, launch.browser <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="getting-started">Getting Started<a class="anchor" aria-label="anchor" href="#getting-started"></a>
@@ -144,7 +144,7 @@
 </ol>
 <p><img src="www/ncaexample.png"></p>
 <ol start="4" style="list-style-type: decimal">
-<li>Quick data exploration are provided by the “General Plot”, “Ind. Plot”, and “Corr. Plot” tabs (tip: clicking on the legend can toggle each subgroup on/off when the plot is interactive):</li>
+<li>Quick data exploration are provided by the “General Plot”, “Ind. Plot”, “Corr. Plot”, and “Covariate Histograms” tabs (tip: clicking on the legend can toggle each subgroup on/off when the plot is interactive):</li>
 </ol>
 <p>General plots are flexible plots that can handle continuous/continuous, continuous/discrete (Box plot option), and discrete/discrete (Box plot option) types of data.</p>
 <p><img src="www/facet_plot.png"></p>
@@ -152,6 +152,8 @@
 <p><img src="www/ind_plot.png"></p>
 <p>Correlation plots are grouped by ID and are useful to explore potential correlations between covariates.</p>
 <p><img src="www/corr_plot.png"></p>
+<p>Covariate histogram plots are a quick way to check for outliers in the datasets (plots are distinct by ID, which usually displays the baseline).</p>
+<p><img src="www/hist.png"></p>
 <p><strong>Note: once a dataset is uploaded, its display can be toggled on other pages by checking the “Overlay Dataset” checkbox in the “Plotting Options” in each respective page!</strong></p>
 <p><img src="www/overlayexp.png"></p>
 </div>
@@ -282,17 +284,17 @@
 <div class="section level3">
 <h3 id="providing-external-models-and-changing-default-settings">Providing external models and changing default settings<a class="anchor" aria-label="anchor" href="#providing-external-models-and-changing-default-settings"></a>
 </h3>
-<p>Please see the article on <a href="https://boehringer-ingelheim.github.io/MVPapp/articles/supply-passwords.html">Supplying Passworded Models</a>, or access the vignette on this topic in R (<code>vignette("supply-passwords", package = "MVPapp"</code>) for instructions on how to provide external models on App start-up.</p>
+<p>Please see the article on <a href="https://stevechoy.github.io/MVPapp/articles/supply-passwords.html" class="external-link">Supplying Passworded Models</a>, or access the vignette on this topic in R (<code>vignette("supply-passwords", package = "MVPapp"</code>) for instructions on how to provide external models on App start-up.</p>
 </div>
 <div class="section level3">
 <h3 id="effective-exploratory-data-analysis-eda">Effective Exploratory Data Analysis (EDA)<a class="anchor" aria-label="anchor" href="#effective-exploratory-data-analysis-eda"></a>
 </h3>
-<p>Please see the article on <a href="https://boehringer-ingelheim.github.io/MVPapp/articles/data-exploration.html">Effective Exploratory Data Analysis (EDA)</a>, or access the vignette on this topic in R (<code>vignette("data-exploration", package = "MVPapp"</code>) for a short guide on using MVP to perform quick EDA.</p>
+<p>Please see the article on <a href="https://stevechoy.github.io/MVPapp/articles/data-exploration.html" class="external-link">Effective Exploratory Data Analysis (EDA)</a>, or access the vignette on this topic in R (<code>vignette("data-exploration", package = "MVPapp"</code>) for a short guide on using MVP to perform quick EDA.</p>
 </div>
 <div class="section level3">
 <h3 id="run-mvp-as-a-regular-shiny-app">Run MVP as a regular Shiny App<a class="anchor" aria-label="anchor" href="#run-mvp-as-a-regular-shiny-app"></a>
 </h3>
-<p>To run MVP without calling <code><a href="reference/run_mvp.html">run_mvp()</a></code>, navigate to the path of the installed <code>MVPapp</code> package, open <code>inst/shiny/app.R</code>, and set <code>standalone_mode &lt;- TRUE</code>. Then you would be able to run the App as-is. Change back to <code>standalone_mode &lt;- FALSE</code> to allow passing of options via <code><a href="reference/run_mvp.html">run_mvp()</a></code> again.</p>
+<p>To run MVP without calling <code><a href="reference/run_mvp.html">run_mvp()</a></code>, navigate to the path of the installed <code>MVPapp</code> package (path can be obtained by running <code>system.file(package = 'MVPapp')</code>), open <code>shiny/app.R</code>, and set <code>standalone_mode &lt;- TRUE</code>. Then you would be able to run the App as-is. Change back to <code>standalone_mode &lt;- FALSE</code> to allow passing of options via <code><a href="reference/run_mvp.html">run_mvp()</a></code> again.</p>
 </div>
 <div class="section level3">
 <h3 id="sources-for-patient-databases">Sources for patient databases<a class="anchor" aria-label="anchor" href="#sources-for-patient-databases"></a>

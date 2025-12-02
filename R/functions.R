@@ -5662,3 +5662,63 @@ spider_plot <-  function(df,
   
   return(p)
 }
+
+#-------------------------------------------------------------------------------
+#' @name draw_histogram_plot
+#'
+#' @title Draw a histogram plot from a NONMEM-formatted dataset for covariates
+#'
+#' @param input_df Input dataframe
+#' @param hist_variables Vector (string) of names to be used in the plot
+#' @param bin_size Size of bin_width used for histogram
+#' @param debug show debugging messages
+#'
+#' @returns a ggplot object
+#' @importFrom dplyr distinct select all_of mutate across
+#' @importFrom tidyr pivot_longer
+#' @importFrom ggplot2 theme_bw after_stat geom_histogram geom_density labs
+#' @importFrom ggplot2 facet_wrap aes
+#' @export
+#-------------------------------------------------------------------------------
+
+draw_histogram_plot <- function(input_df,
+                                hist_variables,
+                                bin_size = 5,
+                                debug = FALSE) {
+  if(debug) {
+    message("Creating histogram plot for variables: ", paste(hist_variables, collapse = ", "))
+  }
+  
+  hist_data_id <- input_df %>% dplyr::distinct(ID, .keep_all = TRUE)
+  
+  # Coerce specified variables to numeric
+  hist_data_id <- hist_data_id %>%
+    dplyr::mutate(
+      dplyr::across(
+        .cols = dplyr::all_of(hist_variables),
+        .fns = ~ as.numeric(.),
+        .names = "{col}"
+      )
+    )
+  
+  # Reshape data to long format for multiple variables
+  hist_data_long <- hist_data_id %>%
+    tidyr::pivot_longer(
+      cols = dplyr::all_of(hist_variables),
+      names_to = "Variable",
+      values_to = "Value"
+    )
+  
+  # Create the histogram plot with facets for each variable
+  hist_plot <- ggplot2::ggplot(hist_data_long, ggplot2::aes(x = Value)) +
+    ggplot2::geom_histogram(
+      binwidth = bin_size,
+      fill = "skyblue",
+      color = "white",
+      alpha = 1
+    ) +
+    ggplot2::facet_wrap(~Variable, scales = "free") + # Facet by variable
+    ggplot2::theme_bw()
+  
+  return(hist_plot)
+}

@@ -19,7 +19,7 @@ quantile_output(
 
 \item{lower_quartile}{lower quantile for yvar, default 0.025  (2.5\%)}
 
-\item{upper_quartile}{lower quantile for yvar, default 0.0975 (97.5\%)}
+\item{upper_quartile}{upper quantile for yvar, default 0.0975 (97.5\%)}
 
 \item{dp}{decimal places for rounding}
 }
