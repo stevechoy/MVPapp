@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   data-exploration: data-exploration.html
   supply-passwords: supply-passwords.html
-last_built: 2025-12-02T17:37Z
+last_built: 2025-12-04T12:50Z
 urls:
   reference: https://stevechoy.github.io/MVPapp/reference
   article: https://stevechoy.github.io/MVPapp/articles
