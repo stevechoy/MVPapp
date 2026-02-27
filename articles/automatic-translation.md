@@ -1,0 +1,232 @@
+# Automatic Model Translation
+
+## Motivation
+
+**Imagine how convenient it would be for any model described in the
+literature to be translated and simulated in real-time with a click of a
+button!**
+
+With the recent advancements of generative AI, it is now possible (and
+*feasible*) to upload a file to a large language model (LLM), extract
+its relevant contents and convert it into model code in \<1 minute.
+
+This feature in MVP is potentially a huge time-saver, especially for
+more complicated models such as complex PopPK/PD, PBPK, or QSP models.
+
+## Disclaimer
+
+By using this functionality, the user should be aware that data will be
+sent externally, and may be used for training purposes (depending on the
+provider). Please check with your organization’s policies regarding data
+privacy and data protection.
+
+## Pre-requisites
+
+To use this feature, you **must have access to API keys** for calling
+LLM service providers. Please contact your system administrator if you
+have questions about API usage and costs, which is outside the scope of
+this post.
+
+If you don’t, luckily there is a **free option** available via Gemini,
+which you can do after signing up to [Google AI
+Studio](https://aistudio.google.com/) and clicking the “Create API Key”
+button on the lower left (info current as of 2026-02). Please be aware
+that you may be rate limited with free options.
+
+Alternatively, [OpenRouter](https://openrouter.ai/models) also has a
+free tier for API keys, although in general the free models do not
+perform as well as the frontier models, and in addition you would have
+to specify your exact model of choice to be more optimal (more on that
+later), so we recommend spending a few dollars to have a vastly superior
+user-experience and reserve the free option for testing purposes.
+
+## Setup
+
+Install the `ellmer` and the `pdftools` R packages if you don’t
+currently have it (`install.packages(c("ellmer", "pdftools")`). If you
+are not sure, you can check by
+`print(requireNamespace(c("ellmer", "pdftools")))`. As of 2026-Feb, most
+of the major providers (Claude, Gemini, OpenAI, OpenRouter) are
+supported in MVP, and any other providers who share the same API
+protocol as OpenAI should also work (by selecting the
+“OpenAI-Compatible” option). Please see below for a brief instruction of
+configuring API keys after package installation:
+
+1.  Open up the `.Renviron` file (if you have the `usethis` package, run
+    `usethis::edit_r_environ()`on the console)  
+2.  Create a new entry for each provider that you would like to use, as
+    follows:  
+
+- Claude: `ANTHROPIC_API_KEY="your-key-here"`  
+- Gemini: `GEMINI_API_KEY="your-key-here"`  
+- OpenAI: `OPENAI_API_KEY="your-key-here"`  
+- OpenRouter: `OPENROUTER_API_KEY="your-key-here"`
+- OpenAI-Compatible: `OPENAI_COMPATIBLE_API_KEY="your-key-here"`
+- DeepSeek: `DEEPSEEK_API_KEY="your-key-here"`  
+- Azure OpenAI: `AZURE_OPENAI_API_KEY="your-key-here"`,
+  `AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`,
+  `AZURE_OPENAI_ENDPOINT` [refer to ellmer
+  documentation](https://ellmer.tidyverse.org/reference/chat_azure_openai.html)  
+- AWS Bedrock: [refer to ellmer
+  documentation](https://ellmer.tidyverse.org/reference/chat_aws_bedrock.html)  
+
+3.  Save and close the `.Renviron` file, and restart your R session (you
+    only have to do this once for each new key).  
+4.  (Optional) When you launch MVP
+    ([`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)),
+    you can specify more options associated with your provider of choice
+    using the LLM-specific arguments:  
+
+- `llm_choices`: By default, `OpenAI`, `Claude`, `Gemini`, `OpenRouter`,
+  `OpenAI-Compatible`, `Azure OpenAI`, `AWS Bedrock` are supported.
+- `user_id`: your user name to the provider, defaults to
+  `"mrgsolve_translator"`
+- `user_id_retry`: your user name to the provider during retries,
+  defaults to `"mrgsolve_translator"`
+- `reuse_context`: keep the same conversation during retries to improve
+  subsequent results, defaults to `FALSE` (see explanation below)  
+- `model_*`: Model name to use for your preferred provider,
+  e.g. `model_openai` for ChatGPT, or `model_anthropic` for Claude, etc.
+  A default has been provided for each provider. Please check each
+  provider for the latest list of accepted model names.  
+- `api_chat`: URL path if you are using an OpenAI-Compatible provider,
+  which feeds into the `base_url` argument during
+  [`ellmer::chat_openai_compatible()`](https://ellmer.tidyverse.org/reference/chat_openai_compatible.html)
+  call  
+- `api_upload`: URL path if you are using a Dify-style provider for the
+  upload location of files  
+- `temperature`: Temperature setting, ranging from 0 (more
+  deterministic) to 1 (more creativity), defaults to `0.1`  
+- `llm_seed`: Seed number if supported by the LLM (however it still does
+  not guarantee reproducibility), defaults to `42`
+- `model_lang`: Output `mrgsolve` or `nonmem` code in the response (see
+  below).
+- `prompts_path`: Path of the [prompts
+  file](https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R),
+  by default it is in the installed package directory of `MVPapp` (see
+  below).
+
+For example, if I am a Claude user and I want the results to be
+reproducible, I would launch MVP as follows:
+
+`run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0)`
+
+As the advancement of models happens frequently (on a time scale of
+months), it is recommended that the user pays particular attention and
+**specify a preferred model name** as appropriate, as the default
+options may become outdated and deprecated.
+
+## Usage
+
+From the Model Selection drop-down list, choose the option called
+“Upload File (AI Translation)”. After choosing the LLM provider that
+you’ve previously setup, all you need to do is to upload a file
+(currently supports PDF or text files `.txt/.mod/.ctl`), and then wait
+for the results to be generated, which takes about a minute. When the
+results become available, the code editor will be updated and then you
+can proceed as normal.
+
+⚠️ Multiple files are supported, as long as they have the same extension
+(e.g. all PDF files). For example, if the model descriptions are in the
+main body of the article, while the model equations and/or parameters
+are provided in the supplementary files, simply upload them all at the
+same time.
+
+💡 For better results, try **limiting the file contents** to just the
+relevant portions. If it is a PDF file, you may use
+[pdfcombiner](https://github.com/stevechoy/pdfcombiner) to help trim
+some pages off.
+
+### Locally Parsing Files
+
+The user has the option to bypass uploading of files, and instead parse
+the text locally and include that as part of the prompt to be sent to
+the LLM (currently supports PDF and text files). The advantage is that
+this is usually quicker, and with a reduced token usage (i.e. cheaper).
+The downside is that if the file contains lots of images such as model
+schematics, the contents will not be extracted and thus the response may
+become less accurate, compared to uploading the file. In addition, not
+all providers allow separate uploading of (PDF) files. If that is the
+case, MVP will automatically parse the file contents locally.
+
+💡 Whether it makes sense to parse locally is **highly dependent** on
+the file itself, e.g. in MVP, NONMEM control streams (`.mod/.ctl`) are
+considered equivalent to text files, and will be automatically locally
+parsed since there is no advantage to be gained by uploading it.
+
+### Automatic Retries
+
+MVP has built-in automatic retries (up to 3 times, default: 2) if the
+compilation fails. As mrgsolve syntax can be quite strict, the initial
+response may fail to compile on simple syntax errors which is often an
+easy fix.
+
+How this works behind the scenes is that an internal compilation check
+is performed when the initial response is received. If unsuccessful, the
+error message from the compilation will be attached together with the
+original model code and sent to the provider, asking it to correct the
+mistakes. By default, this initiates a new conversation (i.e. no memory)
+so the LLM is not aware of the original conversation with the file
+contents.
+
+💡 For better results, the user can set argument `reuse_context = TRUE`
+to keep the same conversation in order to provide better context to the
+LLM to improve the response, although this would incur additional token
+usage.
+
+### Cost
+
+Typical usage assuming a 10-page PDF costs anywhere between 20k-70k
+tokens (including 2 retries), which translates to about 10-20 cents for
+a frontier model such as Claude Sonnet. If you are price conscious, you
+could consider cheaper models and/or providers. However please be aware
+that performance may be inferior for non-frontier models. In general,
+**you get what you pay for**.
+
+After each LLM response has been received, a notification will be
+displayed on the bottom right hand corner, which includes token usage
+for the user’s information.
+
+### Other Notes
+
+- The `prompts_path` argument when launching
+  [`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)
+  allows the user to provide their own prompts. By default, the included
+  `prompts.R` file is used (located in the `/shiny` subfolder of
+  `MVPapp`, whereby the path can be located by
+  `find.package("MVPapp")`). The prompts are fine-tuned based on
+  trial-and-error, and may change in newer versions to improve first-try
+  success rates based on user feedback. It is recommended that users
+  make a copy of the file before making adjustments.  
+- A seed of `42` and a temperature setting of `0.1` is used by default.
+  While the use of a seed or setting a temperature to 0 does not
+  guarantee reproducibility, during testing, I found the default value
+  of 0.1 works OK in practice (also, many providers do not support these
+  settings). The reason a non-zero temperature is used is because
+  apparently the LLM can get stuck more easily with a temperature of 0,
+  however we have not done extensive testing to confirm whether this is
+  the case.  
+- While the feature is currently limited to translating into mrgsolve,
+  in principle it can be quite easily adapted to any other language. The
+  `model_lang` argument controls the output language, which is set to
+  `mrgsolve` by default. Alternatively, `nonmem` is also available
+  (remember to also set Retries to 0, since MVP app does not support
+  executing NONMEM).  
+- If the launch argument `show_debugging_msg = TRUE`, the responses will
+  be saved as the R objects `llm_result` (for initial translation) and
+  `llm_refine` (for retries) in the global environment for review.
+
+## Performance Evaluation
+
+This section will be populated in the near future.
+
+## Summary
+
+The goal of this feature is to further enable internal team sharing and
+discussion of models from the literature, with a side benefit of
+translating existing NONMEM models so users don’t have to start from
+scratch as they prepare for simulations.
+
+Please note that successful compilation does not guarantee code
+correctness, therefore it is on the user to ensure that any generated
+model code is accurate.

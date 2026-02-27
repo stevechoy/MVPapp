@@ -1,0 +1,232 @@
+# Effective Exploratory Data Analysis
+
+## Motivation
+
+> “If you know the enemy and know yourself, you need not fear the result
+> of a hundred battles.”
+>
+>                                                           --- Sun Tzu, The Art of War
+
+Understanding the data via exploratory data analysis (EDA) is arguably
+the most important aspect during model development, yet often
+overlooked. MVP provides some flexible tools to inspect and explore
+uploaded datasets quickly, with the goal to effortlessly:
+
+- Perform summary checks on data on a population level
+- Review and highlight profiles on an individual level
+
+This vignette is meant to introduce a **workflow of using MVP to perform
+quick exploratory data analysis**, which all takes place in the “Data
+Input” page. The reader is recommended to start MVP on a separate
+browser screen and follow the instructions on this page.
+
+## Uploading and Filtering Data
+
+1.  The first step is upload a NONMEM-compatible (.csv) dataset, or a
+    tab-delimited text file (.txt). For full compatibility for the rest
+    of the app, the `ID`, `DV`, and `TIME` columns should be present in
+    the dataset. **At minimum, the `ID` column should be present** to at
+    least support plotting in the Data Exploration pages on the right
+    hand side of the page.  
+2.  There are built-in dataset cleaning options (options collapsed by
+    default - click on the “+” icon to expand the box) that provides
+    short-cuts to commonly used options to filter the dataset. For more
+    custom filtering needs beyond the basics, the code editor on the
+    left hand side of the page provides this flexibility (e.g. renaming
+    Concentration and Time columns to be `DV` and `TIME`, respectively,
+    if using non-NONMEM formatted datasets).
+3.  Click on the Apply button on the code editor when you are done with
+    filtering via code - a dynamic table showing the filtered data
+    should now show up on the right hand side of the screen (the
+    “Filtered Data” tab) and able to be downloaded if required. If not,
+    check the Console below the Code Editor for potential error
+    messages.
+
+💡 In general, the filters applied here should match with what
+eventually will be used in the NONMEM control stream files.
+
+## Summary Statistics
+
+Quick summary statistics are now available on the “Summary Statistics”
+tab on the right hand side of the page, derived by using `ID` as a
+grouping variable. While summary of all variables (each column) will be
+provided, obviously not all are relevant or applicable, especially if a
+variable is a categorical (i.e. discrete) variable. However, this is a
+**useful functionality to review summary statistics for continuous
+variables** e.g. body weight or renal function.  
+  
+💡 There is a “Transpose Table” checkbox that will further aid
+visualization of the results for datasets with a lot of columns.
+
+## Descriptive Statistics (NCA)
+
+*Note: NCA functionality is currently only applicable for single
+ascending dose (SAD) studies or its equivalent where each subject will
+only receive one dose in a single compartment. If that’s not the case,
+skip this section.*
+
+1.  Column names for Time, Concentration, Dose will be pre-filled after
+    a dataset is uploaded (user can adjust as they see fit).  
+2.  Provide a “Group by Additional Column” variable to sort by the
+    defined grouping in the table output.  
+3.  (Optional) Adjust the units and provide a molecular weight (derives
+    clearance and volume terms if present).  
+4.  Click the “Calculate NCA” button to view results. The result
+    table(s) can be transposed accordingly if required.
+
+💡 Individual results and/or all profiles can be downloaded by clicking
+on their respective buttons on the bottom right of the page. For
+information and details on the various settings, visit [the NonCompart
+and ncar packages
+guide](https://asancpt.github.io/book-ncar-en/methods.html#r-packages-noncompart-and-ncar/).
+
+## General Plot
+
+The General Plot provide a quick way to visualize multiple data types,
+including continuous/continuous data, continuous/discrete data (box
+plots), and discrete/discrete data (count plots).
+
+### Continuous Plots
+
+1.  By default, the x-axis and y-axis will be updated to select `TIME`
+    and `DV` columns automatically. For non-NONMEM datasets, the user
+    may need to adjust accordingly.  
+2.  (Optional) The “color by” setting makes it easy to further
+    categorize and visualize the data. It is recommended (but not
+    required) to use a categorical variable for this option.  
+3.  (Optional) The “facet(s) by” setting provides even more flexibility
+    by allowing **multiple columns** to perform a `facet_wrap()`. To
+    optimize visualization, there currently is a hard limit of up to 30
+    unique combinations.
+4.  (Optional) Median lines by variable allows quick assessment of
+    trends by variable. Median lines are derived by connecting the
+    median values of quantiles (n=20) across the x-axis.
+5.  (Optional) For PKPD models with multiple compartments, a quick
+    shortcut is available to filter to only the compartment of interest
+    to be shown.
+6.  (Optional) Plots can be downloaded by clicking on the camera icon
+    (if plots are interactive) on the top right of the plot, or by
+    clicking the “Download Non-Interactive Plot” button (if it is a
+    regular plot). Image settings can be configured in the “Download
+    Options” box, which is collapsed by default (expand by clicking on
+    the “+” icon).
+
+💡 The “Quantize X-axis” option converts a continuous X-axis into
+discrete quantiles, and displays the results in a box plot with the
+quantile limits shown at the bottom. **Note that this option retains all
+observations, as opposed to the “Box plot” option that only retains
+unique IDs**.
+
+💡 by default interactive plots are switched off for speed. **Toggle the
+checkbox to allow interactive plotting, where hovering on each
+individual observation will display extra information**, along with
+other useful features.
+
+### Box plots
+
+1.  **Assuming that the x-axis is a categorical variable**, one can
+    toggle the box plot icon to change the visualization to display a
+    box plot (by unique IDs), with the number of subjects displayed on
+    top of each boxplot. There currently is a hard limit of up to 20
+    categories for box plots (i.e. must have \<= 20 unique x-axis
+    values).
+2.  (Optional) “Color by” and “facet(s) by” settings apply accordingly.
+    Use the “Text Label Size” to adjust the text size that displayed the
+    number of subjects.
+
+💡 Switch off Interactive Plot when using the “Color by” option to
+ensure the box plots are dodged properly, as the `plotly` package
+currently do not offer full support during conversion of a ggplot
+object.
+
+### Count plots
+
+Count plots are considered a special case of box plot where the y-axis
+variable is either:
+
+- A character type, or
+- There are \<=7 unique values
+
+**Count plots are triggered automatically when any of these two
+conditions are met when the Box Plot option is toggled.** The size of
+the circle reflects the number of unique subjects belonging to that
+subset, which is also displayed in a text label.
+
+💡 Currently if the “Color by” option is used, a known issue is that the
+circles would be stacked on top of each other. A workaround is to use
+the Interactive Plot option and hover over the circle to obtain count
+sizes of the “hidden” circles.
+
+## Individual Plots
+
+Most options in the “Ind. Plot” tab are carried over from the “General
+Plot” tab, with the exception of the “Facet by” option, since individual
+plots are always faceted by the `ID` column. Note that smoothers and
+median lines are not relevant for individual plots so they will also not
+be inserted.
+
+1.  By default, 9 subjects are displayed per page. Adjust the “Rows per
+    Page” and “Columns per Page” accordingly to change the number of
+    subjects per page. Note that the Page selector will be updated
+    dynamically to reflect any changes in rows and columns.  
+2.  (Optional) Dosing information is enabled by default, which searches
+    for the `EVID`, `ADDL`, and `II` columns, and inserts dosing lines
+    for each subject. The height of the dosing lines are scaled by their
+    relative amount that is given by the “Dose Column”, and each unique
+    dose will be labeled as text. If the `RATE` column is present, the
+    dosing lines will be extended accordingly to the infusion duration.
+    An optional unit for the dose can also be inserted. **Dosing records
+    (i.e. EVID == 1) must be present in the filtered data for this
+    option to work!**
+3.  (Optional) BLQ information can be inserted by providing the “LLOQ
+    Column”, which will then be shown as horizontal dashed orange lines.
+4.  (Optional) Select any specific number of subjects to be viewed by
+    using the “Select ID(s)” option. When any subjects are selected this
+    way, the page, row and column options will be ignored.
+5.  (Optional) The “Flag Variable” option allows the user to select a
+    variable, and any of its associated values, to be flagged as an red
+    asterix (**`*`**) on the plot, for further visualization beyond the
+    “Color by” option.
+6.  (Optional) The “Flag Outliers” option allows the user to select a
+    stratification group, and combined with the “Outlier Threshold”
+    option, **potential outliers will be automatically highlighted in
+    their subplot ID label**. The method of determining whether a
+    subject is an outlier is done by deriving the arithmetic mean of all
+    Y-axis values, and compare it to the entire group’s arithmetic mean.
+    If the subject’s mean value is above/below X% of the group, the
+    subject will be considered an outlier.
+
+💡 To visualize and/or highlight BLQ values, make sure the built-in
+filter option to remove BLQ values on the left hand side of the page is
+**unchecked** (“Built-in Dataset Cleaning Options” box - click on the
+“+” icon to expand the box)!
+
+💡 All individual profiles can be downloaded by clicking on the
+“Generate All Individuals” button which is located directly below the
+plot. Plot dimensions can be adjusted by expanding the “Download
+Options” box on the bottom right side of the page.
+
+## Correlation Plots
+
+Correlation between variables can be quickly assessed in this tab, using
+the
+[`GGally::ggpairs`](https://ggobi.github.io/ggally/reference/ggpairs.html)
+function. It is recommended to keep the number of variables \<7 as the
+plot may become too bunched up.
+
+💡 Any variables with more than \<=10 unique values are assumed to be
+categorical and converted into a factor for plotting.
+
+## Covariate Histograms
+
+Covariate distributions can be quickly evaluated in this tab to check
+for outliers. Note that columns of character type would be coerced into
+numerics to support plotting of histograms.
+
+## Summary
+
+The Data Input page of MVP offers the ability to effortlessly review the
+data, assisting sanity checks and easily pinpoint outliers or potential
+errors. While this does not replace a more rigorous (i.e. scripted) EDA,
+the provided features serves as a great “first-pass” and should
+massively reduce turnaround time of queries back to data programmers.
