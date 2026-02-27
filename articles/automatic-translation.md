@@ -6,9 +6,9 @@
 literature to be translated and simulated in real-time with a click of a
 button!**
 
-With the recent advancements of generative AI, it is now possible (and
+With the recent advancements on generative AI, it is now possible (and
 *feasible*) to upload a file to a large language model (LLM), extract
-its relevant contents and convert it into model code in \<1 minute.
+its relevant contents, and convert it into model code in \<1 minute.
 
 This feature in MVP is potentially a huge time-saver, especially for
 more complicated models such as complex PopPK/PD, PBPK, or QSP models.
@@ -42,15 +42,17 @@ user-experience and reserve the free option for testing purposes.
 
 ## Setup
 
+### API Keys
+
 Install the `ellmer` and the `pdftools` R packages if you don’t
 currently have it (`install.packages(c("ellmer", "pdftools")`). If you
 are not sure, you can check by
-`print(requireNamespace(c("ellmer", "pdftools")))`. As of 2026-Feb, most
-of the major providers (Claude, Gemini, OpenAI, OpenRouter) are
-supported in MVP, and any other providers who share the same API
-protocol as OpenAI should also work (by selecting the
-“OpenAI-Compatible” option). Please see below for a brief instruction of
-configuring API keys after package installation:
+`print(requireNamespace(c("ellmer", "pdftools")))`. As of the writing of
+this post (2026-Feb), most of the major providers are supported in MVP,
+and any other providers who share the same API protocol as OpenAI should
+also work (by selecting the “OpenAI-Compatible” option). Please see
+below for a brief instruction of configuring API keys after package
+installation:
 
 1.  Open up the `.Renviron` file (if you have the `usethis` package, run
     `usethis::edit_r_environ()`on the console)  
@@ -71,11 +73,14 @@ configuring API keys after package installation:
   documentation](https://ellmer.tidyverse.org/reference/chat_aws_bedrock.html)  
 
 3.  Save and close the `.Renviron` file, and restart your R session (you
-    only have to do this once for each new key).  
-4.  (Optional) When you launch MVP
-    ([`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)),
-    you can specify more options associated with your provider of choice
-    using the LLM-specific arguments:  
+    have to do this once for each new key).
+
+### Configuring Start-up Options
+
+When you launch MVP
+([`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)),
+you may specify more options associated with your provider of choice
+using the LLM-specific arguments:
 
 - `llm_choices`: By default, `OpenAI`, `Claude`, `Gemini`, `OpenRouter`,
   `OpenAI-Compatible`, `Azure OpenAI`, `AWS Bedrock` are supported.
@@ -187,7 +192,7 @@ After each LLM response has been received, a notification will be
 displayed on the bottom right hand corner, which includes token usage
 for the user’s information.
 
-### Other Notes
+### Notes
 
 - The `prompts_path` argument when launching
   [`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)

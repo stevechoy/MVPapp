@@ -73,9 +73,9 @@
 <p><strong>Imagine how convenient it would be for any model described in
 the literature to be translated and simulated in real-time with a click
 of a button!</strong></p>
-<p>With the recent advancements of generative AI, it is now possible
+<p>With the recent advancements on generative AI, it is now possible
 (and <em>feasible</em>) to upload a file to a large language model
-(LLM), extract its relevant contents and convert it into model code in
+(LLM), extract its relevant contents, and convert it into model code in
 &lt;1 minute.</p>
 <p>This feature in MVP is potentially a huge time-saver, especially for
 more complicated models such as complex PopPK/PD, PBPK, or QSP
@@ -111,14 +111,17 @@ reserve the free option for testing purposes.</p>
 <div class="section level2">
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
+<div class="section level3">
+<h3 id="api-keys">API Keys<a class="anchor" aria-label="anchor" href="#api-keys"></a>
+</h3>
 <p>Install the <code>ellmer</code> and the <code>pdftools</code> R
 packages if you don’t currently have it
 (<code>install.packages(c("ellmer", "pdftools")</code>). If you are not
 sure, you can check by
-<code>print(requireNamespace(c("ellmer", "pdftools")))</code>. As of
-2026-Feb, most of the major providers (Claude, Gemini, OpenAI,
-OpenRouter) are supported in MVP, and any other providers who share the
-same API protocol as OpenAI should also work (by selecting the
+<code>print(requireNamespace(c("ellmer", "pdftools")))</code>. As of the
+writing of this post (2026-Feb), most of the major providers are
+supported in MVP, and any other providers who share the same API
+protocol as OpenAI should also work (by selecting the
 “OpenAI-Compatible” option). Please see below for a brief instruction of
 configuring API keys after package installation:</p>
 <ol style="list-style-type: decimal">
@@ -153,13 +156,15 @@ follows:<br>
 </ul>
 <ol start="3" style="list-style-type: decimal">
 <li>Save and close the <code>.Renviron</code> file, and restart your R
-session (you only have to do this once for each new key).<br>
-</li>
-<li>(Optional) When you launch MVP (<code><a href="../reference/run_mvp.html">run_mvp()</a></code>), you can
-specify more options associated with your provider of choice using the
-LLM-specific arguments:<br>
-</li>
+session (you have to do this once for each new key).</li>
 </ol>
+</div>
+<div class="section level3">
+<h3 id="configuring-start-up-options">Configuring Start-up Options<a class="anchor" aria-label="anchor" href="#configuring-start-up-options"></a>
+</h3>
+<p>When you launch MVP (<code><a href="../reference/run_mvp.html">run_mvp()</a></code>), you may specify more
+options associated with your provider of choice using the LLM-specific
+arguments:</p>
 <ul>
 <li>
 <code>llm_choices</code>: By default, <code>OpenAI</code>,
@@ -219,6 +224,7 @@ reproducible, I would launch MVP as follows:</p>
 months), it is recommended that the user pays particular attention and
 <strong>specify a preferred model name</strong> as appropriate, as the
 default options may become outdated and deprecated.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
@@ -290,7 +296,7 @@ displayed on the bottom right hand corner, which includes token usage
 for the user’s information.</p>
 </div>
 <div class="section level3">
-<h3 id="other-notes">Other Notes<a class="anchor" aria-label="anchor" href="#other-notes"></a>
+<h3 id="notes">Notes<a class="anchor" aria-label="anchor" href="#notes"></a>
 </h3>
 <ul>
 <li>The <code>prompts_path</code> argument when launching
