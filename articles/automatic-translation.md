@@ -42,17 +42,20 @@ user-experience and reserve the free option for testing purposes.
 
 ## Setup
 
-### API Keys
+### Required Packages
 
 Install the `ellmer` and the `pdftools` R packages if you don’t
 currently have it (`install.packages(c("ellmer", "pdftools")`). If you
 are not sure, you can check by
-`print(requireNamespace(c("ellmer", "pdftools")))`. As of the writing of
-this post (2026-Feb), most of the major providers are supported in MVP,
-and any other providers who share the same API protocol as OpenAI should
-also work (by selecting the “OpenAI-Compatible” option). Please see
-below for a brief instruction of configuring API keys after package
-installation:
+`print(requireNamespace(c("ellmer", "pdftools")))`.
+
+### API Keys
+
+As of the writing of this post (2026-Feb), most of the major providers
+are supported in MVP, and any other providers who share the same API
+protocol as OpenAI should also work (by selecting the
+“OpenAI-Compatible” option). Please see below for a brief instruction of
+configuring API keys after package installation:
 
 1.  Open up the `.Renviron` file (if you have the `usethis` package, run
     `usethis::edit_r_environ()`on the console)  
@@ -84,10 +87,6 @@ using the LLM-specific arguments:
 
 - `llm_choices`: By default, `OpenAI`, `Claude`, `Gemini`, `OpenRouter`,
   `OpenAI-Compatible`, `Azure OpenAI`, `AWS Bedrock` are supported.
-- `user_id`: your user name to the provider, defaults to
-  `"mrgsolve_translator"`
-- `user_id_retry`: your user name to the provider during retries,
-  defaults to `"mrgsolve_translator"`
 - `reuse_context`: keep the same conversation during retries to improve
   subsequent results, defaults to `FALSE` (see explanation below)  
 - `model_*`: Model name to use for your preferred provider,
@@ -101,7 +100,7 @@ using the LLM-specific arguments:
 - `api_upload`: URL path if you are using a Dify-style provider for the
   upload location of files  
 - `temperature`: Temperature setting, ranging from 0 (more
-  deterministic) to 1 (more creativity), defaults to `0.1`  
+  deterministic) to 1 (more creativity), defaults to `0`  
 - `llm_seed`: Seed number if supported by the LLM (however it still does
   not guarantee reproducibility), defaults to `42`
 - `model_lang`: Output `mrgsolve` or `nonmem` code in the response (see
@@ -114,7 +113,7 @@ using the LLM-specific arguments:
 For example, if I am a Claude user and I want the results to be
 reproducible, I would launch MVP as follows:
 
-`run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0)`
+`run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0, llm_seed = 42)`
 
 As the advancement of models happens frequently (on a time scale of
 months), it is recommended that the user pays particular attention and
@@ -203,20 +202,16 @@ for the user’s information.
   trial-and-error, and may change in newer versions to improve first-try
   success rates based on user feedback. It is recommended that users
   make a copy of the file before making adjustments.  
-- A seed of `42` and a temperature setting of `0.1` is used by default.
-  While the use of a seed or setting a temperature to 0 does not
-  guarantee reproducibility, during testing, I found the default value
-  of 0.1 works OK in practice (also, many providers do not support these
-  settings). The reason a non-zero temperature is used is because
-  apparently the LLM can get stuck more easily with a temperature of 0,
-  however we have not done extensive testing to confirm whether this is
-  the case.  
-- While the feature is currently limited to translating into mrgsolve,
-  in principle it can be quite easily adapted to any other language. The
-  `model_lang` argument controls the output language, which is set to
-  `mrgsolve` by default. Alternatively, `nonmem` is also available
-  (remember to also set Retries to 0, since MVP app does not support
-  executing NONMEM).  
+- A seed of `42` and a temperature setting of `0` is used by default.
+  Please note that the use of a seed or setting a temperature to 0 may
+  not necessarily guarantee reproducibility (depending on the
+  provider).  
+- While the feature is currently limited to translating and compiling
+  into mrgsolve, in principle it can be quite easily adapted to any
+  other language. The `model_lang` argument controls the output
+  language, which is set to `mrgsolve` by default. For testing purposes,
+  `nonmem` is also available (MVP app does not support executing NONMEM,
+  so retries will be automatically set to 0).  
 - If the launch argument `show_debugging_msg = TRUE`, the responses will
   be saved as the R objects `llm_result` (for initial translation) and
   `llm_refine` (for retries) in the global environment for review.

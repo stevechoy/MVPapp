@@ -80,10 +80,10 @@ to it's state prior to calling <code>run_mvp</code>.</p>
 <span>  model_openrouter <span class="op">=</span> <span class="st">"arcee-ai/trinity-large-preview:free"</span>,</span>
 <span>  model_openai_compatible <span class="op">=</span> <span class="st">"gpt-5.2"</span>,</span>
 <span>  model_deepseek <span class="op">=</span> <span class="st">"deepseek-reasoner"</span>,</span>
-<span>  model_apollo <span class="op">=</span> <span class="st">"gpt-5.2"</span>,</span>
+<span>  model_apollo <span class="op">=</span> <span class="st">"claude_4_6_sonnet"</span>,</span>
 <span>  model_azure <span class="op">=</span> <span class="st">"gpt-5.2"</span>,</span>
 <span>  model_aws <span class="op">=</span> <span class="st">"anthropic.claude-sonnet-4-6"</span>,</span>
-<span>  temperature <span class="op">=</span> <span class="fl">0.1</span>,</span>
+<span>  temperature <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  llm_seed <span class="op">=</span> <span class="fl">42</span>,</span>
 <span>  model_lang <span class="op">=</span> <span class="st">"mrgsolve"</span>,</span>
 <span>  prompts_path <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"shiny/prompts.R"</span>, package <span class="op">=</span> <span class="st">"MVPapp"</span><span class="op">)</span>,</span>
@@ -133,11 +133,11 @@ to it's state prior to calling <code>run_mvp</code>.</p>
 
 
 <dt id="arg-user-id">user_id<a class="anchor" aria-label="anchor" href="#arg-user-id"></a></dt>
-<dd><p>Character. Default mrgsolve_translator. User ID for LLMs.</p></dd>
+<dd><p>Character. Default mrgsolve_translator. User ID for LLMs (BI-only).</p></dd>
 
 
 <dt id="arg-user-id-retry">user_id_retry<a class="anchor" aria-label="anchor" href="#arg-user-id-retry"></a></dt>
-<dd><p>Character. Default mrgsolve_translator. User ID for submitting retries to LLMs.</p></dd>
+<dd><p>Character. Default mrgsolve_translator. User ID for submitting retries to LLMs (BI-only).</p></dd>
 
 
 <dt id="arg-reuse-context">reuse_context<a class="anchor" aria-label="anchor" href="#arg-reuse-context"></a></dt>
@@ -181,7 +181,7 @@ to it's state prior to calling <code>run_mvp</code>.</p>
 
 
 <dt id="arg-temperature">temperature<a class="anchor" aria-label="anchor" href="#arg-temperature"></a></dt>
-<dd><p>Numeric. Default 0.1. Between 0 (more deterministic) to 1 (more creative) (not all models support this).</p></dd>
+<dd><p>Numeric. Default 0, between 0 (more deterministic) to 1 (more creative) (not all models support this).</p></dd>
 
 
 <dt id="arg-llm-seed">llm_seed<a class="anchor" aria-label="anchor" href="#arg-llm-seed"></a></dt>

@@ -73,7 +73,7 @@ translate_model_code(
 
 - user_id:
 
-  user id for the request
+  user id for the request (BI-only)
 
 - model_gemini:
 

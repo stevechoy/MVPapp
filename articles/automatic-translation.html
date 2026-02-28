@@ -112,16 +112,20 @@ reserve the free option for testing purposes.</p>
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="section level3">
-<h3 id="api-keys">API Keys<a class="anchor" aria-label="anchor" href="#api-keys"></a>
+<h3 id="required-packages">Required Packages<a class="anchor" aria-label="anchor" href="#required-packages"></a>
 </h3>
 <p>Install the <code>ellmer</code> and the <code>pdftools</code> R
 packages if you don’t currently have it
 (<code>install.packages(c("ellmer", "pdftools")</code>). If you are not
 sure, you can check by
-<code>print(requireNamespace(c("ellmer", "pdftools")))</code>. As of the
-writing of this post (2026-Feb), most of the major providers are
-supported in MVP, and any other providers who share the same API
-protocol as OpenAI should also work (by selecting the
+<code>print(requireNamespace(c("ellmer", "pdftools")))</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="api-keys">API Keys<a class="anchor" aria-label="anchor" href="#api-keys"></a>
+</h3>
+<p>As of the writing of this post (2026-Feb), most of the major
+providers are supported in MVP, and any other providers who share the
+same API protocol as OpenAI should also work (by selecting the
 “OpenAI-Compatible” option). Please see below for a brief instruction of
 configuring API keys after package installation:</p>
 <ol style="list-style-type: decimal">
@@ -172,14 +176,6 @@ arguments:</p>
 <code>OpenAI-Compatible</code>, <code>Azure OpenAI</code>,
 <code>AWS Bedrock</code> are supported.</li>
 <li>
-<code>user_id</code>: your user name to the provider, defaults to
-<code>"mrgsolve_translator"</code>
-</li>
-<li>
-<code>user_id_retry</code>: your user name to the provider during
-retries, defaults to <code>"mrgsolve_translator"</code>
-</li>
-<li>
 <code>reuse_context</code>: keep the same conversation during
 retries to improve subsequent results, defaults to <code>FALSE</code>
 (see explanation below)<br>
@@ -202,8 +198,7 @@ provider for the upload location of files<br>
 </li>
 <li>
 <code>temperature</code>: Temperature setting, ranging from 0 (more
-deterministic) to 1 (more creativity), defaults to
-<code>0.1</code><br>
+deterministic) to 1 (more creativity), defaults to <code>0</code><br>
 </li>
 <li>
 <code>llm_seed</code>: Seed number if supported by the LLM (however
@@ -219,7 +214,7 @@ package directory of <code>MVPapp</code> (see below).</li>
 </ul>
 <p>For example, if I am a Claude user and I want the results to be
 reproducible, I would launch MVP as follows:</p>
-<p><code>run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0)</code></p>
+<p><code>run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0, llm_seed = 42)</code></p>
 <p>As the advancement of models happens frequently (on a time scale of
 months), it is recommended that the user pays particular attention and
 <strong>specify a preferred model name</strong> as appropriate, as the
@@ -310,20 +305,17 @@ is recommended that users make a copy of the file before making
 adjustments.<br>
 </li>
 <li>A seed of <code>42</code> and a temperature setting of
-<code>0.1</code> is used by default. While the use of a seed or setting
-a temperature to 0 does not guarantee reproducibility, during testing, I
-found the default value of 0.1 works OK in practice (also, many
-providers do not support these settings). The reason a non-zero
-temperature is used is because apparently the LLM can get stuck more
-easily with a temperature of 0, however we have not done extensive
-testing to confirm whether this is the case.<br>
+<code>0</code> is used by default. Please note that the use of a seed or
+setting a temperature to 0 may not necessarily guarantee reproducibility
+(depending on the provider).<br>
 </li>
-<li>While the feature is currently limited to translating into mrgsolve,
-in principle it can be quite easily adapted to any other language. The
-<code>model_lang</code> argument controls the output language, which is
-set to <code>mrgsolve</code> by default. Alternatively,
-<code>nonmem</code> is also available (remember to also set Retries to
-0, since MVP app does not support executing NONMEM).<br>
+<li>While the feature is currently limited to translating and compiling
+into mrgsolve, in principle it can be quite easily adapted to any other
+language. The <code>model_lang</code> argument controls the output
+language, which is set to <code>mrgsolve</code> by default. For testing
+purposes, <code>nonmem</code> is also available (MVP app does not
+support executing NONMEM, so retries will be automatically set to
+0).<br>
 </li>
 <li>If the launch argument <code>show_debugging_msg = TRUE</code>, the
 responses will be saved as the R objects <code>llm_result</code> (for

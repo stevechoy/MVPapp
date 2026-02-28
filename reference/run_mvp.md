@@ -30,10 +30,10 @@ run_mvp(
   model_openrouter = "arcee-ai/trinity-large-preview:free",
   model_openai_compatible = "gpt-5.2",
   model_deepseek = "deepseek-reasoner",
-  model_apollo = "gpt-5.2",
+  model_apollo = "claude_4_6_sonnet",
   model_azure = "gpt-5.2",
   model_aws = "anthropic.claude-sonnet-4-6",
-  temperature = 0.1,
+  temperature = 0,
   llm_seed = 42,
   model_lang = "mrgsolve",
   prompts_path = system.file("shiny/prompts.R", package = "MVPapp"),
@@ -91,12 +91,12 @@ run_mvp(
 
 - user_id:
 
-  Character. Default mrgsolve_translator. User ID for LLMs.
+  Character. Default mrgsolve_translator. User ID for LLMs (BI-only).
 
 - user_id_retry:
 
   Character. Default mrgsolve_translator. User ID for submitting retries
-  to LLMs.
+  to LLMs (BI-only).
 
 - reuse_context:
 
@@ -142,7 +142,7 @@ run_mvp(
 
 - temperature:
 
-  Numeric. Default 0.1. Between 0 (more deterministic) to 1 (more
+  Numeric. Default 0, between 0 (more deterministic) to 1 (more
   creative) (not all models support this).
 
 - llm_seed:
