@@ -110,10 +110,17 @@ using the LLM-specific arguments:
   by default it is in the installed package directory of `MVPapp` (see
   below).
 
-For example, if I am a Claude user and I want the results to be
-reproducible, I would launch MVP as follows:
+For example, if you want to use Moonshot AI’s Kimi K2.5 model (i.e. a
+OpenAI-Compatible provider), one would launch MVP as follows (after
+configuring the corresponding `OPENAI_COMPATIBLE_API_KEY` field in
+.Renviron):
 
-`run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0, llm_seed = 42)`
+`run_mvp(model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")`
+
+In another second example, if you already have Claude API access, and
+just want to change the model, you could try something like:
+
+`run_mvp(model_anthropic = "claude-haiku-4-5-20251001")`
 
 As the advancement of models happens frequently (on a time scale of
 months), it is recommended that the user pays particular attention and
@@ -210,8 +217,9 @@ for the user’s information.
   into mrgsolve, in principle it can be quite easily adapted to any
   other language. The `model_lang` argument controls the output
   language, which is set to `mrgsolve` by default. For testing purposes,
-  `nonmem` is also available (MVP app does not support executing NONMEM,
-  so retries will be automatically set to 0).  
+  `nonmem` and `rxode2` is also available (MVP app does not support
+  executing NONMEM or RxODE2, so retries will be automatically set to
+  0).  
 - If the launch argument `show_debugging_msg = TRUE`, the responses will
   be saved as the R objects `llm_result` (for initial translation) and
   `llm_refine` (for retries) in the global environment for review.

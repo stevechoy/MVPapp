@@ -35,6 +35,9 @@ translate_model_code(
   nonmem_system_prompt,
   nonmem_long_user_prompt,
   nonmem_short_user_prompt,
+  rxode2_system_prompt,
+  rxode2_long_user_prompt,
+  rxode2_short_user_prompt,
   internal_version = TRUE,
   debug = TRUE
 )
@@ -156,6 +159,18 @@ translate_model_code(
 - nonmem_short_user_prompt:
 
   String for nonmem short user prompt
+
+- rxode2_system_prompt:
+
+  String for rxode2 system prompt
+
+- rxode2_long_user_prompt:
+
+  String for rxode2 long user prompt
+
+- rxode2_short_user_prompt:
+
+  String for rxode2 short user prompt
 
 - internal_version:
 

@@ -28,7 +28,7 @@ refine_model_code(
   progress_bar = 0.4,
   max_retries = 2,
   display_info = TRUE,
-  temperature = 0.1,
+  temperature = 0,
   seed = 42,
   attempt = 1,
   system_prompt,

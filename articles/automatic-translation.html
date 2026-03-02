@@ -212,9 +212,14 @@ it still does not guarantee reproducibility), defaults to
 <code>prompts_path</code>: Path of the <a href="https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R" target="_blank" class="external-link">prompts file</a>, by default it is in the installed
 package directory of <code>MVPapp</code> (see below).</li>
 </ul>
-<p>For example, if I am a Claude user and I want the results to be
-reproducible, I would launch MVP as follows:</p>
-<p><code>run_mvp(model_anthropic = "claude-sonnet-4-6", temperature = 0, llm_seed = 42)</code></p>
+<p>For example, if you want to use Moonshot AI’s Kimi K2.5 model (i.e. a
+OpenAI-Compatible provider), one would launch MVP as follows (after
+configuring the corresponding <code>OPENAI_COMPATIBLE_API_KEY</code>
+field in .Renviron):</p>
+<p><code>run_mvp(model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")</code></p>
+<p>In another second example, if you already have Claude API access, and
+just want to change the model, you could try something like:</p>
+<p><code>run_mvp(model_anthropic = "claude-haiku-4-5-20251001")</code></p>
 <p>As the advancement of models happens frequently (on a time scale of
 months), it is recommended that the user pays particular attention and
 <strong>specify a preferred model name</strong> as appropriate, as the
@@ -313,9 +318,9 @@ setting a temperature to 0 may not necessarily guarantee reproducibility
 into mrgsolve, in principle it can be quite easily adapted to any other
 language. The <code>model_lang</code> argument controls the output
 language, which is set to <code>mrgsolve</code> by default. For testing
-purposes, <code>nonmem</code> is also available (MVP app does not
-support executing NONMEM, so retries will be automatically set to
-0).<br>
+purposes, <code>nonmem</code> and <code>rxode2</code> is also available
+(MVP app does not support executing NONMEM or RxODE2, so retries will be
+automatically set to 0).<br>
 </li>
 <li>If the launch argument <code>show_debugging_msg = TRUE</code>, the
 responses will be saved as the R objects <code>llm_result</code> (for

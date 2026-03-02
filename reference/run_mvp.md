@@ -153,7 +153,7 @@ run_mvp(
 - model_lang:
 
   Character. Default mrgsolve. Changes model translation language to
-  "mrgsolve" or "nonmem" (unsupported)
+  "mrgsolve", "nonmem" (for testing only), "rxode2" (for testing only)
 
 - prompts_path:
 
