@@ -35,6 +35,7 @@ refine_model_code(
   long_user_prompt,
   short_user_prompt,
   internal_version,
+  feedback_success = FALSE,
   debug = TRUE
 )
 ```
@@ -141,6 +142,26 @@ refine_model_code(
 - attempt:
 
   current attempt number
+
+- system_prompt:
+
+  Character. System prompt
+
+- long_user_prompt:
+
+  Character. Long user prompt
+
+- short_user_prompt:
+
+  Character. Short user prompt
+
+- internal_version:
+
+  Logical. Only relevant for BI
+
+- feedback_success:
+
+  Logical. Only relevant for BI, and if reuse_context = TRUE
 
 - debug:
 
