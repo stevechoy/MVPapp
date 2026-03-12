@@ -57,7 +57,7 @@ error notification is shown and <code>NULL</code> is returned.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">prepare_uploaded_files</span><span class="op">(</span><span class="va">files</span>, <span class="va">single_file_types</span>, <span class="va">multi_file_types</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">prepare_uploaded_files</span><span class="op">(</span><span class="va">files</span>, <span class="va">llm_service</span>, <span class="va">single_file_types</span>, <span class="va">multi_file_types</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -68,6 +68,10 @@ error notification is shown and <code>NULL</code> is returned.</p>
 <dd><p>A data frame produced by a Shiny <code>fileInput</code> widget,
 containing at minimum the columns <code>name</code> (original filename) and
 <code>datapath</code> (server-side temporary path).</p></dd>
+
+
+<dt id="arg-llm-service">llm_service<a class="anchor" aria-label="anchor" href="#arg-llm-service"></a></dt>
+<dd><p>LLM provider name. More extensions are accepted by Dify-workflows.</p></dd>
 
 
 <dt id="arg-single-file-types">single_file_types<a class="anchor" aria-label="anchor" href="#arg-single-file-types"></a></dt>

@@ -266,13 +266,13 @@ If that is the case, MVP will automatically parse the file contents
 locally.</p>
 <p>💡 Whether it makes sense to parse locally is <strong>highly
 dependent</strong> on the file itself, e.g. in MVP, NONMEM control
-streams (<code>.mod/.ctl</code>) are considered equivalent to text files
-(it is converted internally to have a <code>.txt</code> extension before
-uploading to ensure compatibility). Therefore, you may consider locally
-parsing small text files since there is no advantage to be gained by
-uploading it. An exception to this would be if there are context window
-limits which prevents lots of text to fit properly within the
-prompt.</p>
+streams or CPP files (<code>.mod/.ctl/.cpp</code>) are considered
+equivalent to text files (it is converted internally to have a
+<code>.txt</code> extension before uploading to ensure compatibility).
+Therefore, it will be automatically parsed locally since there is no
+advantage to be gained by uploading it. If there are context window
+limits which prevents lots of text to fit within the prompt, the user
+should then save the file(s) as a PDF so it can properly uploaded.</p>
 </div>
 <div class="section level3">
 <h3 id="automatic-retries">Automatic Retries<a class="anchor" aria-label="anchor" href="#automatic-retries"></a>

@@ -12,7 +12,7 @@ returned.
 ## Usage
 
 ``` r
-prepare_uploaded_files(files, single_file_types, multi_file_types)
+prepare_uploaded_files(files, llm_service, single_file_types, multi_file_types)
 ```
 
 ## Arguments
@@ -22,6 +22,10 @@ prepare_uploaded_files(files, single_file_types, multi_file_types)
   A data frame produced by a Shiny `fileInput` widget, containing at
   minimum the columns `name` (original filename) and `datapath`
   (server-side temporary path).
+
+- llm_service:
+
+  LLM provider name. More extensions are accepted by Dify-workflows.
 
 - single_file_types:
 

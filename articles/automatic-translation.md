@@ -169,13 +169,14 @@ all providers allow separate uploading of (PDF) files. If that is the
 case, MVP will automatically parse the file contents locally.
 
 💡 Whether it makes sense to parse locally is **highly dependent** on
-the file itself, e.g. in MVP, NONMEM control streams (`.mod/.ctl`) are
-considered equivalent to text files (it is converted internally to have
-a `.txt` extension before uploading to ensure compatibility). Therefore,
-you may consider locally parsing small text files since there is no
-advantage to be gained by uploading it. An exception to this would be if
+the file itself, e.g. in MVP, NONMEM control streams or CPP files
+(`.mod/.ctl/.cpp`) are considered equivalent to text files (it is
+converted internally to have a `.txt` extension before uploading to
+ensure compatibility). Therefore, it will be automatically parsed
+locally since there is no advantage to be gained by uploading it. If
 there are context window limits which prevents lots of text to fit
-properly within the prompt.
+within the prompt, the user should then save the file(s) as a PDF so it
+can properly uploaded.
 
 ### Automatic Retries
 

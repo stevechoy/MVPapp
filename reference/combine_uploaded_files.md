@@ -3,7 +3,7 @@
 Merges a list of locally stored files (from a Shiny `fileInput` with
 `multiple = TRUE`) into a single temporary file, ready for downstream
 processing such as sending to an LLM. Supports PDF (merged page-by-page)
-and plain text types including `.txt`, `.mod`, and `.ctl`
+and plain text types including `.txt`, `.mod`, `.ctl`, and `.cpp`
 (concatenated). On error, a Shiny notification is shown to the user and
 `NULL` is returned rather than stopping the session.
 
