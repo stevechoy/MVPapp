@@ -373,6 +373,15 @@ demographics. 
 
 ![](www/expplot.png)
 
+#### Saving and Restoring Sessions
+
+The current model and settings can be saved as a .rds file to be stored
+locally, and re-loaded at any time for convenience, which includes
+support of any uploaded datasets and filtering options. The buttons are
+located below the main code editor.
+
+![](www/session.png)
+
 ## Extended Features and Vignettes
 
 ### AI model translation
