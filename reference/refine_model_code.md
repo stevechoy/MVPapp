@@ -31,6 +31,8 @@ refine_model_code(
   temperature = 0,
   seed = 42,
   attempt = 1,
+  deep_pdfscan = FALSE,
+  force_parse = FALSE,
   system_prompt,
   long_user_prompt,
   short_user_prompt,
@@ -142,6 +144,14 @@ refine_model_code(
 - attempt:
 
   current attempt number
+
+- deep_pdfscan:
+
+  Uses Vision to extract image data (BI only)
+
+- force_parse:
+
+  Force reparsing (BI only)
 
 - system_prompt:
 

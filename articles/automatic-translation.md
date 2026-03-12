@@ -78,21 +78,22 @@ configuring API keys after package installation:
 3.  Save and close the `.Renviron` file, and restart your R session (you
     have to do this once for each new key).
 
-### Configuring Start-up Options
+### Configuring Default Options
 
 When you launch MVP
 ([`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)),
-you may specify more options associated with your provider of choice
-using the LLM-specific arguments:
+you may specify defaults associated with your provider of choice using
+the LLM-specific arguments:
 
-- `llm_choices`: By default, `OpenAI`, `Claude`, `Gemini`, `OpenRouter`,
-  `OpenAI-Compatible`, `Azure OpenAI`, `AWS Bedrock` are supported.
+- `llm_choices`: By default, `Claude`, `OpenAI`, `Gemini`, `OpenRouter`,
+  `OpenAI-Compatible`, `Azure OpenAI`, `AWS Bedrock` are included. The
+  first name is used as default.
 - `reuse_context`: keep the same conversation during retries to improve
   subsequent results, defaults to `FALSE` (see explanation below)  
-- `model_*`: Model name to use for your preferred provider,
+- `model_*`: Default model names to use for your preferred provider,
   e.g. `model_openai` for ChatGPT, or `model_anthropic` for Claude, etc.
-  A default has been provided for each provider. Please check each
-  provider for the latest list of accepted model names.  
+  Please check each provider for the latest list of accepted model
+  names.  
 - `api_chat`: URL path if you are using an OpenAI-Compatible provider,
   which feeds into the `base_url` argument during
   [`ellmer::chat_openai_compatible()`](https://ellmer.tidyverse.org/reference/chat_openai_compatible.html)
@@ -103,39 +104,46 @@ using the LLM-specific arguments:
   deterministic) to 1 (more creativity), defaults to `0`  
 - `llm_seed`: Seed number if supported by the LLM (however it still does
   not guarantee reproducibility), defaults to `42`
-- `model_lang`: Output `mrgsolve` or `nonmem` code in the response (see
-  below).
+- `model_lang`: Default output to `mrgsolve`, `nonmem`, or `rxode2` code
+  in the response (see below).
 - `prompts_path`: Path of the [prompts
   file](https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R),
   by default it is in the installed package directory of `MVPapp` (see
   below).
 
-For example, if you want to use Moonshot AI’s Kimi K2.5 model (i.e. a
-OpenAI-Compatible provider), one would launch MVP as follows (after
-configuring the corresponding `OPENAI_COMPATIBLE_API_KEY` field in
-.Renviron):
+For example, if you want to use Moonshot AI’s Kimi K2.5 model as default
+(i.e. a OpenAI-Compatible provider), one would launch MVP as follows
+(after configuring the corresponding `OPENAI_COMPATIBLE_API_KEY` field
+in .Renviron):
 
-`run_mvp(model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")`
+`run_mvp(llm_choices = "OpenAI-Compatible", model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")`
 
 In another second example, if you already have Claude API access, and
-just want to change the model, you could try something like:
+just want to change the default model, you could try something like:
 
-`run_mvp(model_anthropic = "claude-haiku-4-5-20251001")`
+`run_mvp(llm_choices = "Claude", model_anthropic = "claude-haiku-4-5-20251001")`
 
-As the advancement of models happens frequently (on a time scale of
-months), it is recommended that the user pays particular attention and
-**specify a preferred model name** as appropriate, as the default
-options may become outdated and deprecated.
+Note that all of the arguments only set up the default option for
+convenience - all of these options can be changed dynamically within
+MVP.
+
+In addition, as the advancement of models happens frequently (on a time
+scale of months), it is recommended that the user pays particular
+attention and **specify a preferred model name** as appropriate, as the
+default options may become outdated and deprecated.
 
 ## Usage
 
 From the Model Selection drop-down list, choose the option called
-“Upload File (AI Translation)”. After choosing the LLM provider that
-you’ve previously setup, all you need to do is to upload a file
-(currently supports PDF or text files `.txt/.mod/.ctl`), and then wait
-for the results to be generated, which takes about a minute. When the
-results become available, the code editor will be updated and then you
-can proceed as normal.
+“Upload File (AI Translation)”. Next, all you need to do is to upload a
+file (or multiple files, we currently supports PDF or text files
+`.txt/.mod/.ctl`), click the “Send” button, and then wait for the
+results to be generated, which takes about a minute.
+
+When the results become available, the code editor will be updated and
+then you can proceed as normal. If the default settings are not to your
+preference, you can click on the “Gear” button to further customize
+settings.
 
 ⚠️ Multiple files are supported, as long as they have the same extension
 (e.g. all PDF files). For example, if the model descriptions are in the
@@ -181,9 +189,9 @@ so the LLM is not aware of the original conversation with the file
 contents.
 
 💡 For better results, the user can set argument `reuse_context = TRUE`
-to keep the same conversation in order to provide better context to the
-LLM to improve the response, although this would incur additional token
-usage.
+(or check the “Memory” option in Settings) to keep the same conversation
+in order to provide better context to the LLM to improve the response,
+although this would incur additional token usage.
 
 ### Cost
 

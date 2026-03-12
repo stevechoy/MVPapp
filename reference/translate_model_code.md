@@ -29,6 +29,8 @@ translate_model_code(
   seed = 42,
   locally_parse_file = FALSE,
   model_lang = "mrgsolve",
+  deep_pdfscan = FALSE,
+  force_parse = FALSE,
   mrgsolve_system_prompt,
   mrgsolve_long_user_prompt,
   mrgsolve_short_user_prompt,
@@ -135,6 +137,14 @@ translate_model_code(
 - model_lang:
 
   Either "mrgsolve" or "nonmem" (changes the prompt)
+
+- deep_pdfscan:
+
+  Use Vision to extract image data (BI only)
+
+- force_parse:
+
+  Force parsing (BI only)
 
 - mrgsolve_system_prompt:
 

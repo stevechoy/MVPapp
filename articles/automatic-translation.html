@@ -164,28 +164,28 @@ session (you have to do this once for each new key).</li>
 </ol>
 </div>
 <div class="section level3">
-<h3 id="configuring-start-up-options">Configuring Start-up Options<a class="anchor" aria-label="anchor" href="#configuring-start-up-options"></a>
+<h3 id="configuring-default-options">Configuring Default Options<a class="anchor" aria-label="anchor" href="#configuring-default-options"></a>
 </h3>
-<p>When you launch MVP (<code><a href="../reference/run_mvp.html">run_mvp()</a></code>), you may specify more
-options associated with your provider of choice using the LLM-specific
+<p>When you launch MVP (<code><a href="../reference/run_mvp.html">run_mvp()</a></code>), you may specify
+defaults associated with your provider of choice using the LLM-specific
 arguments:</p>
 <ul>
 <li>
-<code>llm_choices</code>: By default, <code>OpenAI</code>,
-<code>Claude</code>, <code>Gemini</code>, <code>OpenRouter</code>,
+<code>llm_choices</code>: By default, <code>Claude</code>,
+<code>OpenAI</code>, <code>Gemini</code>, <code>OpenRouter</code>,
 <code>OpenAI-Compatible</code>, <code>Azure OpenAI</code>,
-<code>AWS Bedrock</code> are supported.</li>
+<code>AWS Bedrock</code> are included. The first name is used as
+default.</li>
 <li>
 <code>reuse_context</code>: keep the same conversation during
 retries to improve subsequent results, defaults to <code>FALSE</code>
 (see explanation below)<br>
 </li>
 <li>
-<code>model_*</code>: Model name to use for your preferred provider,
-e.g. <code>model_openai</code> for ChatGPT, or
-<code>model_anthropic</code> for Claude, etc. A default has been
-provided for each provider. Please check each provider for the latest
-list of accepted model names.<br>
+<code>model_*</code>: Default model names to use for your preferred
+provider, e.g. <code>model_openai</code> for ChatGPT, or
+<code>model_anthropic</code> for Claude, etc. Please check each provider
+for the latest list of accepted model names.<br>
 </li>
 <li>
 <code>api_chat</code>: URL path if you are using an
@@ -206,36 +206,43 @@ it still does not guarantee reproducibility), defaults to
 <code>42</code>
 </li>
 <li>
-<code>model_lang</code>: Output <code>mrgsolve</code> or
-<code>nonmem</code> code in the response (see below).</li>
+<code>model_lang</code>: Default output to <code>mrgsolve</code>,
+<code>nonmem</code>, or <code>rxode2</code> code in the response (see
+below).</li>
 <li>
 <code>prompts_path</code>: Path of the <a href="https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R" target="_blank" class="external-link">prompts file</a>, by default it is in the installed
 package directory of <code>MVPapp</code> (see below).</li>
 </ul>
-<p>For example, if you want to use Moonshot AI’s Kimi K2.5 model (i.e. a
-OpenAI-Compatible provider), one would launch MVP as follows (after
-configuring the corresponding <code>OPENAI_COMPATIBLE_API_KEY</code>
-field in .Renviron):</p>
-<p><code>run_mvp(model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")</code></p>
+<p>For example, if you want to use Moonshot AI’s Kimi K2.5 model as
+default (i.e. a OpenAI-Compatible provider), one would launch MVP as
+follows (after configuring the corresponding
+<code>OPENAI_COMPATIBLE_API_KEY</code> field in .Renviron):</p>
+<p><code>run_mvp(llm_choices = "OpenAI-Compatible", model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")</code></p>
 <p>In another second example, if you already have Claude API access, and
-just want to change the model, you could try something like:</p>
-<p><code>run_mvp(model_anthropic = "claude-haiku-4-5-20251001")</code></p>
-<p>As the advancement of models happens frequently (on a time scale of
-months), it is recommended that the user pays particular attention and
-<strong>specify a preferred model name</strong> as appropriate, as the
-default options may become outdated and deprecated.</p>
+just want to change the default model, you could try something like:</p>
+<p><code>run_mvp(llm_choices = "Claude", model_anthropic = "claude-haiku-4-5-20251001")</code></p>
+<p>Note that all of the arguments only set up the default option for
+convenience - all of these options can be changed dynamically within
+MVP.</p>
+<p>In addition, as the advancement of models happens frequently (on a
+time scale of months), it is recommended that the user pays particular
+attention and <strong>specify a preferred model name</strong> as
+appropriate, as the default options may become outdated and
+deprecated.</p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
 <p>From the Model Selection drop-down list, choose the option called
-“Upload File (AI Translation)”. After choosing the LLM provider that
-you’ve previously setup, all you need to do is to upload a file
-(currently supports PDF or text files <code>.txt/.mod/.ctl</code>), and
-then wait for the results to be generated, which takes about a minute.
-When the results become available, the code editor will be updated and
-then you can proceed as normal.</p>
+“Upload File (AI Translation)”. Next, all you need to do is to upload a
+file (or multiple files, we currently supports PDF or text files
+<code>.txt/.mod/.ctl</code>), click the “Send” button, and then wait for
+the results to be generated, which takes about a minute.</p>
+<p>When the results become available, the code editor will be updated
+and then you can proceed as normal. If the default settings are not to
+your preference, you can click on the “Gear” button to further customize
+settings.</p>
 <p>⚠️ Multiple files are supported, as long as they have the same
 extension (e.g. all PDF files). For example, if the model descriptions
 are in the main body of the article, while the model equations and/or
@@ -278,9 +285,10 @@ it to correct the mistakes. By default, this initiates a new
 conversation (i.e. no memory) so the LLM is not aware of the original
 conversation with the file contents.</p>
 <p>💡 For better results, the user can set argument
-<code>reuse_context = TRUE</code> to keep the same conversation in order
-to provide better context to the LLM to improve the response, although
-this would incur additional token usage.</p>
+<code>reuse_context = TRUE</code> (or check the “Memory” option in
+Settings) to keep the same conversation in order to provide better
+context to the LLM to improve the response, although this would incur
+additional token usage.</p>
 </div>
 <div class="section level3">
 <h3 id="cost">Cost<a class="anchor" aria-label="anchor" href="#cost"></a>

@@ -63,7 +63,8 @@ model to exist first.</p>
 <span>  <span class="va">session</span>,</span>
 <span>  <span class="va">rv</span>,</span>
 <span>  <span class="va">uploaded_data_override</span>,</span>
-<span>  <span class="va">show_note</span></span>
+<span>  <span class="va">show_note</span>,</span>
+<span>  selectize_choices <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -100,6 +101,10 @@ a file upload.</p></dd>
 <dt id="arg-show-note">show_note<a class="anchor" aria-label="anchor" href="#arg-show-note"></a></dt>
 <dd><p>Logical. Whether to display a version compatibility
 notification on restore. Default <code>TRUE</code>.</p></dd>
+
+
+<dt id="arg-selectize-choices">selectize_choices<a class="anchor" aria-label="anchor" href="#arg-selectize-choices"></a></dt>
+<dd><p>Workaround for restoring nonmem_y_axis and color_data_by</p></dd>
 
 </dl></div>
     <div class="section level2">

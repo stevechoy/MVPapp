@@ -15,7 +15,8 @@ restore_session_state(
   session,
   rv,
   uploaded_data_override,
-  show_note
+  show_note,
+  selectize_choices = NULL
 )
 ```
 
@@ -54,6 +55,10 @@ restore_session_state(
 
   Logical. Whether to display a version compatibility notification on
   restore. Default `TRUE`.
+
+- selectize_choices:
+
+  Workaround for restoring nonmem_y_axis and color_data_by
 
 ## Value
 

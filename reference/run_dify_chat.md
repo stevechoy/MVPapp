@@ -1,4 +1,4 @@
-# Send a chat request to a Dify Workflow via httr2
+# Send a chat request to a Dify Workflow via httr2 (BI-only)
 
 Handles the full Dify API interaction: optionally uploads a file first,
 then sends the instruction prompt as a blocking workflow request and
@@ -17,6 +17,8 @@ run_dify_chat(
   detected_type = NULL,
   locally_parse_file = TRUE,
   conversation_id = NULL,
+  deep_pdfscan = FALSE,
+  force_parse = FALSE,
   model_name,
   debug = TRUE
 )
@@ -63,6 +65,14 @@ run_dify_chat(
 - conversation_id:
 
   Default NULL, required for context reuse
+
+- deep_pdfscan:
+
+  Default FALSE, uses Vision to extract images
+
+- force_parse:
+
+  Default FALSE, forces reparsing
 
 - model_name:
 

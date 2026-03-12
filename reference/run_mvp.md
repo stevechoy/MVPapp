@@ -22,7 +22,6 @@ run_mvp(
   api_upload = NA_character_,
   api_chat = NA_character_,
   user_id = "mrgsolve_translator",
-  user_id_retry = "mrgsolve_translator",
   reuse_context = FALSE,
   model_gemini = "gemini-3-flash-preview",
   model_openai = "gpt-5.4",
@@ -82,21 +81,16 @@ run_mvp(
 - api_upload:
 
   Character. Default NA_character\_. API upload URL when using
-  Dify-based workflows
+  Dify-based workflows (BI-only)
 
 - api_chat:
 
   Character. Default NA_character\_. API chat URL required when using
-  OpenAI-compatible providers
+  OpenAI-Compatible providers
 
 - user_id:
 
-  Character. Default mrgsolve_translator. User ID for LLMs (BI-only).
-
-- user_id_retry:
-
-  Character. Default mrgsolve_translator. User ID for submitting retries
-  to LLMs (BI-only).
+  Character. Default MVP_user. User ID for LLMs
 
 - reuse_context:
 

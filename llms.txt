@@ -609,7 +609,7 @@ which you may use for citation purposes.
 - [`restore_session_state()`](https://stevechoy.github.io/MVPapp/reference/restore_session_state.md)
   : Restore a saved MVP session state
 - [`run_dify_chat()`](https://stevechoy.github.io/MVPapp/reference/run_dify_chat.md)
-  : Send a chat request to a Dify Workflow via httr2
+  : Send a chat request to a Dify Workflow via httr2 (BI-only)
 - [`run_ellmer_chat()`](https://stevechoy.github.io/MVPapp/reference/run_ellmer_chat.md)
   : Send a chat request via an ellmer provider
 - [`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)
