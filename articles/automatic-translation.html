@@ -218,8 +218,8 @@ default (i.e. a OpenAI-Compatible provider), one would launch MVP as
 follows (after configuring the corresponding
 <code>OPENAI_COMPATIBLE_API_KEY</code> field in .Renviron):</p>
 <p><code>run_mvp(llm_choices = "OpenAI-Compatible", model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")</code></p>
-<p>In another second example, if you already have Claude API access, and
-just want to change the default model, you could try something like:</p>
+<p>In a second example, if you already have Claude API access, and just
+want to change the default model, you could try something like:</p>
 <p><code>run_mvp(llm_choices = "Claude", model_anthropic = "claude-haiku-4-5-20251001")</code></p>
 <p>Note that all of the arguments only set up the default option for
 convenience - all of these options can be changed dynamically within
@@ -236,7 +236,7 @@ deprecated.</p>
 </h2>
 <p>From the Model Selection drop-down list, choose the option called
 “Upload File (AI Translation)”. Next, all you need to do is to upload a
-file (or multiple files, we currently supports PDF or text files
+file (or multiple files, we currently support PDF or text files
 <code>.txt/.mod/.ctl</code>), click the “Send” button, and then wait for
 the results to be generated, which takes about a minute.</p>
 <p>When the results become available, the code editor will be updated
@@ -266,9 +266,13 @@ If that is the case, MVP will automatically parse the file contents
 locally.</p>
 <p>💡 Whether it makes sense to parse locally is <strong>highly
 dependent</strong> on the file itself, e.g. in MVP, NONMEM control
-streams (<code>.mod/.ctl</code>) are considered equivalent to text
-files, and will be automatically locally parsed since there is no
-advantage to be gained by uploading it.</p>
+streams (<code>.mod/.ctl</code>) are considered equivalent to text files
+(it is converted internally to have a <code>.txt</code> extension before
+uploading to ensure compatibility). Therefore, you may consider locally
+parsing small text files since there is no advantage to be gained by
+uploading it. An exception to this would be if there are context window
+limits which prevents lots of text to fit properly within the
+prompt.</p>
 </div>
 <div class="section level3">
 <h3 id="automatic-retries">Automatic Retries<a class="anchor" aria-label="anchor" href="#automatic-retries"></a>
@@ -322,7 +326,7 @@ adjustments.<br>
 setting a temperature to 0 may not necessarily guarantee reproducibility
 (depending on the provider).<br>
 </li>
-<li>While the feature is currently limited to translating and compiling
+<li>While the feature is best supported by translating and compiling
 into mrgsolve, in principle it can be quite easily adapted to any other
 language. The <code>model_lang</code> argument controls the output
 language, which is set to <code>mrgsolve</code> by default. For testing
