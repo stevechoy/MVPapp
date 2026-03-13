@@ -59,9 +59,9 @@ translate_model_code(
 
 - service:
 
-  Choice of "PROD" (BI-only), "EXP" (BI-only), "Gemini", "OpenAI",
-  "Claude", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Apollo"
-  (BI-only), "Azure OpenAI"
+  Choice of "PROD" (BI-only), "EXP" (BI-only), "Gemini", "OpenAI", "AWS
+  Bedrock", "Claude", "OpenRouter", "OpenAI-Compatible", "DeepSeek",
+  "Apollo" (BI-only), "Azure OpenAI"
 
 - api_key:
 

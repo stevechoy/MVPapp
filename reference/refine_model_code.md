@@ -70,7 +70,7 @@ refine_model_code(
 - api_key:
 
   API Key, recommended to store it as env var called "ANTHROPIC_API_KEY"
-  etc
+  etc (Dify only)
 
 - api_upload:
 
