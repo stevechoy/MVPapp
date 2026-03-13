@@ -165,18 +165,17 @@ this is usually quicker, and with a reduced token usage (i.e. cheaper).
 The downside is that if the file contains lots of images such as model
 schematics, the contents will not be extracted and thus the response may
 become less accurate, compared to uploading the file. In addition, not
-all providers allow separate uploading of (PDF) files. If that is the
-case, MVP will automatically parse the file contents locally.
+all providers allow separate uploading of files, so locally parsing
+files is the workaround solution.
 
 💡 Whether it makes sense to parse locally is **highly dependent** on
 the file itself, e.g. in MVP, NONMEM control streams or CPP files
 (`.mod/.ctl/.cpp`) are considered equivalent to text files (it is
-converted internally to have a `.txt` extension before uploading to
-ensure compatibility). Therefore, it will be automatically parsed
-locally since there is no advantage to be gained by uploading it. If
-there are context window limits which prevents lots of text to fit
-within the prompt, the user should then save the file(s) as a PDF so it
-can properly uploaded.
+converted internally to `.txt`). Therefore, it will be automatically
+parsed locally since any actual upload accepts only PDF files to ensure
+maximum compatibility for most providers. If there are context window
+limits which prevents lots of text to fit within the prompt, the user
+should then save the file(s) as a PDF so it can be properly uploaded.
 
 ### Automatic Retries
 

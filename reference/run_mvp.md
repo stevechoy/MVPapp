@@ -21,7 +21,7 @@ run_mvp(
     "DeepSeek", "Azure OpenAI", "AWS Bedrock"),
   api_upload = NA_character_,
   api_chat = NA_character_,
-  user_id = "mrgsolve_translator",
+  user_id = "MVP_user",
   reuse_context = FALSE,
   model_gemini = "gemini-3-flash-preview",
   model_openai = "gpt-5.4",
