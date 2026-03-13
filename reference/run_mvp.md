@@ -34,7 +34,7 @@ run_mvp(
   model_aws = "anthropic.claude-sonnet-4-6",
   temperature = 0,
   llm_seed = 42,
-  model_lang = "mrgsolve",
+  model_lang = c("mrgsolve", "nonmem", "rxode2"),
   prompts_path = system.file("shiny/prompts.R", package = "MVPapp"),
   show_debugging_msg = FALSE,
   ...
