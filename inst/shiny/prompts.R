@@ -328,8 +328,8 @@ ini({})
     tvcl <- c(lower, initial, upper)
 - Use fixed values with fix keyword when appropriate:
     tvcl <- fix(10)
-- Comment each line with the parameter name and units
-    tvcl <- c(0, 1, 10); label("CL (L/h)")
+- Comment each line with the parameter name and units, use single quotes inside labels
+    tvcl <- c(0, 1, 10); label('CL (L/h)')
 - Define all ETA variances using eta syntax:
      ECL ~ 0.09
 - Define correlated ETAs using block syntax:
