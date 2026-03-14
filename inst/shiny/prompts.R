@@ -1,44 +1,44 @@
 #-------------------------------------------------------------------------------
 #' List of Prompts
-#' 
+#'
 #' It is recommended that users store their prompts in a dedicated file, which
 #' makes it easier for fine-tuning as this document may undergo more frequent
-#' changes based on model advancements and our own experience on improving 
+#' changes based on model advancements and our own experience on improving
 #' responses.
-#' 
+#'
 #' In MVP, the following prompts are required:
-#' 
+#'
 #' * mrgsolve_translation_system_prompt
 #' * mrgsolve_translation_long_user_prompt
 #' * mrgsolve_translation_short_user_prompt
 #' * mrgsolve_refine_system_prompt
 #' * mrgsolve_refine_long_user_prompt
 #' * mrgsolve_refine_short_user_prompt
-#' 
+#'
 #' The following prompts are for test purposes only and is therefore optional:
-#' 
+#'
 #' * nonmem_translation_system_prompt
 #' * nonmem_translation_long_user_prompt
 #' * nonmem_translation_short_user_prompt
-#' 
+#'
 #' * rxode2_translation_system_prompt
 #' * rxode2_translation_long_user_prompt
 #' * roxde2_translation_short_user_prompt
-#' 
+#'
 #' By default, both long and short user prompts are equivalent. A different long
-#' user prompt may be used if the model does not support system prompts, or a 
+#' user prompt may be used if the model does not support system prompts, or a
 #' short user prompt may be used if the API connects to a Workflow which has its
 #' own system prompts.
-#' 
+#'
 #' The "prompts_path" argument from run_mvp() sources this file by default
-#' upon App start up from the shiny/ folder where the package ("MVPapp") is 
-#' installed. Alternatively, the user can create their own prompts file and 
+#' upon App start up from the shiny/ folder where the package ("MVPapp") is
+#' installed. Alternatively, the user can create their own prompts file and
 #' then supply its path to "prompts_path" if required.
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 #' mrgsolve translation prompts
-#' 
+#'
 #-------------------------------------------------------------------------------
 
 mrgsolve_translation_system_prompt <- "
@@ -140,12 +140,12 @@ mrgsolve_translation_short_user_prompt <- "Convert the model described in this f
 
 #-------------------------------------------------------------------------------
 #' Test prompts optimized for Claude
-#' 
+#'
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 #' mrgsolve refinement prompts
-#' 
+#'
 #-------------------------------------------------------------------------------
 
 mrgsolve_refine_system_prompt <- "
@@ -171,7 +171,7 @@ mrgsolve_refine_short_user_prompt <- "Your task is to correct the code so that i
 #-------------------------------------------------------------------------------
 #' NONMEM translation prompts
 #' (no refinement prompts needed since MVP does not support NONMEM execution)
-#' 
+#'
 #-------------------------------------------------------------------------------
 
 nonmem_translation_system_prompt <- "
@@ -207,7 +207,7 @@ $SUBROUTINE:
   - 1-CMT oral: ADVAN2 TRANS2 (CL, V, KA)
   - 2-CMT oral: ADVAN4 TRANS4 (CL, V2, Q, V3, KA)
   - Use ADVAN6/ADVAN8/ADVAN13 + $DES only when ODEs are necessary
-  
+
 $MODEL:
 - Each compartment that occurs in $DES needs to be defined here
 - Example: COMP=(DOSING) ; dosing compartment
@@ -275,7 +275,7 @@ $COVARIANCE:
 
 $TABLE:
 - Always include: ID TIME DV IPRED PRED CWRES IWRES ETA(1:LAST) NOAPPEND NOPRINT ONEHEADER
-- Output to a clearly named file: FILE=sdtab 
+- Output to a clearly named file: FILE=sdtab
 - Add a patab for parameters and cotab for covariates if relevant
 - Add FORMAT=s1PE15.8 at the end of each table file
 
@@ -295,7 +295,7 @@ nonmem_translation_short_user_prompt <- "Convert the model described in this fil
 
 #-------------------------------------------------------------------------------
 #' rxode2 / nlmixr2 translation prompts
-#' 
+#'
 #-------------------------------------------------------------------------------
 
 rxode2_translation_system_prompt <- "
@@ -315,7 +315,7 @@ Do not output this step.
 </extraction>
 
 <block_structure>
-An rxode2 model is an R function with two named blocks in this exact order:
+An rxode2 model is a named R function with two named blocks in this exact order:
 ini({...})
 model({...})
 </block_structure>
@@ -324,29 +324,45 @@ model({...})
 
 ini({})
 - Define all population (typical) parameter values: TVCL = 10
-- Define all ETA variances using eta syntax:     ECL ~ 0.09
+- Include initial estimate for population parameters using lower and upper bounds:
+    tvcl <- c(lower, initial, upper)
+- Use fixed values with fix keyword when appropriate:
+    tvcl <- fix(10)
+- Comment each line with the parameter name and units
+    tvcl <- c(0, 1, 10); label("CL (L/h)")
+- Define all ETA variances using eta syntax:
+     ECL ~ 0.09
 - Define correlated ETAs using block syntax:
-  c(EKA, ECL, EVC) ~ c(0.09,
-                        0.01, 0.09,
-                        0.01, 0.02, 0.09)
-- Define residual error variances using eps syntax:
-  Additive:       add.err  ~ 0.1
-  Proportional:   prop.err ~ 0.1
-  Combined:       c(add.err, prop.err) ~ c(0.1, 0.1)
-- No ^ symbol; use decimal values
-- No duplicate entries
+  EKA ~ 0.09
+  ECL ~ c(0.01,  0.09) # ECL variance is 0.09 and covariance with EKA is 0.01
+  EVC ~ c(0.01, 0.02, 0.09) # EVC variance is 0.09, covariance with EKA is 0.01, covariance with ECL is 0.02
+- Define inter-occasion varibility variance estimates using eta syntax specifying which data item represents the occasion:
+   ECL_IOV ~ 0.09 | occ
+- Define residual error variances using theta syntax, keeping in mind that the estimates for these parameters
+  must be on the standard devitation scale instead of the variance scale as in NONMEM and mrgsolve.
+  Additive:       add.sd  <- 0.1
+  Proportional:   prop.sd <- 0.1
+  For combined errors, you need to provide estimates for each error:
+    add.err <- 0.1
+    prop.err <- 0.1
 
 model({})
 - Define covariate relationships first
-- Apply ETAs as described in the text: e.g. CL = TVCL * exp(ECL)
+- Apply ETAs as described in the text, but prefer the mu referenced covariates e.g.:
+     CL = exp(lCl + ECL)
 - Define PK parameters before ODEs
 - Bioavailability/rate parameters use rxode2 convention: f(CMT), alag(CMT), dur(CMT), rate(CMT)
 - Write ODEs using d/dt() notation: d/dt(CENT) = ...
 - Every compartment must have a corresponding d/dt() equation
-- Apply residual error exactly as described in the text:
-  Additive:     DV ~ add(add.err)
-  Proportional: DV ~ prop(prop.err)
-  Combined:     DV ~ add(add.err) + prop(prop.err)
+
+- Apply residual error exactly as described in the text, but never use DV as the left hand side variable.
+Instead use the variable name of the item being modeled (like concentration, cp, effect, etc) on the left hand side. For example:
+
+  Additive:     cp ~ add(add.sd)
+  Proportional: cp ~ prop(prop.sd)
+  Combined:     cp ~ add(add.sd) + prop(prop.sd)
+  Log-normal:   cp ~ lnorm(lnorm.sd)
+
 - Use t (not TIME) when referencing time
 
 </block_rules>
@@ -363,7 +379,6 @@ NEVER:
 - Duplicate variable names
 - Invent compartments not described in the paper
 - Omit any term that appears in the paper equations
-- Use ^ symbol anywhere in the code
 - Add PK assumptions not explicitly stated (e.g. linear elimination, first-order absorption)
 </constraints>
 
