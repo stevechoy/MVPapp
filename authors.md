@@ -6,6 +6,8 @@
 
 - **Jin Gyu Kim**. Author.
 
+- **Matthew Fidler**. Contributor.
+
 ## Citation
 
 Source:
