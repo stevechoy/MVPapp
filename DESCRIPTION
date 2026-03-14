@@ -3,7 +3,8 @@ Title: Model Visualization Platform
 Version: 0.4.0
 Authors@R: c(
     person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre")),
-    person("Jin Gyu", "Kim", role = "aut"))
+    person("Jin Gyu", "Kim", role = "aut"),
+    person("Matthew", "Fidler", role = "ctb"))
 Description: Model Visualization Platform (MVP) is an intuitive and interactive pharmacometrics environment requiring minimal setup from the users.
     It is a flexible tool that allows users to explore model structures, parameters, dosing regimens, and compare with observations.
     The goal of MVP is to support initial model development and facilitate internal discussions more efficiently.
