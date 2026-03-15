@@ -6222,8 +6222,8 @@ refine_model_code <- function(model_code,
           user_id            = user_id,
           locally_parse_file = TRUE,
           model_name         = model_name,
-          deep_pdfscan          = FALSE,
-          force_parse      = FALSE,
+          deep_pdfscan       = FALSE,
+          force_parse        = FALSE,
           debug              = debug
         )
       } else {
@@ -6822,6 +6822,26 @@ prepare_uploaded_files <- function(files,
     }
     
     return(files$datapath[1])
+  }
+  
+  # ── NONMEM pair: one .ctl/.mod + one .ext → list for nonmem2mrgsolve ─────────
+  # Must be checked before the general multi-file logic so .ext doesn't get
+  # rejected by the multi_file_types guard.
+  if (nrow(files) == 2) {
+    
+    is_model_ext <- exts %in% c(".ctl", ".mod")
+    is_ext_ext   <- exts == ".ext"
+    
+    if (sum(is_model_ext) == 1 && sum(is_ext_ext) == 1) {
+      
+      model_path <- files$datapath[is_model_ext]
+      ext_path   <- files$datapath[is_ext_ext]
+      
+      return(list(
+        model = model_path,
+        ext   = ext_path
+      ))
+    }
   }
   
   # ── Multiple files ────────────────────────────────────────────────────────────

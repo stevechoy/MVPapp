@@ -2442,6 +2442,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.1 (2026-03-15) - Supporting nonmem2mrgsolve and nonmem2rx for deterministic translation from NONMEM.'),
                                p('v0.4.0 (2026-03-11) - Experimental feature of parsing external files to generate mrgsolve model code. Save and restore session support. Performance improvements.'),
                                p('v0.3.5 (2026-02-04) - Dose info now displays correctly for all doses in Individual Plots'),
                                p('v0.3.4 (2025-12-02) - Covariate histograms feature in Data Exploration.'),
@@ -2654,7 +2655,9 @@ server <- function(input, output, session) {
     locally_parse           = FALSE,
     max_retries             = 2,
     deep_pdfscan            = FALSE,
-    force_parse             = FALSE
+    force_parse             = FALSE,
+    nonmem2mrgsolve         = FALSE,
+    nonmem2rx               = FALSE
   )
   
   # Reactive values to store LLM settings
@@ -2679,7 +2682,9 @@ server <- function(input, output, session) {
     locally_parse           = default_llm_settings$locally_parse,
     max_retries             = default_llm_settings$max_retries,
     deep_pdfscan            = default_llm_settings$deep_pdfscan,
-    force_parse             = default_llm_settings$force_parse
+    force_parse             = default_llm_settings$force_parse,
+    nonmem2mrgsolve         = default_llm_settings$nonmem2mrgsolve,
+    nonmem2rx               = default_llm_settings$nonmem2rx
   )
   
   llm_settings_model_2 <- reactiveValues(
@@ -2703,7 +2708,9 @@ server <- function(input, output, session) {
     locally_parse           = default_llm_settings$locally_parse,
     max_retries             = default_llm_settings$max_retries,
     deep_pdfscan            = default_llm_settings$deep_pdfscan,
-    force_parse             = default_llm_settings$force_parse
+    force_parse             = default_llm_settings$force_parse,
+    nonmem2mrgsolve         = default_llm_settings$nonmem2mrgsolve,
+    nonmem2rx               = default_llm_settings$nonmem2rx
   )
   
   # Page 1 Data Input ----
@@ -3980,6 +3987,16 @@ server <- function(input, output, session) {
   output$upload_pdf_model_1 <- renderUI({
     if (input$model_select == 'Upload File (AI Translation)') {
       
+      if(requireNamespace("nonmem2mrgsolve")) {
+        llm_accept_single_types <- c(llm_accept_single_types, ".ext")
+        llm_accept_multi_types  <- c(llm_accept_multi_types, ".ext")
+      }
+      
+      if(requireNamespace("nonmem2rx")) {
+        llm_accept_single_types <- c(llm_accept_single_types, ".lst")
+        llm_accept_multi_types  <- c(llm_accept_multi_types, ".lst")
+      }      
+      
       # Determine accepted file types based on llm choice
       accept_types <- if (llm_settings_model_1$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
         llm_accept_single_types  # Dify supports text too
@@ -4146,6 +4163,28 @@ server <- function(input, output, session) {
     }    
   })
   
+  output$nonmem2mrgsolve_ui_model_1 <- renderUI({
+    shiny::req(input$model_lang_model_1) # use the live modal input, not the saved reactive
+    
+    if (input$model_lang_model_1 == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+      checkboxInput('nonmem2mrgsolve_model_1',
+                    label = llm_nonmem2mrgsolve_label,
+                    value = llm_settings_model_1$nonmem2mrgsolve
+      )
+    }    
+  })
+  
+  output$nonmem2rx_ui_model_1 <- renderUI({
+    shiny::req(input$model_lang_model_1) # use the live modal input, not the saved reactive
+    
+    if (input$model_lang_model_1 == "rxode2" && requireNamespace("nonmem2rx")) {
+      checkboxInput('nonmem2rx_model_1',
+                    label = llm_nonmem2rx_label,
+                    value = llm_settings_model_1$nonmem2rx
+      )
+    }    
+  })
+  
   # Show a modal dialog for customizing llm settings
   observeEvent(input$customize_llm_model_1, {
     showModal(
@@ -4192,7 +4231,9 @@ server <- function(input, output, session) {
                  checkboxInput('reuse_context_model_1',
                                label = llm_memory_label,
                                value = llm_settings_model_1$reuse_context
-                 )
+                 ),
+                 uiOutput("nonmem2mrgsolve_ui_model_1"),
+                 uiOutput("nonmem2rx_ui_model_1")
           ),          
         ),
         footer = tagList(
@@ -4228,6 +4269,8 @@ server <- function(input, output, session) {
     llm_settings_model_1$max_retries             <- default_llm_settings$max_retries
     llm_settings_model_1$deep_pdfscan            <- default_llm_settings$deep_pdfscan
     llm_settings_model_1$force_parse             <- default_llm_settings$force_parse
+    llm_settings_model_1$nonmem2mrgsolve         <- default_llm_settings$nonmem2mrgsolve
+    llm_settings_model_1$nonmem2rx               <- default_llm_settings$nonmem2rx
     
     # Update the modal input fields, BI-only
     updateSelectInput(session, "llm_model_1",                    selected = default_llm_settings$llm_choices)
@@ -4252,6 +4295,8 @@ server <- function(input, output, session) {
     updateTextInput(session, "model_aws_model_1",                   value = default_llm_settings$model_aws)
     updateSliderInput(session, "temperature_model_1",               value = default_llm_settings$temperature)
     updateNumericInput(session, "llm_seed_model_1",                 value = default_llm_settings$llm_seed)
+    updateCheckboxInput(session, "nonmem2mrgsolve_model_1",         value = default_llm_settings$nonmem2mrgsolve)
+    updateCheckboxInput(session, "nonmem2rx_model_1",               value = default_llm_settings$nonmem2rx)
   })
   
   # Apply new settings to update the llm_settings reactive
@@ -4280,6 +4325,8 @@ server <- function(input, output, session) {
     if(!is.null(input$llm_seed_model_1))                llm_settings_model_1$llm_seed                <- input$llm_seed_model_1
     if(!is.null(input$deep_pdfscan_model_1))            llm_settings_model_1$deep_pdfscan            <- input$deep_pdfscan_model_1
     if(!is.null(input$force_parse_model_1))             llm_settings_model_1$force_parse             <- input$force_parse_model_1
+    if(!is.null(input$nonmem2mrgsolve_model_1))         llm_settings_model_1$nonmem2mrgsolve         <- input$nonmem2mrgsolve_model_1
+    if(!is.null(input$nonmem2rx_model_1))               llm_settings_model_1$nonmem2rx               <- input$nonmem2rx_model_1
     
     # Update the modal input fields, BI-only
     updateSelectInput(session, "llm_model_1",                    selected = llm_settings_model_1$llm_choices)
@@ -4308,6 +4355,12 @@ server <- function(input, output, session) {
     updateTextInput(session, "model_aws_model_1",                   value = llm_settings_model_1$model_aws)
     updateSliderInput(session, "temperature_model_1",               value = llm_settings_model_1$temperature)
     updateNumericInput(session, "llm_seed_model_1",                 value = llm_settings_model_1$llm_seed)
+    if(llm_settings_model_1$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+      updateCheckboxInput(session, "nonmem2mrgsolve_model_1",         value = llm_settings_model_1$nonmem2mrgsolve)
+    }
+    if(llm_settings_model_1$model_lang == "rxode2" && requireNamespace("nonmem2rx")) {
+      updateCheckboxInput(session, "nonmem2rx_model_1",               value = llm_settings_model_1$nonmem2rx)
+    }
   })
   
   observeEvent(input$send_to_llm_model_1, {
@@ -4395,43 +4448,72 @@ server <- function(input, output, session) {
     
     if(show_debugging_msg) message("Beginning translation")
     
-    # 1. Initial Translation
-    current_code <- translate_model_code(
-      ready_path                 = ready_path,
-      file_name                  = NULL,
-      service                    = llm_service,
-      api_key                    = api_key,
-      api_upload                 = api_upload,
-      api_chat                   = api_chat,
-      user_id                    = user_id,
-      model_gemini               = model_gemini,
-      model_openai               = model_openai,
-      model_anthropic            = model_anthropic,
-      model_openrouter           = model_openrouter,
-      model_openai_compatible    = model_openai_compatible,
-      model_deepseek             = model_deepseek,
-      model_apollo               = model_apollo,
-      model_azure                = model_azure,
-      model_aws                  = model_aws,
-      display_info               = TRUE,
-      temperature                = temperature,
-      seed                       = llm_seed,
-      locally_parse_file         = locally_parse,
-      model_lang                 = model_lang,
-      deep_pdfscan               = deep_pdfscan,
-      force_parse                = force_parse,
-      mrgsolve_system_prompt     = mrgsolve_translation_system_prompt,
-      mrgsolve_long_user_prompt  = mrgsolve_translation_long_user_prompt,
-      mrgsolve_short_user_prompt = mrgsolve_translation_short_user_prompt,
-      nonmem_system_prompt       = nonmem_translation_system_prompt,
-      nonmem_long_user_prompt    = nonmem_translation_long_user_prompt,
-      nonmem_short_user_prompt   = nonmem_translation_short_user_prompt,
-      rxode2_system_prompt       = rxode2_translation_system_prompt,
-      rxode2_long_user_prompt    = rxode2_translation_long_user_prompt,
-      rxode2_short_user_prompt   = rxode2_translation_short_user_prompt,
-      internal_version           = internal_version,
-      debug                      = show_debugging_msg
-    )
+    ## nonmem2mrgsolve check, if ready_path is a list, that means the user has uploaded EXACTLY a NONMEM file + .ext file
+    if(requireNamespace("nonmem2mrgsolve") && is.list(ready_path)) {
+      
+      safely_showNotification("NONMEM file and .ext file detected, will utilize nonmem2mrgsolve for initial translation locally.", duration = 10)
+      
+      # Create a dedicated temp directory for this translation
+      work_dir <- tempfile()
+      dir.create(work_dir)
+      
+      # Copy both files with a matching dummy base name
+      file.copy(ready_path$model, file.path(work_dir, "dummy.ctl"))
+      file.copy(ready_path$ext,   file.path(work_dir, "dummy.ext"))
+      
+      # Call nonmem2mrgsolve using the dummy name
+      translated_code <- nonmem2mrgsolve::nonmem2mrgsolve(
+        filename = "dummy",
+        dir      = work_dir,
+        write    = FALSE
+      ) %>%
+        .$V1 %>% paste(collapse = "\n")
+      current_code$answer          <- translated_code
+      
+      message(current_code$answer)
+      current_code$conversation_id <- NULL
+      current_code$chat_obj        <- NULL
+      
+    } else {
+      
+      # 1. Initial Translation
+      current_code <- translate_model_code(
+        ready_path                 = ready_path,
+        file_name                  = NULL,
+        service                    = llm_service,
+        api_key                    = api_key,
+        api_upload                 = api_upload,
+        api_chat                   = api_chat,
+        user_id                    = user_id,
+        model_gemini               = model_gemini,
+        model_openai               = model_openai,
+        model_anthropic            = model_anthropic,
+        model_openrouter           = model_openrouter,
+        model_openai_compatible    = model_openai_compatible,
+        model_deepseek             = model_deepseek,
+        model_apollo               = model_apollo,
+        model_azure                = model_azure,
+        model_aws                  = model_aws,
+        display_info               = TRUE,
+        temperature                = temperature,
+        seed                       = llm_seed,
+        locally_parse_file         = locally_parse,
+        model_lang                 = model_lang,
+        deep_pdfscan               = deep_pdfscan,
+        force_parse                = force_parse,
+        mrgsolve_system_prompt     = mrgsolve_translation_system_prompt,
+        mrgsolve_long_user_prompt  = mrgsolve_translation_long_user_prompt,
+        mrgsolve_short_user_prompt = mrgsolve_translation_short_user_prompt,
+        nonmem_system_prompt       = nonmem_translation_system_prompt,
+        nonmem_long_user_prompt    = nonmem_translation_long_user_prompt,
+        nonmem_short_user_prompt   = nonmem_translation_short_user_prompt,
+        rxode2_system_prompt       = rxode2_translation_system_prompt,
+        rxode2_long_user_prompt    = rxode2_translation_long_user_prompt,
+        rxode2_short_user_prompt   = rxode2_translation_short_user_prompt,
+        internal_version           = internal_version,
+        debug                      = show_debugging_msg
+      )
+    }
     
     if (is.null(current_code)) return()
     
@@ -4626,6 +4708,11 @@ server <- function(input, output, session) {
   output$upload_pdf_model_2 <- renderUI({
     if (input$model_select2 == 'Upload File (AI Translation)') {
       
+      if(requireNamespace("nonmem2mrgsolve")) {
+        llm_accept_single_types <- c(llm_accept_single_types, ".ext")
+        llm_accept_multi_types  <- c(llm_accept_multi_types, ".ext")
+      }
+      
       # Determine accepted file types based on llm choice
       accept_types <- if (llm_settings_model_2$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
         llm_accept_single_types  # Dify supports text too
@@ -4792,6 +4879,17 @@ server <- function(input, output, session) {
     }    
   })
   
+  output$nonmem2mrgsolve_ui_model_2 <- renderUI({
+    shiny::req(input$model_lang_model_2) # use the live modal input, not the saved reactive
+    
+    if (input$model_lang_model_2 == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+      checkboxInput('nonmem2mrgsolve_model_2',
+                    label = llm_nonmem2mrgsolve_label,
+                    value = llm_settings_model_2$nonmem2mrgsolve
+      )
+    }    
+  })
+  
   # Show a modal dialog for customizing llm settings
   observeEvent(input$customize_llm_model_2, {
     showModal(
@@ -4838,7 +4936,8 @@ server <- function(input, output, session) {
                  checkboxInput('reuse_context_model_2',
                                label = llm_memory_label,
                                value = llm_settings_model_2$reuse_context
-                 )
+                 ),
+                 uiOutput("nonmem2mrgsolve_ui_model_2")
           ),          
         ),
         footer = tagList(
@@ -4874,6 +4973,7 @@ server <- function(input, output, session) {
     llm_settings_model_2$max_retries             <- default_llm_settings$max_retries
     llm_settings_model_2$deep_pdfscan            <- default_llm_settings$deep_pdfscan
     llm_settings_model_2$force_parse             <- default_llm_settings$force_parse
+    llm_settings_model_2$nonmem2mrgsolve         <- default_llm_settings$nonmem2mrgsolve
     
     # Update the modal input fields, BI-only
     updateSelectInput(session, "llm_model_2",                    selected = default_llm_settings$llm_choices)
@@ -4898,6 +4998,7 @@ server <- function(input, output, session) {
     updateTextInput(session, "model_aws_model_2",                   value = default_llm_settings$model_aws)
     updateSliderInput(session, "temperature_model_2",               value = default_llm_settings$temperature)
     updateNumericInput(session, "llm_seed_model_2",                 value = default_llm_settings$llm_seed)
+    updateCheckboxInput(session, "nonmem2mrgsolve_model_2",         value = default_llm_settings$nonmem2mrgsolve)
   })
   
   # Apply new settings to update the llm_settings reactive
@@ -4926,6 +5027,7 @@ server <- function(input, output, session) {
     if(!is.null(input$llm_seed_model_2))                llm_settings_model_2$llm_seed                <- input$llm_seed_model_2
     if(!is.null(input$deep_pdfscan_model_2))            llm_settings_model_2$deep_pdfscan            <- input$deep_pdfscan_model_2
     if(!is.null(input$force_parse_model_2))             llm_settings_model_2$force_parse             <- input$force_parse_model_2
+    if(!is.null(input$nonmem2mrgsolve_model_2))         llm_settings_model_2$nonmem2mrgsolve         <- input$nonmem2mrgsolve_model_2
     
     # Update the modal input fields, BI-only
     updateSelectInput(session, "llm_model_2",                    selected = llm_settings_model_2$llm_choices)
@@ -4954,6 +5056,9 @@ server <- function(input, output, session) {
     updateTextInput(session, "model_aws_model_2",                   value = llm_settings_model_2$model_aws)
     updateSliderInput(session, "temperature_model_2",               value = llm_settings_model_2$temperature)
     updateNumericInput(session, "llm_seed_model_2",                 value = llm_settings_model_2$llm_seed)
+    if(llm_settings_model_2$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+      updateCheckboxInput(session, "nonmem2mrgsolve_model_2",         value = llm_settings_model_2$nonmem2mrgsolve)
+    }
   })  
   
   observeEvent(input$send_to_llm_model_2, {
@@ -5041,43 +5146,72 @@ server <- function(input, output, session) {
     
     if(show_debugging_msg) message("Beginning translation")
     
-    # 1. Initial Translation
-    current_code <- translate_model_code(
-      ready_path                 = ready_path,
-      file_name                  = NULL,
-      service                    = llm_service,
-      api_key                    = api_key,
-      api_upload                 = api_upload,
-      api_chat                   = api_chat,
-      user_id                    = user_id,
-      model_gemini               = model_gemini,
-      model_openai               = model_openai,
-      model_anthropic            = model_anthropic,
-      model_openrouter           = model_openrouter,
-      model_openai_compatible    = model_openai_compatible,
-      model_deepseek             = model_deepseek,
-      model_apollo               = model_apollo,
-      model_azure                = model_azure,
-      model_aws                  = model_aws,
-      display_info               = TRUE,
-      temperature                = temperature,
-      seed                       = llm_seed,
-      locally_parse_file         = locally_parse,
-      model_lang                 = model_lang,
-      deep_pdfscan               = deep_pdfscan,
-      force_parse                = force_parse,
-      mrgsolve_system_prompt     = mrgsolve_translation_system_prompt,
-      mrgsolve_long_user_prompt  = mrgsolve_translation_long_user_prompt,
-      mrgsolve_short_user_prompt = mrgsolve_translation_short_user_prompt,
-      nonmem_system_prompt       = nonmem_translation_system_prompt,
-      nonmem_long_user_prompt    = nonmem_translation_long_user_prompt,
-      nonmem_short_user_prompt   = nonmem_translation_short_user_prompt,
-      rxode2_system_prompt       = rxode2_translation_system_prompt,
-      rxode2_long_user_prompt    = rxode2_translation_long_user_prompt,
-      rxode2_short_user_prompt   = rxode2_translation_short_user_prompt,
-      internal_version           = internal_version,
-      debug                      = show_debugging_msg
-    )
+    ## nonmem2mrgsolve check, if ready_path is a list, that means the user has uploaded EXACTLY a NONMEM file + .ext file
+    if(requireNamespace("nonmem2mrgsolve") && is.list(ready_path)) {
+      
+      safely_showNotification("NONMEM file and .ext file detected, will utilize nonmem2mrgsolve for initial translation locally.", duration = 10)
+      
+      # Create a dedicated temp directory for this translation
+      work_dir <- tempfile()
+      dir.create(work_dir)
+      
+      # Copy both files with a matching dummy base name
+      file.copy(ready_path$model, file.path(work_dir, "dummy.ctl"))
+      file.copy(ready_path$ext,   file.path(work_dir, "dummy.ext"))
+      
+      # Call nonmem2mrgsolve using the dummy name
+      translated_code <- nonmem2mrgsolve::nonmem2mrgsolve(
+        filename = "dummy",
+        dir      = work_dir,
+        write    = FALSE
+      ) %>%
+        .$V1 %>% paste(collapse = "\n")
+      current_code$answer          <- translated_code
+      
+      message(current_code$answer)
+      current_code$conversation_id <- NULL
+      current_code$chat_obj        <- NULL
+      
+    } else {
+      
+      # 1. Initial Translation
+      current_code <- translate_model_code(
+        ready_path                 = ready_path,
+        file_name                  = NULL,
+        service                    = llm_service,
+        api_key                    = api_key,
+        api_upload                 = api_upload,
+        api_chat                   = api_chat,
+        user_id                    = user_id,
+        model_gemini               = model_gemini,
+        model_openai               = model_openai,
+        model_anthropic            = model_anthropic,
+        model_openrouter           = model_openrouter,
+        model_openai_compatible    = model_openai_compatible,
+        model_deepseek             = model_deepseek,
+        model_apollo               = model_apollo,
+        model_azure                = model_azure,
+        model_aws                  = model_aws,
+        display_info               = TRUE,
+        temperature                = temperature,
+        seed                       = llm_seed,
+        locally_parse_file         = locally_parse,
+        model_lang                 = model_lang,
+        deep_pdfscan               = deep_pdfscan,
+        force_parse                = force_parse,
+        mrgsolve_system_prompt     = mrgsolve_translation_system_prompt,
+        mrgsolve_long_user_prompt  = mrgsolve_translation_long_user_prompt,
+        mrgsolve_short_user_prompt = mrgsolve_translation_short_user_prompt,
+        nonmem_system_prompt       = nonmem_translation_system_prompt,
+        nonmem_long_user_prompt    = nonmem_translation_long_user_prompt,
+        nonmem_short_user_prompt   = nonmem_translation_short_user_prompt,
+        rxode2_system_prompt       = rxode2_translation_system_prompt,
+        rxode2_long_user_prompt    = rxode2_translation_long_user_prompt,
+        rxode2_short_user_prompt   = rxode2_translation_short_user_prompt,
+        internal_version           = internal_version,
+        debug                      = show_debugging_msg
+      )
+    }
     
     if (is.null(current_code)) return()
     
