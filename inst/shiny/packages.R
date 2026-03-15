@@ -14,6 +14,7 @@ required_packages <- list(
   htmltools = "0.5.5",
   magrittr = NULL,
   mrgsolve = "1.5.0",
+  #nonmem2rx, # suggested, not required
   #pdftools, # suggested, not required
   plotly = "4.10.1", 
   purrr = NULL,
