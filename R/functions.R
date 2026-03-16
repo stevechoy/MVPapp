@@ -6852,7 +6852,7 @@ prepare_uploaded_files <- function(files,
   # ── NONMEM pair: one .ctl/.mod + one .ext → list for nonmem2mrgsolve ─────────
   # Must be checked before the general multi-file logic so .ext doesn't get
   # rejected by the multi_file_types guard.
-  if (nrow(files) == 2 && model_lang == "mrgsolve" && use_nonmem2mrgsolve) {
+  if (nrow(files) == 2 && model_lang == "mrgsolve" && use_nonmem2mrgsolve && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
     
     is_model_ext <- exts %in% c(".ctl", ".mod")
     is_ext_ext   <- exts == ".ext"

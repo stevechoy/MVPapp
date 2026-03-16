@@ -5114,7 +5114,7 @@ server <- function(input, output, session) {
     if(llm_settings_model_2$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
       updateCheckboxInput(session, "nonmem2mrgsolve_model_2",         value = llm_settings_model_2$nonmem2mrgsolve)
     }
-    if(llm_settings_model_1$model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE)) {
+    if(llm_settings_model_2$model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE)) {
       updateCheckboxInput(session, "nonmem2rx_model_2",               value = llm_settings_model_2$nonmem2rx)
     }
   })  
@@ -5210,7 +5210,7 @@ server <- function(input, output, session) {
     if(show_debugging_msg) message("Beginning translation")
     
     ## nonmem2mrgsolve check, if ready_path is a list, that means the user has uploaded EXACTLY a NONMEM file + .ext file
-    if(requireNamespace("nonmem2mrgsolve", quietly = TRUE) && is.list(ready_path)) {
+    if(use_nonmem2mrgsolve && model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE) && is.list(ready_path)) {
       
       safely_showNotification("NONMEM file and .ext file detected, will utilize nonmem2mrgsolve for initial translation locally.", duration = 10)
       
