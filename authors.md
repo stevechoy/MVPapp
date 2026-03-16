@@ -11,7 +11,7 @@
 ## Citation
 
 Source:
-[`inst/CITATION`](https://github.com/stevechoy/MVPapp/blob/master/inst/CITATION)
+[`inst/CITATION`](https://github.com/stevechoy/MVPapp/blob/v0.4.1/inst/CITATION)
 
 Choy S, Kim JG, Korell J (2025). “Less Is More: Design Considerations
 for Interactive Pharmacometrics Tools - A Case Study Using the Model
