@@ -12,7 +12,15 @@ returned.
 ## Usage
 
 ``` r
-prepare_uploaded_files(files, llm_service, single_file_types, multi_file_types)
+prepare_uploaded_files(
+  files,
+  llm_service,
+  model_lang,
+  use_nonmem2mrgsolve,
+  use_nonmem2rx,
+  single_file_types,
+  multi_file_types
+)
 ```
 
 ## Arguments
@@ -26,6 +34,20 @@ prepare_uploaded_files(files, llm_service, single_file_types, multi_file_types)
 - llm_service:
 
   LLM provider name. More extensions are accepted by Dify-workflows.
+
+- model_lang:
+
+  Character. "mrgsolve", "nonmem", "rxode2"
+
+- use_nonmem2mrgsolve:
+
+  Logical. Whether to use nonmem2mrgsolve when translating to mrgsolve,
+  if package is present
+
+- use_nonmem2rx:
+
+  Logical. Whether to use nonmem2rx when translating to rxode2, if
+  package is present
 
 - single_file_types:
 
