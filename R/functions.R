@@ -7184,7 +7184,7 @@ get_apollo_token_ext <- function() {
 #' @export
 get_session_state <- function(input, rv, uploaded_data) {
   list(
-    version = "0.4.0",  # tag with app version for forward-compat checks
+    version = "0.4.1",  # tag with app version for forward-compat checks
     saved_at = Sys.time(),
     
     # --- Model code & settings ---
