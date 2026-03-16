@@ -42,6 +42,7 @@ file, or \code{NULL} if validation failed (in which case a Shiny error
 notification has already been shown to the user). For single-file uploads
 this is \code{files$datapath[1]}; for multi-file uploads this is the
 temporary combined file produced by \code{\link{combine_uploaded_files}}.
+Returns a list if either criteria for nonmem2mrgsolve or nonmem2rx has been met.
 }
 \description{
 Validates one or more files from a Shiny \code{\link[shiny]{fileInput}}

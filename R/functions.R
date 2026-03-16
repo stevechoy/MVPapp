@@ -6744,6 +6744,7 @@ run_ellmer_chat <- function(service,
 #'   notification has already been shown to the user). For single-file uploads
 #'   this is \code{files$datapath[1]}; for multi-file uploads this is the
 #'   temporary combined file produced by \code{\link{combine_uploaded_files}}.
+#'   Returns a list if either criteria for nonmem2mrgsolve or nonmem2rx has been met.
 #'
 #' @details
 #' Extensions \code{.ctl} and \code{.mod} are treated as equivalent to
