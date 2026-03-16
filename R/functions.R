@@ -6805,11 +6805,11 @@ prepare_uploaded_files <- function(files,
     multi_file_types  # default for other providers (PDF or text-equivalent)
   }
   
-  if(model_lang == "mrgsolve" && use_nonmem2mrgsolve) {
+  if(model_lang == "mrgsolve" && use_nonmem2mrgsolve && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
     accept_types <- c(accept_types, ".ext")
   }
   
-  if(model_lang == "rxode2" && use_nonmem2rx) {
+  if(model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE)) {
     accept_types <- c(accept_types, ".lst")
   }
   
