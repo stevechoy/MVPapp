@@ -70,6 +70,8 @@ has already been shown to the user). For single-file uploads this is
 `files$datapath[1]`; for multi-file uploads this is the temporary
 combined file produced by
 [`combine_uploaded_files`](https://stevechoy.github.io/MVPapp/reference/combine_uploaded_files.md).
+Returns a list if either criteria for nonmem2mrgsolve or nonmem2rx has
+been met.
 
 ## Details
 
