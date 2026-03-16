@@ -227,7 +227,7 @@ llm_nonmem2mrgsolve_label  <- shiny::HTML(paste0("nonmem2mrgsolve",
                                              "<i class='fa fa-question-circle' title='Use nonmem2mrgsolve to deterministically parse NONMEM files initially, when the user uploads EXACTLY 2 files: a .ctl/.mod file AND a .ext file.' style='margin-left: 3px;'></i>"))
 #' @export
 llm_nonmem2rx_label    <- shiny::HTML(paste0("nonmem2rx",
-                                                 "<i class='fa fa-question-circle' title='Use nonmem2rx to deterministically parse NONMEM files initially, when the user uploads EXACTLY 1 file: a .ctl/.mod file.' style='margin-left: 3px;'></i>"))
+                                                 "<i class='fa fa-question-circle' title='Use nonmem2rx to deterministically parse NONMEM files, when the user uploads EXACTLY 1 file: a .ctl/.mod/.lst file.' style='margin-left: 3px;'></i>"))
 #' @export
 llm_accept_single_types <- c(".pdf", ".txt", ".docx", ".html", ".md", ".markdown", ".xls", ".xlsx", ".csv", ".ppt", ".pptx", ".eml", ".msg", ".json", ".yaml", ".yml", ".mod", ".ctl", ".cpp")
 #' @export

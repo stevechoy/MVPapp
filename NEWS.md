@@ -1,3 +1,9 @@
+# MVPapp 0.4.1 (2026-03-15)
+
+## Features
+
+* Deterministic translation from NONMEM files using nonmem2mrgsolve and nonmem2rx (#10)
+
 # MVPapp 0.4.0 (2026-03-02)
 
 ## Features

@@ -107,6 +107,18 @@ How this works behind the scenes is that an internal compilation check is perfor
 
 `r "\U0001F4A1"` For better results, the user can set argument `reuse_context = TRUE` (or check the "Memory" option in Settings) to keep the same conversation in order to provide better context to the LLM to improve the response, although this would incur additional token usage.  
 
+### Deterministic Translation of NONMEM files
+
+MVP (>= v0.4.1) supports deterministic translation (i.e. not using LLMs) of NONMEM files (`.ctl/.mod/.lst`), courtesy of the [nonmem2mrgsolve](https://github.com/Andy00000000000/nonmem2mrgsolve){target="_blank"} and [nonmem2rx](https://github.com/nlmixr2/nonmem2rx){target="_blank"} R packages.  
+
+When either packages are installed, new checkbox options would be available during customization (default not used). When checked, deterministic translation will be triggered when:  
+
+  - nonmem2mrgsolve - If the user uploads **EXACTLY** 2 files: the NONMEM (`.ctl/.mod`) file **AND** the corresponding `.ext` file.  
+  - nonmem2rx - If the user uploads **EXACTLY** 1 file: the NONMEM (`.ctl/.mod/.lst`) file.  
+  
+`r "\U0001F4A1"` Automatic retries can still happen when using nonmem2mrgsolve, as internal compilation checks can still be performed. However, no self-validation will be performed when using nonmem2rx.  
+
+
 ### Cost
 
 Typical usage assuming a 10-page PDF costs anywhere between 20k-70k tokens (including 2 retries), which translates to about 10-20 cents for a frontier model such as Claude Sonnet. If you are price conscious, you could consider cheaper models and/or providers. However please be aware that performance may be inferior for non-frontier models. In general, __you get what you pay for__.  

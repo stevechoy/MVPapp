@@ -5815,7 +5815,7 @@ translate_model_code <- function(ready_path,
   file_path <- ready_path
   file_name <- file_name %||% basename(ready_path)
 
-  is_text_file <- grepl("\\.(txt|mod|ctl|cpp)$", file_name, ignore.case = TRUE)
+  is_text_file <- grepl("\\.(txt|mod|ctl|cpp|lst)$", file_name, ignore.case = TRUE)
   
   if(is_text_file) {
     detected_type <- "text/plain"
@@ -6728,6 +6728,9 @@ run_ellmer_chat <- function(service,
 #'   containing at minimum the columns \code{name} (original filename) and
 #'   \code{datapath} (server-side temporary path).
 #' @param llm_service LLM provider name. More extensions are accepted by Dify-workflows.
+#' @param model_lang Character. "mrgsolve", "nonmem", "rxode2"
+#' @param use_nonmem2mrgsolve Logical. Whether to use nonmem2mrgsolve when translating to mrgsolve, if package is present
+#' @param use_nonmem2rx Logical. Whether to use nonmem2rx when translating to rxode2, if package is present
 #' @param single_file_types Character vector of permitted file extensions when
 #'   exactly one file is uploaded, e.g. \code{c(".pdf", ".docx", ".csv")}.
 #'   Extensions should include the leading dot.
@@ -6789,6 +6792,9 @@ run_ellmer_chat <- function(service,
 #' @export
 prepare_uploaded_files <- function(files,
                                    llm_service,
+                                   model_lang,
+                                   use_nonmem2mrgsolve,
+                                   use_nonmem2rx,
                                    single_file_types,
                                    multi_file_types) {
   
@@ -6799,9 +6805,17 @@ prepare_uploaded_files <- function(files,
     multi_file_types  # default for other providers (PDF or text-equivalent)
   }
   
+  if(model_lang == "mrgsolve" && use_nonmem2mrgsolve) {
+    accept_types <- c(accept_types, ".ext")
+  }
+  
+  if(model_lang == "rxode2" && use_nonmem2rx) {
+    accept_types <- c(accept_types, ".lst")
+  }
+  
   # ── Helper: normalise interchangeable plain-text extensions ──────────────────
   normalize_ext <- function(ext) {
-    ifelse(ext %in% c(".ctl", ".mod", ".cpp"), ".txt", ext)
+    ifelse(ext %in% c(".ctl", ".mod", ".cpp", ".lst"), ".txt", ext)
   }
   
   exts            <- tolower(paste0(".", tools::file_ext(files$name)))
@@ -6821,13 +6835,24 @@ prepare_uploaded_files <- function(files,
       return(invisible(NULL))
     }
     
+    # ── nonmem2rx path: single .ctl/.mod/.lst when targeting rxode2 ─────────────
+    if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) &&
+        exts %in% c(".ctl", ".mod", ".lst")) {
+      
+      return(list(
+        path = files$datapath[1],
+        ext  = exts,
+        name = files$name[1]
+      ))
+    }
+    
     return(files$datapath[1])
   }
   
   # ── NONMEM pair: one .ctl/.mod + one .ext → list for nonmem2mrgsolve ─────────
   # Must be checked before the general multi-file logic so .ext doesn't get
   # rejected by the multi_file_types guard.
-  if (nrow(files) == 2) {
+  if (nrow(files) == 2 && model_lang == "mrgsolve" && use_nonmem2mrgsolve) {
     
     is_model_ext <- exts %in% c(".ctl", ".mod")
     is_ext_ext   <- exts == ".ext"
@@ -6966,7 +6991,7 @@ combine_uploaded_files <- function(file_paths, file_names) {
   
   # Normalize interchangeable plain-text extensions before uniqueness check
   normalize_ext <- function(ext) {
-    ifelse(ext %in% c(".ctl", ".mod", ".cpp"), ".txt", ext)
+    ifelse(ext %in% c(".ctl", ".mod", ".cpp", ".lst"), ".txt", ext)
   }
   normalized_exts <- normalize_ext(exts)
   
@@ -6990,7 +7015,7 @@ combine_uploaded_files <- function(file_paths, file_names) {
   }
   
   # ── Plain text: .txt, .mod, .ctl, .cpp ──────────────────────────────────────
-  if (ext %in% c(".txt", ".mod", ".ctl", ".cpp")) {
+  if (ext %in% c(".txt", ".mod", ".ctl", ".cpp", ".lst")) {
     output_path <- tempfile(fileext = ".txt")
     combined_text <- sapply(file_paths, readLines, warn = FALSE) %>%
       unlist() %>%

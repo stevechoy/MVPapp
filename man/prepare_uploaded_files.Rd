@@ -4,7 +4,15 @@
 \alias{prepare_uploaded_files}
 \title{Validate and Prepare Uploaded Files for LLM Processing}
 \usage{
-prepare_uploaded_files(files, llm_service, single_file_types, multi_file_types)
+prepare_uploaded_files(
+  files,
+  llm_service,
+  model_lang,
+  use_nonmem2mrgsolve,
+  use_nonmem2rx,
+  single_file_types,
+  multi_file_types
+)
 }
 \arguments{
 \item{files}{A data frame produced by a Shiny \code{fileInput} widget,
@@ -12,6 +20,12 @@ containing at minimum the columns \code{name} (original filename) and
 \code{datapath} (server-side temporary path).}
 
 \item{llm_service}{LLM provider name. More extensions are accepted by Dify-workflows.}
+
+\item{model_lang}{Character. "mrgsolve", "nonmem", "rxode2"}
+
+\item{use_nonmem2mrgsolve}{Logical. Whether to use nonmem2mrgsolve when translating to mrgsolve, if package is present}
+
+\item{use_nonmem2rx}{Logical. Whether to use nonmem2rx when translating to rxode2, if package is present}
 
 \item{single_file_types}{Character vector of permitted file extensions when
 exactly one file is uploaded, e.g. \code{c(".pdf", ".docx", ".csv")}.

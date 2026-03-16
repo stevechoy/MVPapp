@@ -21,7 +21,7 @@ update_resistant_popover(
 
 \item{content}{The main content of the popover.}
 
-\item{placement}{Where the popover should appear relative to its target
+\item{placement}{Where the popover should appear relative to its target 
 (\code{top}, \code{bottom}, \code{left}, or \code{right}). Defaults to \code{"bottom"}.}
 
 \item{trigger}{What action should cause the popover to appear? (\code{hover},

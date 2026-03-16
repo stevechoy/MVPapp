@@ -3987,15 +3987,15 @@ server <- function(input, output, session) {
   output$upload_pdf_model_1 <- renderUI({
     if (input$model_select == 'Upload File (AI Translation)') {
       
-      if(requireNamespace("nonmem2mrgsolve")) {
+      if(requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
         llm_accept_single_types <- c(llm_accept_single_types, ".ext")
         llm_accept_multi_types  <- c(llm_accept_multi_types, ".ext")
       }
       
-      if(requireNamespace("nonmem2rx")) {
+      if(requireNamespace("nonmem2rx", quietly = TRUE)) {
         llm_accept_single_types <- c(llm_accept_single_types, ".lst")
         llm_accept_multi_types  <- c(llm_accept_multi_types, ".lst")
-      }      
+      }
       
       # Determine accepted file types based on llm choice
       accept_types <- if (llm_settings_model_1$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
@@ -4166,7 +4166,7 @@ server <- function(input, output, session) {
   output$nonmem2mrgsolve_ui_model_1 <- renderUI({
     shiny::req(input$model_lang_model_1) # use the live modal input, not the saved reactive
     
-    if (input$model_lang_model_1 == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+    if (input$model_lang_model_1 == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
       checkboxInput('nonmem2mrgsolve_model_1',
                     label = llm_nonmem2mrgsolve_label,
                     value = llm_settings_model_1$nonmem2mrgsolve
@@ -4177,7 +4177,7 @@ server <- function(input, output, session) {
   output$nonmem2rx_ui_model_1 <- renderUI({
     shiny::req(input$model_lang_model_1) # use the live modal input, not the saved reactive
     
-    if (input$model_lang_model_1 == "rxode2" && requireNamespace("nonmem2rx")) {
+    if (input$model_lang_model_1 == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE)) {
       checkboxInput('nonmem2rx_model_1',
                     label = llm_nonmem2rx_label,
                     value = llm_settings_model_1$nonmem2rx
@@ -4355,10 +4355,10 @@ server <- function(input, output, session) {
     updateTextInput(session, "model_aws_model_1",                   value = llm_settings_model_1$model_aws)
     updateSliderInput(session, "temperature_model_1",               value = llm_settings_model_1$temperature)
     updateNumericInput(session, "llm_seed_model_1",                 value = llm_settings_model_1$llm_seed)
-    if(llm_settings_model_1$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+    if(llm_settings_model_1$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
       updateCheckboxInput(session, "nonmem2mrgsolve_model_1",         value = llm_settings_model_1$nonmem2mrgsolve)
     }
-    if(llm_settings_model_1$model_lang == "rxode2" && requireNamespace("nonmem2rx")) {
+    if(llm_settings_model_1$model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE)) {
       updateCheckboxInput(session, "nonmem2rx_model_1",               value = llm_settings_model_1$nonmem2rx)
     }
   })
@@ -4396,6 +4396,8 @@ server <- function(input, output, session) {
     deep_pdfscan               <- llm_settings_model_1$deep_pdfscan
     force_parse                <- llm_settings_model_1$force_parse
     max_retries                <- as.numeric(llm_settings_model_1$max_retries %||% 0)
+    use_nonmem2mrgsolve        <- llm_settings_model_1$nonmem2mrgsolve
+    use_nonmem2rx              <- llm_settings_model_1$nonmem2rx
     #internal_version           <- internal_version
     
     # Validate API key first
@@ -4415,10 +4417,13 @@ server <- function(input, output, session) {
     
     ## Validating and combining single or multiple files
     ready_path <- prepare_uploaded_files(
-      files             = input$pdffile_model_1,
-      llm_service       = llm_service,
-      single_file_types = llm_accept_single_types,
-      multi_file_types  = llm_accept_multi_types
+      files               = input$pdffile_model_1,
+      llm_service         = llm_service,
+      model_lang          = model_lang,
+      use_nonmem2mrgsolve = use_nonmem2mrgsolve,
+      use_nonmem2rx       = use_nonmem2rx,
+      single_file_types   = llm_accept_single_types,
+      multi_file_types    = llm_accept_multi_types
     )
     
     shiny::req(!is.null(ready_path))
@@ -4449,7 +4454,7 @@ server <- function(input, output, session) {
     if(show_debugging_msg) message("Beginning translation")
     
     ## nonmem2mrgsolve check, if ready_path is a list, that means the user has uploaded EXACTLY a NONMEM file + .ext file
-    if(requireNamespace("nonmem2mrgsolve") && is.list(ready_path)) {
+    if(use_nonmem2mrgsolve && model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE) && is.list(ready_path)) {
       
       safely_showNotification("NONMEM file and .ext file detected, will utilize nonmem2mrgsolve for initial translation locally.", duration = 10)
       
@@ -4468,9 +4473,39 @@ server <- function(input, output, session) {
         write    = FALSE
       ) %>%
         .$V1 %>% paste(collapse = "\n")
-      current_code$answer          <- translated_code
       
-      message(current_code$answer)
+      current_code$answer          <- translated_code
+      current_code$conversation_id <- NULL
+      current_code$chat_obj        <- NULL
+      
+    } else if (use_nonmem2rx && model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE) && is.list(ready_path)) {
+      
+      safely_showNotification("NONMEM file detected, will utilize nonmem2rx for translation locally.", duration = 10)
+      
+      # Reconstruct a temp path that has the correct extension
+      temp_with_ext <- paste0(tempfile(), ready_path$ext)  # e.g. /tmp/RtmpXXXX/fileXXXX.ctl
+      
+      # Copy the extensionless temp file to the new path with extension
+      file.copy(ready_path$path, temp_with_ext)
+      
+      # Now nonmem2rx can identify the file type correctly
+      rxode2_model <- nonmem2rx::nonmem2rx(temp_with_ext, save = FALSE)
+      
+      # Indent each line of each block by 2 spaces
+      add_indent <- function(text, spaces = 2) {
+        indent <- strrep(" ", spaces)
+        lines  <- strsplit(text, "\n")[[1]]
+        paste(paste0(indent, lines), collapse = "\n")
+      }
+      
+      ini_text   <- add_indent(rlang::expr_text(rxode2_model$iniFun))
+      model_text <- add_indent(rlang::expr_text(rxode2_model$modelFun))
+      
+      combined_text <- paste(ini_text, model_text, sep = "\n\n")
+      combined_text <- gsub('"', "'", combined_text)
+      combined_text <- paste0("\n", "mod <- function() {", "\n", trimws(combined_text, which = "right"), "\n", "}", "\n")
+      
+      current_code$answer          <- combined_text
       current_code$conversation_id <- NULL
       current_code$chat_obj        <- NULL
       
@@ -4708,9 +4743,14 @@ server <- function(input, output, session) {
   output$upload_pdf_model_2 <- renderUI({
     if (input$model_select2 == 'Upload File (AI Translation)') {
       
-      if(requireNamespace("nonmem2mrgsolve")) {
+      if(requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
         llm_accept_single_types <- c(llm_accept_single_types, ".ext")
         llm_accept_multi_types  <- c(llm_accept_multi_types, ".ext")
+      }
+      
+      if(requireNamespace("nonmem2rx", quietly = TRUE)) {
+        llm_accept_single_types <- c(llm_accept_single_types, ".lst")
+        llm_accept_multi_types  <- c(llm_accept_multi_types, ".lst")
       }
       
       # Determine accepted file types based on llm choice
@@ -4882,10 +4922,21 @@ server <- function(input, output, session) {
   output$nonmem2mrgsolve_ui_model_2 <- renderUI({
     shiny::req(input$model_lang_model_2) # use the live modal input, not the saved reactive
     
-    if (input$model_lang_model_2 == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+    if (input$model_lang_model_2 == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
       checkboxInput('nonmem2mrgsolve_model_2',
                     label = llm_nonmem2mrgsolve_label,
                     value = llm_settings_model_2$nonmem2mrgsolve
+      )
+    }    
+  })
+  
+  output$nonmem2rx_ui_model_2 <- renderUI({
+    shiny::req(input$model_lang_model_2) # use the live modal input, not the saved reactive
+    
+    if (input$model_lang_model_2 == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE)) {
+      checkboxInput('nonmem2rx_model_2',
+                    label = llm_nonmem2rx_label,
+                    value = llm_settings_model_2$nonmem2rx
       )
     }    
   })
@@ -4937,7 +4988,8 @@ server <- function(input, output, session) {
                                label = llm_memory_label,
                                value = llm_settings_model_2$reuse_context
                  ),
-                 uiOutput("nonmem2mrgsolve_ui_model_2")
+                 uiOutput("nonmem2mrgsolve_ui_model_2"),
+                 uiOutput("nonmem2rx_ui_model_2")
           ),          
         ),
         footer = tagList(
@@ -4974,6 +5026,7 @@ server <- function(input, output, session) {
     llm_settings_model_2$deep_pdfscan            <- default_llm_settings$deep_pdfscan
     llm_settings_model_2$force_parse             <- default_llm_settings$force_parse
     llm_settings_model_2$nonmem2mrgsolve         <- default_llm_settings$nonmem2mrgsolve
+    llm_settings_model_2$nonmem2rx               <- default_llm_settings$nonmem2rx
     
     # Update the modal input fields, BI-only
     updateSelectInput(session, "llm_model_2",                    selected = default_llm_settings$llm_choices)
@@ -4999,6 +5052,7 @@ server <- function(input, output, session) {
     updateSliderInput(session, "temperature_model_2",               value = default_llm_settings$temperature)
     updateNumericInput(session, "llm_seed_model_2",                 value = default_llm_settings$llm_seed)
     updateCheckboxInput(session, "nonmem2mrgsolve_model_2",         value = default_llm_settings$nonmem2mrgsolve)
+    updateCheckboxInput(session, "nonmem2rx_model_2",               value = default_llm_settings$nonmem2rx)
   })
   
   # Apply new settings to update the llm_settings reactive
@@ -5028,6 +5082,7 @@ server <- function(input, output, session) {
     if(!is.null(input$deep_pdfscan_model_2))            llm_settings_model_2$deep_pdfscan            <- input$deep_pdfscan_model_2
     if(!is.null(input$force_parse_model_2))             llm_settings_model_2$force_parse             <- input$force_parse_model_2
     if(!is.null(input$nonmem2mrgsolve_model_2))         llm_settings_model_2$nonmem2mrgsolve         <- input$nonmem2mrgsolve_model_2
+    if(!is.null(input$nonmem2rx_model_2))               llm_settings_model_2$nonmem2rx               <- input$nonmem2rx_model_2
     
     # Update the modal input fields, BI-only
     updateSelectInput(session, "llm_model_2",                    selected = llm_settings_model_2$llm_choices)
@@ -5056,8 +5111,11 @@ server <- function(input, output, session) {
     updateTextInput(session, "model_aws_model_2",                   value = llm_settings_model_2$model_aws)
     updateSliderInput(session, "temperature_model_2",               value = llm_settings_model_2$temperature)
     updateNumericInput(session, "llm_seed_model_2",                 value = llm_settings_model_2$llm_seed)
-    if(llm_settings_model_2$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve")) {
+    if(llm_settings_model_2$model_lang == "mrgsolve" && requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
       updateCheckboxInput(session, "nonmem2mrgsolve_model_2",         value = llm_settings_model_2$nonmem2mrgsolve)
+    }
+    if(llm_settings_model_1$model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE)) {
+      updateCheckboxInput(session, "nonmem2rx_model_2",               value = llm_settings_model_2$nonmem2rx)
     }
   })  
   
@@ -5094,6 +5152,8 @@ server <- function(input, output, session) {
     deep_pdfscan               <- llm_settings_model_2$deep_pdfscan
     force_parse                <- llm_settings_model_2$force_parse
     max_retries                <- as.numeric(llm_settings_model_2$max_retries %||% 0)
+    use_nonmem2mrgsolve        <- llm_settings_model_2$nonmem2mrgsolve
+    use_nonmem2rx              <- llm_settings_model_2$nonmem2rx
     #internal_version           <- internal_version
     
     # Validate API key first
@@ -5113,10 +5173,13 @@ server <- function(input, output, session) {
     
     ## Validating and combining single or multiple files
     ready_path <- prepare_uploaded_files(
-      files             = input$pdffile_model_2,
-      llm_service       = llm_service,
-      single_file_types = llm_accept_single_types,
-      multi_file_types  = llm_accept_multi_types
+      files               = input$pdffile_model_2,
+      llm_service         = llm_service,
+      model_lang          = model_lang,
+      use_nonmem2mrgsolve = use_nonmem2mrgsolve,
+      use_nonmem2rx       = use_nonmem2rx,
+      single_file_types   = llm_accept_single_types,
+      multi_file_types    = llm_accept_multi_types
     )
     
     shiny::req(!is.null(ready_path))
@@ -5147,7 +5210,7 @@ server <- function(input, output, session) {
     if(show_debugging_msg) message("Beginning translation")
     
     ## nonmem2mrgsolve check, if ready_path is a list, that means the user has uploaded EXACTLY a NONMEM file + .ext file
-    if(requireNamespace("nonmem2mrgsolve") && is.list(ready_path)) {
+    if(requireNamespace("nonmem2mrgsolve", quietly = TRUE) && is.list(ready_path)) {
       
       safely_showNotification("NONMEM file and .ext file detected, will utilize nonmem2mrgsolve for initial translation locally.", duration = 10)
       
@@ -5169,6 +5232,37 @@ server <- function(input, output, session) {
       current_code$answer          <- translated_code
       
       message(current_code$answer)
+      current_code$conversation_id <- NULL
+      current_code$chat_obj        <- NULL
+      
+    } else if (use_nonmem2rx && model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE) && is.list(ready_path)) {
+      
+      safely_showNotification("NONMEM file detected, will utilize nonmem2rx for translation locally.", duration = 10)
+      
+      # Reconstruct a temp path that has the correct extension
+      temp_with_ext <- paste0(tempfile(), ready_path$ext)  # e.g. /tmp/RtmpXXXX/fileXXXX.ctl
+      
+      # Copy the extensionless temp file to the new path with extension
+      file.copy(ready_path$path, temp_with_ext)
+      
+      # Now nonmem2rx can identify the file type correctly
+      rxode2_model <- nonmem2rx::nonmem2rx(temp_with_ext, save = FALSE)
+      
+      # Indent each line of each block by 2 spaces
+      add_indent <- function(text, spaces = 2) {
+        indent <- strrep(" ", spaces)
+        lines  <- strsplit(text, "\n")[[1]]
+        paste(paste0(indent, lines), collapse = "\n")
+      }
+      
+      ini_text   <- add_indent(rlang::expr_text(rxode2_model$iniFun))
+      model_text <- add_indent(rlang::expr_text(rxode2_model$modelFun))
+      
+      combined_text <- paste(ini_text, model_text, sep = "\n\n")
+      combined_text <- gsub('"', "'", combined_text)
+      combined_text <- paste0("\n", "mod <- function() {", "\n", trimws(combined_text, which = "right"), "\n", "}", "\n")
+      
+      current_code$answer          <- combined_text
       current_code$conversation_id <- NULL
       current_code$chat_obj        <- NULL
       

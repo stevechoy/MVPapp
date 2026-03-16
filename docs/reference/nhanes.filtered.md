@@ -1,0 +1,24 @@
+# NHANES 1999-2023 (https://wwwn.cdc.gov/nchs/nhanes/Default.aspx) ID, WT, SEX, AGEYR are retained by default. Insert citation notes here in the future
+
+NHANES 1999-2023 (https://wwwn.cdc.gov/nchs/nhanes/Default.aspx) ID, WT,
+SEX, AGEYR are retained by default. Insert citation notes here in the
+future
+
+## Usage
+
+``` r
+nhanes.filtered
+```
+
+## Format
+
+### `nhanes.filtered`
+
+'data.frame': 101400 obs. of 5 variables: SEX : num 1 0 1 0 1 1 0 1 0 0
+... AGEMO: num 24 924 120 588 228 708 156 132 516 180 ... AGEYR: num 2
+77 10 49 19 59 13 11 43 15 ... WT : num 12.5 75.4 32.9 92.5 59.2 ... HT
+: num 91.6 174 136.6 178.3 162 ...
+
+## Source
+
+<https://wwwn.cdc.gov/nchs/nhanes/Default.aspx>
