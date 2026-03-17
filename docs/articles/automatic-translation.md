@@ -201,7 +201,7 @@ although this would incur additional token usage.
 ### Deterministic Translation of NONMEM files
 
 MVP (\>= v0.4.1) supports deterministic translation (i.e. not using
-LLMs) of NONMEM files (`.ctl/.mod/.lst`), courtesy of the
+LLMs) of NONMEM files, courtesy of the
 [nonmem2mrgsolve](https://github.com/Andy00000000000/nonmem2mrgsolve)
 and [nonmem2rx](https://github.com/nlmixr2/nonmem2rx) R packages.
 
@@ -211,8 +211,9 @@ deterministic translation will be triggered when:
 
 - nonmem2mrgsolve - If the user uploads **EXACTLY** 2 files: the NONMEM
   (`.ctl/.mod`) file **AND** the corresponding `.ext` file.  
-- nonmem2rx - If the user uploads **EXACTLY** 1 file: the NONMEM
-  (`.ctl/.mod/.lst`) file.
+- nonmem2rx - If the user uploads **AT LEAST** the NONMEM
+  (`.ctl/.mod/.lst/.xml`) file, and optionally **ANY** number of
+  supporting files (`.phi/.ext/.cov/.xml/.grd`).
 
 💡 Automatic retries can still happen when using nonmem2mrgsolve, as
 internal compilation checks can still be performed. However, no

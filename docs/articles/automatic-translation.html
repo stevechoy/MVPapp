@@ -297,7 +297,7 @@ additional token usage.</p>
 <h3 id="deterministic-translation-of-nonmem-files">Deterministic Translation of NONMEM files<a class="anchor" aria-label="anchor" href="#deterministic-translation-of-nonmem-files"></a>
 </h3>
 <p>MVP (&gt;= v0.4.1) supports deterministic translation (i.e. not using
-LLMs) of NONMEM files (<code>.ctl/.mod/.lst</code>), courtesy of the <a href="https://github.com/Andy00000000000/nonmem2mrgsolve" target="_blank" class="external-link">nonmem2mrgsolve</a> and <a href="https://github.com/nlmixr2/nonmem2rx" target="_blank" class="external-link">nonmem2rx</a> R packages.</p>
+LLMs) of NONMEM files, courtesy of the <a href="https://github.com/Andy00000000000/nonmem2mrgsolve" target="_blank" class="external-link">nonmem2mrgsolve</a> and <a href="https://github.com/nlmixr2/nonmem2rx" target="_blank" class="external-link">nonmem2rx</a> R packages.</p>
 <p>When either packages are installed, new checkbox options would be
 available during customization (default not used). When checked,
 deterministic translation will be triggered when:</p>
@@ -306,8 +306,10 @@ deterministic translation will be triggered when:</p>
 files: the NONMEM (<code>.ctl/.mod</code>) file <strong>AND</strong> the
 corresponding <code>.ext</code> file.<br>
 </li>
-<li>nonmem2rx - If the user uploads <strong>EXACTLY</strong> 1 file: the
-NONMEM (<code>.ctl/.mod/.lst</code>) file.</li>
+<li>nonmem2rx - If the user uploads <strong>AT LEAST</strong> the NONMEM
+(<code>.ctl/.mod/.lst/.xml</code>) file, and optionally
+<strong>ANY</strong> number of supporting files
+(<code>.phi/.ext/.cov/.xml/.grd</code>).</li>
 </ul>
 <p>💡 Automatic retries can still happen when using nonmem2mrgsolve, as
 internal compilation checks can still be performed. However, no

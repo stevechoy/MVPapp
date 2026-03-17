@@ -3987,21 +3987,24 @@ server <- function(input, output, session) {
   output$upload_pdf_model_1 <- renderUI({
     if (input$model_select == 'Upload File (AI Translation)') {
       
-      if(requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
-        llm_accept_single_types <- c(llm_accept_single_types, ".ext")
-        llm_accept_multi_types  <- c(llm_accept_multi_types, ".ext")
+      accept_single <- llm_accept_single_types
+      accept_multi  <- llm_accept_multi_types
+      
+      if(requireNamespace("nonmem2mrgsolve", quietly = TRUE) && llm_settings_model_1$nonmem2mrgsolve) {
+        accept_single <- c(llm_accept_single_types, ".ext")
+        accept_multi  <- c(llm_accept_multi_types, ".ext")
       }
       
-      if(requireNamespace("nonmem2rx", quietly = TRUE)) {
-        llm_accept_single_types <- c(llm_accept_single_types, ".lst")
-        llm_accept_multi_types  <- c(llm_accept_multi_types, ".lst")
+      if(requireNamespace("nonmem2rx", quietly = TRUE) && llm_settings_model_1$nonmem2rx) {
+        accept_single <- c(llm_accept_single_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
+        accept_multi  <- c(llm_accept_multi_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
       }
       
       # Determine accepted file types based on llm choice
       accept_types <- if (llm_settings_model_1$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
-        llm_accept_single_types  # Dify supports text too
+        accept_single  # Dify supports text too
       } else {
-        llm_accept_multi_types  # default for other providers (PDF or text-equivalent)
+        accept_multi  # default for other providers (PDF or text-equivalent)
       }
       
       fluidRow(
@@ -4478,18 +4481,30 @@ server <- function(input, output, session) {
       current_code$conversation_id <- NULL
       current_code$chat_obj        <- NULL
       
-    } else if (use_nonmem2rx && model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE) && is.list(ready_path)) {
+    } else if (use_nonmem2rx && model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE) && is.list(ready_path) && !is.null(ready_path$primary_path)) {
       
-      safely_showNotification("NONMEM file detected, will utilize nonmem2rx for translation locally.", duration = 10)
+      safely_showNotification("NONMEM file(s) detected, will utilize nonmem2rx for translation locally.", duration = 10)
       
-      # Reconstruct a temp path that has the correct extension
-      temp_with_ext <- paste0(tempfile(), ready_path$ext)  # e.g. /tmp/RtmpXXXX/fileXXXX.ctl
+      if (show_debugging_msg) {
+        message("nonmem2rx primary path: ", ready_path$primary_path)
+        message("nonmem2rx dir contents: ", 
+                paste(list.files(ready_path$dir), collapse = ", "))
+      }
       
-      # Copy the extensionless temp file to the new path with extension
-      file.copy(ready_path$path, temp_with_ext)
+      #rxode2_model <- nonmem2rx::nonmem2rx(ready_path$primary_path, save = FALSE)
       
-      # Now nonmem2rx can identify the file type correctly
-      rxode2_model <- nonmem2rx::nonmem2rx(temp_with_ext, save = FALSE)
+      rxode2_model <- tryCatch(
+        nonmem2rx::nonmem2rx(ready_path$primary_path, save = FALSE),
+        error = function(e) {
+          safely_showNotification(
+            paste0("nonmem2rx conversion failed: ", e$message),
+            type = "error", duration = 10
+          )
+          NULL
+        }
+      )
+      
+      shiny::req(!is.null(rxode2_model))
       
       # Indent each line of each block by 2 spaces
       add_indent <- function(text, spaces = 2) {
@@ -4743,21 +4758,24 @@ server <- function(input, output, session) {
   output$upload_pdf_model_2 <- renderUI({
     if (input$model_select2 == 'Upload File (AI Translation)') {
       
-      if(requireNamespace("nonmem2mrgsolve", quietly = TRUE)) {
-        llm_accept_single_types <- c(llm_accept_single_types, ".ext")
-        llm_accept_multi_types  <- c(llm_accept_multi_types, ".ext")
+      accept_single <- llm_accept_single_types
+      accept_multi  <- llm_accept_multi_types
+      
+      if(requireNamespace("nonmem2mrgsolve", quietly = TRUE) && llm_settings_model_2$nonmem2mrgsolve) {
+        accept_single <- c(llm_accept_single_types, ".ext")
+        accept_multi  <- c(llm_accept_multi_types, ".ext")
       }
       
-      if(requireNamespace("nonmem2rx", quietly = TRUE)) {
-        llm_accept_single_types <- c(llm_accept_single_types, ".lst")
-        llm_accept_multi_types  <- c(llm_accept_multi_types, ".lst")
+      if(requireNamespace("nonmem2rx", quietly = TRUE) && llm_settings_model_2$nonmem2rx) {
+        accept_single <- c(llm_accept_single_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
+        accept_multi  <- c(llm_accept_multi_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
       }
       
       # Determine accepted file types based on llm choice
-      accept_types <- if (llm_settings_model_2$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
-        llm_accept_single_types  # Dify supports text too
+      accept_types <- if (llm_settings_model_1$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
+        accept_single  # Dify supports text too
       } else {
-        llm_accept_multi_types  # default for other providers (PDF or text-equivalent)
+        accept_multi  # default for other providers (PDF or text-equivalent)
       }
       
       fluidRow(
@@ -5235,18 +5253,30 @@ server <- function(input, output, session) {
       current_code$conversation_id <- NULL
       current_code$chat_obj        <- NULL
       
-    } else if (use_nonmem2rx && model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE) && is.list(ready_path)) {
+    } else if (use_nonmem2rx && model_lang == "rxode2" && requireNamespace("nonmem2rx", quietly = TRUE) && is.list(ready_path) && !is.null(ready_path$primary_path)) {
       
-      safely_showNotification("NONMEM file detected, will utilize nonmem2rx for translation locally.", duration = 10)
+      safely_showNotification("NONMEM file(s) detected, will utilize nonmem2rx for translation locally.", duration = 10)
       
-      # Reconstruct a temp path that has the correct extension
-      temp_with_ext <- paste0(tempfile(), ready_path$ext)  # e.g. /tmp/RtmpXXXX/fileXXXX.ctl
+      if (show_debugging_msg) {
+        message("nonmem2rx primary path: ", ready_path$primary_path)
+        message("nonmem2rx dir contents: ", 
+                paste(list.files(ready_path$dir), collapse = ", "))
+      }
       
-      # Copy the extensionless temp file to the new path with extension
-      file.copy(ready_path$path, temp_with_ext)
+      #rxode2_model <- nonmem2rx::nonmem2rx(ready_path$primary_path, save = FALSE)
       
-      # Now nonmem2rx can identify the file type correctly
-      rxode2_model <- nonmem2rx::nonmem2rx(temp_with_ext, save = FALSE)
+      rxode2_model <- tryCatch(
+        nonmem2rx::nonmem2rx(ready_path$primary_path, save = FALSE),
+        error = function(e) {
+          safely_showNotification(
+            paste0("nonmem2rx conversion failed: ", e$message),
+            type = "error", duration = 10
+          )
+          NULL
+        }
+      )
+      
+      shiny::req(!is.null(rxode2_model))
       
       # Indent each line of each block by 2 spaces
       add_indent <- function(text, spaces = 2) {
