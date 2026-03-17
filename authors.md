@@ -2,7 +2,7 @@
 
 ## Authors
 
-- **Steve Choy**. Author, maintainer.
+- **Steve Choy**. Author, maintainer, copyright holder.
 
 - **Jin Gyu Kim**. Author.
 
