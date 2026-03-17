@@ -2,7 +2,7 @@ Package: MVPapp
 Title: Model Visualization Platform
 Version: 0.4.1
 Authors@R: c(
-    person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre")),
+    person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre", "cph")),
     person("Jin Gyu", "Kim", role = "aut"),
     person("Matthew", "Fidler", role = "ctb"))
 Description: Model Visualization Platform (MVP) is an intuitive and interactive pharmacometrics environment requiring minimal setup from the users.
