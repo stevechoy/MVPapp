@@ -6836,32 +6836,9 @@ prepare_uploaded_files <- function(files,
       return(invisible(NULL))
     }
     
-    # ── nonmem2rx path: single .ctl/.mod/.lst when targeting rxode2 ─────────────
-    # Copies file into a temp dir with original filename preserved so that
-    # nonmem2rx can find companion files if needed, and output matches the
-    # multi-file prepare_nonmem2rx_files() structure exactly.
-    if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) &&
-        exts %in% c(".ctl", ".mod", ".lst", ".xml")) {
-      
-      temp_dir <- tempfile()
-      dir.create(temp_dir)
-      
-      dest <- file.path(temp_dir, files$name[1])
-      
-      if (!file.copy(files$datapath[1], dest)) {
-        safely_showNotification(
-          "Failed to prepare NONMEM file for nonmem2rx conversion.",
-          type = "error", duration = 10
-        )
-        return(invisible(NULL))
-      }
-      
-      return(list(
-        primary_path = dest,
-        dir          = temp_dir,
-        ext          = exts,
-        name         = files$name[1]
-      ))
+    # ── nonmem2rx path: delegate to prepare_nonmem2rx_files for unified output ──
+    if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) && exts %in% c(".xml", ".lst", ".ctl", ".mod")) {
+      return(prepare_nonmem2rx_files(files))
     }
     
     return(files$datapath[1])

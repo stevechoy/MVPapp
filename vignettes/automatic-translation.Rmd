@@ -89,7 +89,7 @@ From the Model Selection drop-down list, choose the option called "Upload File (
 
 When the results become available, the code editor will be updated and then you can proceed as normal. If the default settings are not to your preference, you can click on the "Gear" button to further customize settings.    
 
-`r "\u26A0\uFE0F"` Multiple files are supported, as long as they have the same extension (e.g. all PDF files). For example, if the model descriptions are in the main body of the article, while the model equations and/or parameters are provided in the supplementary files, simply upload them all at the same time.  
+`r "\u26A0\uFE0F"` Multiple files are supported, as long as they have the same extension (e.g. all PDF files). For example, if the model descriptions are in the main body of the article, while the model equations and/or parameters are provided in the supplementary files, simply upload them all at the same time. Note: the same extension rule does not apply when using deterministic translation from NONMEM files (see below).  
 
 `r "\U0001F4A1"` For better results, try __limiting the file contents__ to just the relevant portions. If it is a PDF file, you may use [pdfcombiner](https://github.com/stevechoy/pdfcombiner){target="_blank"} to help trim some pages off.  
 
