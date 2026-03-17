@@ -149,7 +149,8 @@ settings.
 (e.g. all PDF files). For example, if the model descriptions are in the
 main body of the article, while the model equations and/or parameters
 are provided in the supplementary files, simply upload them all at the
-same time.
+same time. Note: the same extension rule does not apply when using
+deterministic translation from NONMEM files (see below).
 
 💡 For better results, try **limiting the file contents** to just the
 relevant portions. If it is a PDF file, you may use
