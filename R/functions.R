@@ -827,6 +827,7 @@ do_data_page_ind_plot <- function(nmd,
       nmd[[y_axis]] <- as.factor(nmd[[y_axis]])
     } else {
       nmd[[y_axis]] <- as.numeric(nmd[[y_axis]])
+      max_y         <- max(nmd[[y_axis]], na.rm = TRUE)
     }
     
     # ── Distinct once ─────────────────────────────────────────────
@@ -836,7 +837,7 @@ do_data_page_ind_plot <- function(nmd,
     if (!is.null(named_color_vector))
       a <- a + ggplot2::scale_color_manual(values = named_color_vector)
     
-    max_y    <- max(nmd[[y_axis]], na.rm = TRUE)
+    #max_y    <- max(nmd[[y_axis]], na.rm = TRUE)
     facet_same_as_x <- facet_name == x_axis
     
     if (facet_same_as_x)
@@ -6811,7 +6812,7 @@ prepare_uploaded_files <- function(files,
   }
   
   if(model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE)) {
-    accept_types <- c(accept_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
+    accept_types <- c(accept_types, ".lst")
   }
   
   # ── Helper: normalise interchangeable plain-text extensions ──────────────────
@@ -6825,7 +6826,7 @@ prepare_uploaded_files <- function(files,
   # ── Single file ───────────────────────────────────────────────────────────────
   if (nrow(files) == 1) {
     
-    if (!exts %in% accept_types) {
+    if (!exts %in% single_file_types) {
       safely_showNotification(
         paste0("Unsupported file type: '", exts, "'. ",
                "Supported types are: ",
@@ -6836,9 +6837,15 @@ prepare_uploaded_files <- function(files,
       return(invisible(NULL))
     }
     
-    # ── nonmem2rx path: delegate to prepare_nonmem2rx_files for unified output ──
-    if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) && exts %in% c(".xml", ".lst", ".ctl", ".mod")) {
-      return(prepare_nonmem2rx_files(files))
+    # ── nonmem2rx path: single .ctl/.mod/.lst when targeting rxode2 ─────────────
+    if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) &&
+        exts %in% c(".ctl", ".mod", ".lst")) {
+      
+      return(list(
+        path = files$datapath[1],
+        ext  = exts,
+        name = files$name[1]
+      ))
     }
     
     return(files$datapath[1])
@@ -6862,15 +6869,6 @@ prepare_uploaded_files <- function(files,
         ext   = ext_path
       ))
     }
-  }
-  
-  # ── nonmem2rx multi-file path ─────────────────────────────────────────────────
-  # Must be checked BEFORE the general multi-file guards so that NONMEM
-  # companion extensions (.xml, .ctl, .mod, .ext, .cov etc.) are not
-  # rejected by the unsupported extension or mixed-type guards below.
-  if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) && any(exts %in% c(".xml", ".lst", ".ctl", ".mod"))) {
-    
-    return(prepare_nonmem2rx_files(files))
   }
   
   # ── Multiple files ────────────────────────────────────────────────────────────
@@ -6902,75 +6900,6 @@ prepare_uploaded_files <- function(files,
   
   # Combine and return
   combine_uploaded_files(files$datapath, files$name)
-}
-
-#' Prepare multiple NONMEM files for nonmem2rx conversion
-#'
-#' Copies all uploaded NONMEM files into a single temp directory with their
-#' original filenames preserved, then identifies the primary file for
-#' nonmem2rx based on priority: .xml > .lst > .ctl/.mod
-#'
-#' @param files  Data frame from Shiny fileInput (columns: name, datapath)
-#' @return A list with $primary_path (the main file for nonmem2rx) and
-#'         $dir (the temp directory containing all files), or NULL on failure
-#' @export         
-
-prepare_nonmem2rx_files <- function(files) {
-  
-  # ── Create a single shared temp directory ──────────────────────────────────
-  temp_dir <- tempfile()
-  dir.create(temp_dir)
-  
-  # ── Copy all files into the shared directory with original names ────────────
-  copy_success <- mapply(function(datapath, name) {
-    dest <- file.path(temp_dir, name)
-    file.copy(datapath, dest)
-  }, files$datapath, files$name)
-  
-  if (!all(copy_success)) {
-    safely_showNotification(
-      "Failed to prepare one or more NONMEM files for conversion.",
-      type = "error", duration = 10
-    )
-    return(NULL)
-  }
-  
-  # ── Identify primary file by priority: .xml > .lst > .ctl/.mod ─────────────
-  exts      <- tolower(paste0(".", tools::file_ext(files$name)))
-  priority  <- c(".xml", ".lst", ".ctl", ".mod")
-  
-  primary_name <- NULL
-  for (ext in priority) {
-    match <- files$name[exts == ext]
-    if (length(match) > 0) {
-      primary_name <- match[1]
-      break
-    }
-  }
-  
-  if (is.null(primary_name)) {
-    safely_showNotification(
-      paste0("No recognised primary NONMEM file found. ",
-             "Expected one of: ", paste(priority, collapse = ", ")),
-      type = "error", duration = 10
-    )
-    return(NULL)
-  }
-  
-  primary_path <- file.path(temp_dir, primary_name)
-  
-  # if (show_debugging_msg) {
-  #   message("nonmem2rx primary file: ", primary_name)
-  #   message("nonmem2rx temp dir contents: ", 
-  #           paste(list.files(temp_dir), collapse = ", "))
-  # }
-  
-  return(list(
-    primary_path = primary_path,
-    dir          = temp_dir,
-    ext          = tolower(paste0(".", tools::file_ext(primary_name))),
-    name         = primary_name
-  ))
 }
 
 
