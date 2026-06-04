@@ -400,6 +400,7 @@ do_data_page_plot <- function(nmd,
       nmd[[y_axis]] <- as.factor(nmd[[y_axis]])
     } else {
       nmd[[y_axis]] <- as.numeric(nmd[[y_axis]])
+      max_y <- max(nmd[[y_axis]], na.rm = TRUE)
     }
     
     if (!can_quantize) nmd <- dplyr::distinct(nmd, ID, .keep_all = TRUE)
@@ -412,7 +413,7 @@ do_data_page_plot <- function(nmd,
       a <- a + ggplot2::scale_color_manual(values = named_color_vector)
     
     # ── Compute max_y once ────────────────────────────────────────
-    max_y <- max(y_col, na.rm = TRUE)
+    #max_y <- max(y_col, na.rm = TRUE)
     
     # ── df_count ──────────────────────────────────────────────────────────
     df_count <- nmd
@@ -837,7 +838,6 @@ do_data_page_ind_plot <- function(nmd,
     if (!is.null(named_color_vector))
       a <- a + ggplot2::scale_color_manual(values = named_color_vector)
     
-    #max_y    <- max(nmd[[y_axis]], na.rm = TRUE)
     facet_same_as_x <- facet_name == x_axis
     
     if (facet_same_as_x)
