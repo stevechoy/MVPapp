@@ -33,11 +33,11 @@ tblNCA_progress(
 
 \item{colConc}{column name for concentration}
 
-\item{dose}{administered dose}
+\item{dose}{administered dose, a scalar or a vector}
 
 \item{adm}{one of \code{"Bolus"} or \code{"Infusion"} or \code{"Extravascular"} to indicate drug administration mode}
 
-\item{dur}{duration of infusion}
+\item{dur}{duration of infusion, a scalar or a vector}
 
 \item{doseUnit}{unit of dose}
 

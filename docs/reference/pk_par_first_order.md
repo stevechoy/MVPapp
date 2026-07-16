@@ -8,7 +8,3 @@ https://github.com/mrgsolve/gallery/blob/master/absorption/parallel.md
 ``` r
 pk_par_first_order
 ```
-
-## Format
-
-An object of class `character` of length 1.

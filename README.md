@@ -50,7 +50,7 @@ internal discussions more efficiently.**
 
 ``` r
 ## Install devtools first if required
-# install.packages(devtools)
+# install.packages("devtools")
 
 devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
 ```

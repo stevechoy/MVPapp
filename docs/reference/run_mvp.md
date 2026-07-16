@@ -183,8 +183,7 @@ https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
 
 <https://stevechoy.github.io/MVPapp/articles/supply-passwords.html>
 <https://stevechoy.github.io/MVPapp/articles/automatic-translation.html>
-[`chat`](https://ellmer.tidyverse.org/reference/chat-any.html) for LLM
-chat interface.
+`chat` for LLM chat interface.
 
 ## Examples
 

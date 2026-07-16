@@ -97,8 +97,7 @@ the LLM-specific arguments:
   names.  
 - `api_chat`: URL path if you are using an OpenAI-Compatible provider,
   which feeds into the `base_url` argument during
-  [`ellmer::chat_openai_compatible()`](https://ellmer.tidyverse.org/reference/chat_openai_compatible.html)
-  call  
+  `ellmer::chat_openai_compatible()` call  
 - `api_upload`: URL path if you are using a Dify-style provider for the
   upload location of files  
 - `temperature`: Temperature setting, ranging from 0 (more

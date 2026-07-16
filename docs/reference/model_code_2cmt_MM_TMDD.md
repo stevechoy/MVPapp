@@ -8,7 +8,3 @@ https://doi.org/10.1002/psp4.41
 ``` r
 model_code_2cmt_MM_TMDD
 ```
-
-## Format
-
-An object of class `character` of length 1.

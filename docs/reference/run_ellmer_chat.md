@@ -43,10 +43,8 @@ run_ellmer_chat(
 
 - optimal_params:
 
-  An
-  [`ellmer::params()`](https://ellmer.tidyverse.org/reference/params.html)
-  object controlling temperature, seed, and other supported sampling
-  parameters
+  An `ellmer::params()` object controlling temperature, seed, and other
+  supported sampling parameters
 
 - api_chat:
 

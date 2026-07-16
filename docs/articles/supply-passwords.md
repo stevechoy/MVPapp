@@ -85,6 +85,7 @@ return value is of importance for the user. The only relevant part is
 the following:
 
 ``` r
+
 list_of_valid_passwords <- c("test")
 
 ### Example model
@@ -175,6 +176,7 @@ reference:
   function) as an object and then referenced accordingly, e.g.:
 
 ``` r
+
 q1w_sampling <- c(2, 4, 8, 24, 72, 168)
 q3w_sampling <- c(2, 4, 8, 24, 72, 168, 336, 504) + 168*6
 q1w_repeated <- unlist(lapply(0:5, function(x) q1w_sampling + x * 168)) # end of Q1W sampling
@@ -200,6 +202,7 @@ updateTextInput(session, "custom_sampling_time_text", value = 'c(q1w_repeated, q
   scale to weeks (original unit is in hours):
 
 ``` r
+
 updateSelectizeInput(session, "time_unit", selected = '168', options = list(create = TRUE))
 ```
 
@@ -238,6 +241,7 @@ itself. MVP accepts the character form of mrgsolve code, so objects have
 to be defined in the format of the following:
 
 ``` r
+
 model_name <- paste0(code_preamble, '
 
 "

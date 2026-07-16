@@ -38,8 +38,9 @@ internal discussions more efficiently.**
 `MVPapp` is not currently on CRAN. Install it via `devtools`:
 
 ``` r
+
 ## Install devtools first if required
-# install.packages(devtools)
+# install.packages("devtools")
 
 devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
 ```
@@ -47,6 +48,7 @@ devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
 Once installed, launch MVP using the following commands:
 
 ``` r
+
 library(MVPapp)
 run_mvp()
 
@@ -59,6 +61,7 @@ Alternatively, you may run `MVPapp` directly *without* installation
 (requires additional packages):
 
 ``` r
+
 shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 ```
 

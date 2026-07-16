@@ -33,7 +33,7 @@ Extensions should include the leading dot.}
 
 \item{multi_file_types}{Character vector of permitted file extensions when
 more than one file is uploaded, e.g. \code{c(".pdf", ".txt", ".mod",
-  ".ctl")}. Must be a subset of \code{single_file_types}. Extensions should
+".ctl")}. Must be a subset of \code{single_file_types}. Extensions should
 include the leading dot.}
 }
 \value{

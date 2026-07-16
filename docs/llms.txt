@@ -38,8 +38,9 @@ internal discussions more efficiently.**
 `MVPapp` is not currently on CRAN. Install it via `devtools`:
 
 ``` r
+
 ## Install devtools first if required
-# install.packages(devtools)
+# install.packages("devtools")
 
 devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
 ```
@@ -47,6 +48,7 @@ devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
 Once installed, launch MVP using the following commands:
 
 ``` r
+
 library(MVPapp)
 run_mvp()
 
@@ -59,6 +61,7 @@ Alternatively, you may run `MVPapp` directly *without* installation
 (requires additional packages):
 
 ``` r
+
 shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 ```
 
@@ -597,8 +600,6 @@ which you may use for citation purposes.
   : Function to plot variability exposure data
 - [`plot_three_data_with_nm()`](https://stevechoy.github.io/MVPapp/reference/plot_three_data_with_nm.md)
   : Main function for the plot in Parameter Sensitivity Analysis
-- [`prepare_nonmem2rx_files()`](https://stevechoy.github.io/MVPapp/reference/prepare_nonmem2rx_files.md)
-  : Prepare multiple NONMEM files for nonmem2rx conversion
 - [`prepare_uploaded_files()`](https://stevechoy.github.io/MVPapp/reference/prepare_uploaded_files.md)
   : Validate and Prepare Uploaded Files for LLM Processing
 - [`print_cov_plot()`](https://stevechoy.github.io/MVPapp/reference/print_cov_plot.md)
