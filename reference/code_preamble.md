@@ -7,7 +7,3 @@ Code editor preamble and postambles
 ``` r
 code_preamble
 ```
-
-## Format
-
-An object of class `character` of length 1.

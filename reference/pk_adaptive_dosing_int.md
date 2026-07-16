@@ -8,7 +8,3 @@ https://mrgsolve.org/blog/posts/2024-new-1-4-0-evtools.html#update-the-dose-regi
 ``` r
 pk_adaptive_dosing_int
 ```
-
-## Format
-
-An object of class `character` of length 1.

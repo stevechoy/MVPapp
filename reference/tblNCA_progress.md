@@ -46,7 +46,7 @@ tblNCA_progress(
 
 - dose:
 
-  administered dose
+  administered dose, a scalar or a vector
 
 - adm:
 
@@ -55,7 +55,7 @@ tblNCA_progress(
 
 - dur:
 
-  duration of infusion
+  duration of infusion, a scalar or a vector
 
 - doseUnit:
 

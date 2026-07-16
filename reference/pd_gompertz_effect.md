@@ -11,7 +11,3 @@ carboplatin in non-small cell lung cancer patients. Clin Cancer Res.
 ``` r
 pd_gompertz_effect
 ```
-
-## Format
-
-An object of class `character` of length 1.

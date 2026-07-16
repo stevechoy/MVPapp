@@ -7,7 +7,3 @@ Sequential zero and first order absorption model (by Jinju Guk)
 ``` r
 pk_seq_first_order
 ```
-
-## Format
-
-An object of class `character` of length 1.

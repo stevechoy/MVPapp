@@ -85,6 +85,7 @@ return value is of importance for the user. The only relevant part is
 the following:
 
 ``` r
+
 list_of_valid_passwords <- c("test")
 
 ### Example model
@@ -136,20 +137,20 @@ reference:
 
 ### Dosing Options
 
-| Description                            | Shiny Input Type    | id                         |
-|----------------------------------------|---------------------|----------------------------|
-| Dose Amount, Regimen 1 (Model 1)       | updateNumericInput  | “amt1”                     |
-| First Dose Time, Regimen 1 (Model 1)   | updateNumericInput  | “delay_time1”              |
-| Total Doses, Regimen 1 (Model 1)       | updateNumericInput  | “total1”                   |
-| Dosing Interval, Regimen 1 (Model 1)   | updateNumericInput  | “ii1”                      |
-| Infusion Duration, Regimen 1 (Model 1) | updateNumericInput  | “tinf1”                    |
-| Use MW (Model 1)                       | updateCheckboxInput | “mw_checkbox”              |
-| MW value (Model 1)                     | updateNumericInput  | “mw”                       |
-| MW multiplication factor (Model 1)     | updateNumericInput  | “multi_factor”             |
-| Use Weight-based dosing (Model 1)      | updateCheckboxInput | “wt_based_dosing_checkbox” |
-| Weight-based parameter name (Model 1)  | updateTextInput     | “wt_based_dosing_name”     |
-| Model Duration (Model 1)               | updateCheckboxInput | “model_dur_checkbox”       |
-| Model Rate (Model 1)                   | updateCheckboxInput | “model_rate_checkbox”      |
+| Description | Shiny Input Type | id |
+|----|----|----|
+| Dose Amount, Regimen 1 (Model 1) | updateNumericInput | “amt1” |
+| First Dose Time, Regimen 1 (Model 1) | updateNumericInput | “delay_time1” |
+| Total Doses, Regimen 1 (Model 1) | updateNumericInput | “total1” |
+| Dosing Interval, Regimen 1 (Model 1) | updateNumericInput | “ii1” |
+| Infusion Duration, Regimen 1 (Model 1) | updateNumericInput | “tinf1” |
+| Use MW (Model 1) | updateCheckboxInput | “mw_checkbox” |
+| MW value (Model 1) | updateNumericInput | “mw” |
+| MW multiplication factor (Model 1) | updateNumericInput | “multi_factor” |
+| Use Weight-based dosing (Model 1) | updateCheckboxInput | “wt_based_dosing_checkbox” |
+| Weight-based parameter name (Model 1) | updateTextInput | “wt_based_dosing_name” |
+| Model Duration (Model 1) | updateCheckboxInput | “model_dur_checkbox” |
+| Model Rate (Model 1) | updateCheckboxInput | “model_rate_checkbox” |
 
 - Dose amount, first dose time, total doses, dosing interval, and
   infusion duration goes up to 5, i.e. use `"amt5"` to update the dose
@@ -175,6 +176,7 @@ reference:
   function) as an object and then referenced accordingly, e.g.:
 
 ``` r
+
 q1w_sampling <- c(2, 4, 8, 24, 72, 168)
 q3w_sampling <- c(2, 4, 8, 24, 72, 168, 336, 504) + 168*6
 q1w_repeated <- unlist(lapply(0:5, function(x) q1w_sampling + x * 168)) # end of Q1W sampling
@@ -185,37 +187,38 @@ updateTextInput(session, "custom_sampling_time_text", value = 'c(q1w_repeated, q
 
 ### Plotting Options
 
-| Description                    | Shiny Input Type     | id                      |
-|--------------------------------|----------------------|-------------------------|
-| Y-axis label                   | updateTextInput      | “y_axis_label”          |
-| Log Y-axis (Simulation Page)   | updateCheckboxInput  | “log_y_axis”            |
-| Log Y-axis (PSA Page, Model 1) | updateCheckboxInput  | “log_y_axis_model_1”    |
-| Log Y-axis (PSA Page, Model 2) | updateCheckboxInput  | “log_y_axis_model_2”    |
-| Log Y-axis (Variability Page)  | updateCheckboxInput  | “log_y_axis_iiv”        |
-| Scale X-axis                   | updateSelectizeInput | “time_unit”             |
-| Show Sampling Points \[sims\]  | updateCheckboxInput  | “geom_point_sim_option” |
+| Description | Shiny Input Type | id |
+|----|----|----|
+| Y-axis label | updateTextInput | “y_axis_label” |
+| Log Y-axis (Simulation Page) | updateCheckboxInput | “log_y_axis” |
+| Log Y-axis (PSA Page, Model 1) | updateCheckboxInput | “log_y_axis_model_1” |
+| Log Y-axis (PSA Page, Model 2) | updateCheckboxInput | “log_y_axis_model_2” |
+| Log Y-axis (Variability Page) | updateCheckboxInput | “log_y_axis_iiv” |
+| Scale X-axis | updateSelectizeInput | “time_unit” |
+| Show Sampling Points \[sims\] | updateCheckboxInput | “geom_point_sim_option” |
 
 - For X-axis Inputs, the names are simply switched to `x_axis`.
 - Scale X-axis is handled slightly differently, see example below to
   scale to weeks (original unit is in hours):
 
 ``` r
+
 updateSelectizeInput(session, "time_unit", selected = '168', options = list(create = TRUE))
 ```
 
 ### Variability Options
 
-| Description                              | Shiny Input Type     | id                          | e.g.                                      |     |
-|------------------------------------------|----------------------|-----------------------------|-------------------------------------------|-----|
-| Select Patient Database, Model 1         | updateSelectizeInput | “db_model_1”                | selected = “NHANES”                       |     |
-| N Subjects, Model 1                      | updateNumericInput   | “n_subj_model_1”            |                                           |     |
-| Seed, Model 1                            | updateNumericInput   | “seed_number_model_1”       |                                           |     |
-| Age, Model 1                             | updateSliderInput    | “age_db_model_1”            | min = 0, max = 100, value = c(18, 65)     |     |
-| Weight, Model 1                          | updateSliderInput    | “wt_db_model_1”             | min = 0, max = 150, value = c(0, 150)     |     |
-| Males Percentage, Model 1                | updateSliderInput    | “males_db_model_1”          | min = 0, max = 100, value = 100, step = 5 |     |
-| Custom Covariate 1, Model 1              | updateTextInput      | “custom_cov_1_model_1”      | value = “CMINSS”                          |     |
-| Custom Covariate 1 Distribution, Model 1 | updateSelectInput    | “custom_cov_1_dist_model_1” | selected = “Log-Normal”                   |     |
-| Y-value Threshold                        | updateNumericInput   | “y_value_threshold”         | value = 0                                 |     |
+| Description | Shiny Input Type | id | e.g. |  |
+|----|----|----|----|----|
+| Select Patient Database, Model 1 | updateSelectizeInput | “db_model_1” | selected = “NHANES” |  |
+| N Subjects, Model 1 | updateNumericInput | “n_subj_model_1” |  |  |
+| Seed, Model 1 | updateNumericInput | “seed_number_model_1” |  |  |
+| Age, Model 1 | updateSliderInput | “age_db_model_1” | min = 0, max = 100, value = c(18, 65) |  |
+| Weight, Model 1 | updateSliderInput | “wt_db_model_1” | min = 0, max = 150, value = c(0, 150) |  |
+| Males Percentage, Model 1 | updateSliderInput | “males_db_model_1” | min = 0, max = 100, value = 100, step = 5 |  |
+| Custom Covariate 1, Model 1 | updateTextInput | “custom_cov_1_model_1” | value = “CMINSS” |  |
+| Custom Covariate 1 Distribution, Model 1 | updateSelectInput | “custom_cov_1_dist_model_1” | selected = “Log-Normal” |  |
+| Y-value Threshold | updateNumericInput | “y_value_threshold” | value = 0 |  |
 
 - Note: change the last part of the id name to `model_2` to update
   Inputs for Model 2.
@@ -238,6 +241,7 @@ itself. MVP accepts the character form of mrgsolve code, so objects have
 to be defined in the format of the following:
 
 ``` r
+
 model_name <- paste0(code_preamble, '
 
 "

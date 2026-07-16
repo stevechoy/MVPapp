@@ -7,7 +7,3 @@ List of template models available for all users
 ``` r
 model_examples_list
 ```
-
-## Format
-
-An object of class `character` of length 25.

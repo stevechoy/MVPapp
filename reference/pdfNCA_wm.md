@@ -54,7 +54,7 @@ pdfNCA_wm(
 
 - dose:
 
-  administered dose
+  administered dose, a scalar or a vector
 
 - adm:
 
@@ -63,7 +63,7 @@ pdfNCA_wm(
 
 - dur:
 
-  duration of infusion
+  duration of infusion, a scalar or a vector
 
 - doseUnit:
 

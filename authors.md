@@ -17,7 +17,7 @@ Choy S, Kim JG, Korell J (2025). “Less Is More: Design Considerations
 for Interactive Pharmacometrics Tools - A Case Study Using the Model
 Visualization Platform (MVP) App.” *CPT: Pharmacometrics & Systems
 Pharmacology*, **14**(5), -2.
-[doi:10.1002/psp4.70023](https://doi.org/10.1002/psp4.70023),
+[doi:10.1002/psp4.70023](https://doi.org/10.1002/psp4.70023).
 <https://github.com/Boehringer-Ingelheim/MVPapp>.
 
     @Article{,
