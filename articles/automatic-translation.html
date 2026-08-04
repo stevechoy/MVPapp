@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,7 @@
 
     
     
+<p><em>Last update: 2026-08-03</em></p>
 <div class="section level2">
 <h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
 </h2>
@@ -198,8 +199,10 @@ provider for the upload location of files<br>
 </li>
 <li>
 <code>temperature</code>: Temperature setting, ranging from 0 (more
-deterministic) to 1 (more creativity), defaults to <code>0</code><br>
-</li>
+deterministic) to 1 (more creativity), defaults to <code>0</code>.
+(Note: From mid-2026, most “thinking” models have stopped supporting the
+use of temperature. A warning pop-up box will notify users whether
+temperature is used during translation.)</li>
 <li>
 <code>llm_seed</code>: Seed number if supported by the LLM (however
 it still does not guarantee reproducibility), defaults to
@@ -346,8 +349,10 @@ adjustments.<br>
 <li>A seed of <code>42</code> and a temperature setting of
 <code>0</code> is used by default. Please note that the use of a seed or
 setting a temperature to 0 may not necessarily guarantee reproducibility
-(depending on the provider).<br>
-</li>
+(depending on the provider). It is also important to note that from
+mid-2026, most “thinking” models have stopped supporting the use of
+temperature. A warning pop-up box will notify users whether temperature
+is used during translation.</li>
 <li>While the feature is best supported by translating and compiling
 into mrgsolve, in principle it can be quite easily adapted to any other
 language. The <code>model_lang</code> argument controls the output

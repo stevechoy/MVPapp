@@ -23,15 +23,15 @@ run_mvp(
   api_chat = NA_character_,
   user_id = "MVP_user",
   reuse_context = FALSE,
-  model_gemini = "gemini-3-flash-preview",
-  model_openai = "gpt-5.4",
-  model_anthropic = "claude-sonnet-4-6",
+  model_gemini = "gemini-3.6-flash",
+  model_openai = "gpt-5.6-terra",
+  model_anthropic = "claude-sonnet-5",
   model_openrouter = "arcee-ai/trinity-large-preview:free",
   model_openai_compatible = "gpt-5.2",
-  model_deepseek = "deepseek-reasoner",
+  model_deepseek = "deepseek-v4-flash",
   model_apollo = "claude_4_6_sonnet",
   model_azure = "gpt-5.2",
-  model_aws = "anthropic.claude-sonnet-4-6",
+  model_aws = "anthropic.claude-sonnet-5",
   temperature = 0,
   llm_seed = 42,
   model_lang = c("mrgsolve", "nonmem", "rxode2"),
@@ -99,15 +99,15 @@ run_mvp(
 
 - model_gemini:
 
-  Character. Default gemini-3-flash-preview. Model for Gemini.
+  Character. Default gemini-3.6-flash. Model for Gemini.
 
 - model_openai:
 
-  Character. Default gpt-5.4. Model for OpenAI / ChatGPT.
+  Character. Default gpt-5.6-terra. Model for OpenAI / ChatGPT.
 
 - model_anthropic:
 
-  Character. Default claude-sonnet-4-6. Model for Anthropic / Claude.
+  Character. Default claude-sonnet-5. Model for Anthropic / Claude.
 
 - model_openrouter:
 
@@ -120,7 +120,7 @@ run_mvp(
 
 - model_deepseek:
 
-  Character. Default deepseek-reasoner. Model for DeepSeek.
+  Character. Default deepseek-v4-flash. Model for DeepSeek.
 
 - model_apollo:
 
@@ -132,7 +132,7 @@ run_mvp(
 
 - model_aws:
 
-  Character. Default anthropic.claude-sonnet-4-6. Model for AWS Bedrock.
+  Character. Default anthropic.claude-sonnet-5. Model for AWS Bedrock.
 
 - temperature:
 
