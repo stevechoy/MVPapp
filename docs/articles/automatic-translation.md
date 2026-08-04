@@ -1,5 +1,7 @@
 # Automatic Model Translation
 
+*Last update: 2026-08-03*
+
 ## Motivation
 
 **Imagine how convenient it would be for any model described in the
@@ -97,11 +99,15 @@ the LLM-specific arguments:
   names.  
 - `api_chat`: URL path if you are using an OpenAI-Compatible provider,
   which feeds into the `base_url` argument during
-  `ellmer::chat_openai_compatible()` call  
+  [`ellmer::chat_openai_compatible()`](https://ellmer.tidyverse.org/reference/chat_openai_compatible.html)
+  call  
 - `api_upload`: URL path if you are using a Dify-style provider for the
   upload location of files  
 - `temperature`: Temperature setting, ranging from 0 (more
-  deterministic) to 1 (more creativity), defaults to `0`  
+  deterministic) to 1 (more creativity), defaults to `0`. (Note: From
+  mid-2026, most “thinking” models have stopped supporting the use of
+  temperature. A warning pop-up box will notify users whether
+  temperature is used during translation.)
 - `llm_seed`: Seed number if supported by the LLM (however it still does
   not guarantee reproducibility), defaults to `42`
 - `model_lang`: Default output to `mrgsolve`, `nonmem`, or `rxode2` code
@@ -245,8 +251,11 @@ for the user’s information.
   make a copy of the file before making adjustments.  
 - A seed of `42` and a temperature setting of `0` is used by default.
   Please note that the use of a seed or setting a temperature to 0 may
-  not necessarily guarantee reproducibility (depending on the
-  provider).  
+  not necessarily guarantee reproducibility (depending on the provider).
+  It is also important to note that from mid-2026, most “thinking”
+  models have stopped supporting the use of temperature. A warning
+  pop-up box will notify users whether temperature is used during
+  translation.
 - While the feature is best supported by translating and compiling into
   mrgsolve, in principle it can be quite easily adapted to any other
   language. The `model_lang` argument controls the output language,

@@ -5784,15 +5784,15 @@ translate_model_code <- function(ready_path,
                                  api_upload = NULL,
                                  api_chat = NULL,
                                  user_id = "mrgsolve_translator",
-                                 model_gemini = "gemini-3-flash-preview",
+                                 model_gemini = "gemini-3.6-flash",
                                  model_openai = "gpt-5-mini",
                                  model_anthropic = "claude-haiku-4-5-20251001",
                                  model_openrouter = "arcee-ai/trinity-large-preview:free",
                                  model_openai_compatible = "gpt-5-mini",
                                  model_deepseek = "deepseek-reasoner",
-                                 model_apollo = "gpt-5.2",
-                                 model_azure = "gpt-5.2",
-                                 model_aws = "anthropic.claude-sonnet-4-6",
+                                 model_apollo = "gpt-5.6-terra",
+                                 model_azure = "gpt-5.6-terra",
+                                 model_aws = "anthropic.claude-sonnet-5",
                                  display_info = TRUE,
                                  temperature = 0.1,
                                  seed = 42,
@@ -5845,22 +5845,19 @@ translate_model_code <- function(ready_path,
                        "Azure OpenAI"      = model_azure,
                        "AWS Bedrock"       = model_aws)
   
-  ## Right now it is a blocklist for (mostly) thinking models which do not support temperature setting;
-  ## We may want to reverse this and implement a reverse allow list in the future if the trend continues
-  ## that seems like temperature is pretty much a thing of the past...
-  models_no_temperature <- c("gpt-5-mini", "gpt-5-nano", "gpt-5", "o1", "o3-mini", "o4",
-                             "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
-                             "claude-opus-5", "claude-sonnet-5", "claude-fable-5")
-  
   if(debug) {
     print(paste0("translate_model_code: 0) model_name is: ", model_name))
   }
   
-  if(model_name %in% models_no_temperature) {
+  ## Allow list to explicitly list some popular legacy models that supports temperature settings
+  models_yes_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
+                              "gpt-5.2")
+  
+  if(model_name %in% models_yes_temperature) {
+    optimal_params <- ellmer::params(temperature = temperature, seed = seed)
+  } else {
     safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
     optimal_params <- ellmer::params(seed = seed)
-  } else {
-    optimal_params <- ellmer::params(temperature = temperature, seed = seed)
   }
   
   if(debug) {
@@ -6111,15 +6108,15 @@ refine_model_code <- function(model_code,
                               api_upload = NULL,
                               api_chat = NULL,
                               user_id = "mrgsolve_translator",
-                              model_gemini = "gemini-3-flash-preview",
+                              model_gemini = "gemini-3.6-flash",
                               model_openai = "gpt-5-mini",
                               model_anthropic = "claude-haiku-4-5-20251001",
                               model_openrouter = "arcee-ai/trinity-large-preview:free",
                               model_openai_compatible = "gpt-5-mini",
                               model_deepseek = "deepseek-reasoner",
-                              model_apollo = "gpt-5.2",
-                              model_azure = "gpt-5.2",
-                              model_aws = "anthropic.claude-sonnet-4-6",
+                              model_apollo = "gpt-5.6-terra",
+                              model_azure = "gpt-5.6-terra",
+                              model_aws = "anthropic.claude-sonnet-5",
                               progress_bar = 0.4,
                               max_retries = 2,
                               display_info = TRUE,
@@ -6152,18 +6149,15 @@ refine_model_code <- function(model_code,
                        "Azure OpenAI"      = model_azure,
                        "AWS Bedrock"       = model_aws)
   
-  ## Right now it is a blocklist for (mostly) thinking models which do not support temperature setting;
-  ## We may want to reverse this and implement a reverse allow list in the future if the trend continues
-  ## that seems like temperature is pretty much a thing of the past...
-  models_no_temperature <- c("gpt-5-mini", "gpt-5-nano", "gpt-5", "o1", "o3-mini", "o4",
-                             "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
-                             "claude-opus-5", "claude-sonnet-5", "claude-fable-5")
+  ## Allow list to explicitly list some popular legacy models that supports temperature settings
+  models_yes_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
+                              "gpt-5.2")
   
-  if(model_name %in% models_no_temperature) {
+  if(model_name %in% models_yes_temperature) {
+    optimal_params <- ellmer::params(temperature = temperature, seed = seed)
+  } else {
     safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
     optimal_params <- ellmer::params(seed = seed)
-  } else {
-    optimal_params <- ellmer::params(temperature = temperature, seed = seed)
   }
   
   # Calculate the width of one retry segment (e.g., 0.2 if max_retries is 3)

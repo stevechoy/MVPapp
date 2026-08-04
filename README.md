@@ -22,7 +22,10 @@ complexity for advanced users. Some features include:
 - Live code editing using
 <a href="https://github.com/metrumresearchgroup/mrgsolve"
 target="_blank">mrgsolve</a>  
-- Automatic model translation using generative AI  
+- Automatic model translation into mrgsolve,
+<a href="https://github.com/nlmixr2/rxode2/" target="_blank">rxode2</a>,
+or <a href="https://www.iconplc.com/solutions/technologies/nonmem"
+target="_blank">NONMEM</a> code using generative AI  
 - Flexible dosing regimens, supporting up to 5 independent dosing
 schedules per model  
 - Basic data exploration and data cleaning, and overlaying of data  
@@ -403,7 +406,7 @@ Translation](https://stevechoy.github.io/MVPapp/articles/automatic-translation.h
 or access the vignette on this topic in R
 (`vignette("automatic-translation", package = "MVPapp"`) for a short
 guide on how to set up MVP to use generative AI models to translate any
-document into mrgsolve code.
+document into mrgsolve, rxode2, or NONMEM code.
 
 ### Providing external models and changing default settings
 

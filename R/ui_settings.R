@@ -206,7 +206,7 @@ llm_parse_locally    <- shiny::HTML(paste0("Parse Locally",
                                            "<i class='fa fa-question-circle' title='Parse PDF / text file (.txt/.mod/.ctl) locally and bypass file upload, which may be required if the LLM provider does not natively support file attachments (it can also reduce token usage). Note that this method extracts only text, which may be less accurate for files with lots of images.' style='margin-left: 3px;'></i>"))
 #' @export
 llm_temp_label       <- shiny::HTML(paste0("Temperature",
-                                           "<i class='fa fa-question-circle' title='0 = more deterministic, 1 = more creative (Not all providers support this setting).' style='margin-left: 3px;'></i>"))
+                                           "<i class='fa fa-question-circle' title='0 = more deterministic, 1 = more creative (Newer models (from mid-2026) tend NOT to support this setting).' style='margin-left: 3px;'></i>"))
 #' @export
 llm_seed_label       <- shiny::HTML(paste0("Seed",
                                             "<i class='fa fa-question-circle' title='Seed for reproducibility (Not all providers support this setting).' style='margin-left: 3px;'></i>"))

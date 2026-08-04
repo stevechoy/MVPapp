@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -62,7 +62,7 @@
 <!-- badges: end -->
 <p><code>MVPapp</code> is an R package that bundles the <a href="https://mvp.boehringer-ingelheim.com/" target="_blank" class="external-link">Model Visualization Platform (MVP)</a> Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:<br>
 - Live code editing using <a href="https://github.com/metrumresearchgroup/mrgsolve" target="_blank" class="external-link">mrgsolve</a><br>
-- Automatic model translation using generative AI<br>
+- Automatic model translation into mrgsolve, <a href="https://github.com/nlmixr2/rxode2/" target="_blank" class="external-link">rxode2</a>, or <a href="https://www.iconplc.com/solutions/technologies/nonmem" target="_blank" class="external-link">NONMEM</a> code using generative AI<br>
 - Flexible dosing regimens, supporting up to 5 independent dosing schedules per model<br>
 - Basic data exploration and data cleaning, and overlaying of data<br>
 - Quick NCA output and reporting<br>
@@ -295,7 +295,7 @@
 <div class="section level3">
 <h3 id="ai-model-translation">AI model translation<a class="anchor" aria-label="anchor" href="#ai-model-translation"></a>
 </h3>
-<p>Please see the article on <a href="https://stevechoy.github.io/MVPapp/articles/automatic-translation.html">Automatic Model Translation</a>, or access the vignette on this topic in R (<code>vignette("automatic-translation", package = "MVPapp"</code>) for a short guide on how to set up MVP to use generative AI models to translate any document into mrgsolve code.</p>
+<p>Please see the article on <a href="https://stevechoy.github.io/MVPapp/articles/automatic-translation.html">Automatic Model Translation</a>, or access the vignette on this topic in R (<code>vignette("automatic-translation", package = "MVPapp"</code>) for a short guide on how to set up MVP to use generative AI models to translate any document into mrgsolve, rxode2, or NONMEM code.</p>
 </div>
 <div class="section level3">
 <h3 id="providing-external-models-and-changing-default-settings">Providing external models and changing default settings<a class="anchor" aria-label="anchor" href="#providing-external-models-and-changing-default-settings"></a>

@@ -52,12 +52,12 @@ if(standalone_mode) {
   api_chat                = NA_character_ 
   user_id                 = "MVP_user" # 
   reuse_context           = FALSE # Re-use same conversation to keep original context for better re-iteration answers
-  model_gemini            = "gemini-3-flash-preview"
+  model_gemini            = "gemini-3.6-flash"
   model_openai            = "gpt-5.6-terra" # "gpt-5-mini"
   model_anthropic         = "claude-sonnet-5" # "claude-haiku-4-5-20251001" 
-  model_openrouter        = "arcee-ai/trinity-large-preview:free"  # "openrouter/free"
+  model_openrouter        = "openrouter/free"  # "openrouter/free"
   model_openai_compatible = "gpt-5-mini"
-  model_deepseek          = "deepseek-reasoner"
+  model_deepseek          = "deepseek-v4-flash"
   model_apollo            = "claude_4_6_sonnet" # For BI-only
   model_azure             = "gpt-5.2"
   model_aws               = "anthropic.claude-sonnet-5"
@@ -83,12 +83,12 @@ if(!exists("api_chat"))                {api_chat                 <- NA_character
 if(!exists("user_id"))                 {user_id                  <- "MVP_user"}
 if(!exists("user_id_retry"))           {user_id_retry            <- "MVP_user"}
 if(!exists("reuse_context"))           {reuse_context            <- FALSE}
-if(!exists("model_gemini"))            {model_gemini             <- "gemini-3-flash-preview"}
+if(!exists("model_gemini"))            {model_gemini             <- "gemini-3.6-flash"}
 if(!exists("model_openai"))            {model_openai             <- "gpt-5.6-terra"}
 if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-5"}
 if(!exists("model_openrouter"))        {model_openrouter         <- "arcee-ai/trinity-large-preview:free"}
 if(!exists("model_openai_compatible")) {model_openai_compatible  <- "gpt-5-mini"}
-if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-reasoner"}
+if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-v4-flash"}
 if(!exists("model_apollo"))            {model_apollo             <- "claude_4_6_sonnet"}
 if(!exists("model_azure"))             {model_azure              <- "gpt-5.2"}
 if(!exists("model_aws"))               {model_aws                <- "anthropic.claude-sonnet-5"}
@@ -2442,6 +2442,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.2 (2026-08-03) - Fixing support for frontier thinking models and updating LLM default models.'),
                                p('v0.4.1 (2026-03-15) - Supporting nonmem2mrgsolve and nonmem2rx for deterministic translation from NONMEM.'),
                                p('v0.4.0 (2026-03-11) - Experimental feature of parsing external files to generate mrgsolve model code. Save and restore session support. Performance improvements.'),
                                p('v0.3.5 (2026-02-04) - Dose info now displays correctly for all doses in Individual Plots'),

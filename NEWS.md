@@ -1,3 +1,9 @@
+# MVPapp 0.4.2 (2026-08-03)
+
+## Bugfixes
+
+* Fixed an issue where LLM model translation fails for thinking models (#11)
+
 # MVPapp 0.4.1 (2026-03-15)
 
 ## Features

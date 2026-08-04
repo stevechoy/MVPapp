@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 `MVPapp` is an R package that bundles the [Model Visualization Platform (MVP)](https://mvp.boehringer-ingelheim.com/){target="_blank"} Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:\
 - Live code editing using [mrgsolve](https://github.com/metrumresearchgroup/mrgsolve){target="_blank"}\
-- Automatic model translation using generative AI\
+- Automatic model translation into mrgsolve, [rxode2](https://github.com/nlmixr2/rxode2/){target="_blank"}, or [NONMEM](https://www.iconplc.com/solutions/technologies/nonmem){target="_blank"} code using generative AI\
 - Flexible dosing regimens, supporting up to 5 independent dosing schedules per model\
 - Basic data exploration and data cleaning, and overlaying of data\
 - Quick NCA output and reporting\
@@ -217,7 +217,7 @@ The current model and settings can be saved as a .rds file to be stored locally,
 
 ### AI model translation
 
-Please see the article on [Automatic Model Translation](https://stevechoy.github.io/MVPapp/articles/automatic-translation.html), or access the vignette on this topic in R (`vignette("automatic-translation", package = "MVPapp"`) for a short guide on how to set up MVP to use generative AI models to translate any document into mrgsolve code.
+Please see the article on [Automatic Model Translation](https://stevechoy.github.io/MVPapp/articles/automatic-translation.html), or access the vignette on this topic in R (`vignette("automatic-translation", package = "MVPapp"`) for a short guide on how to set up MVP to use generative AI models to translate any document into mrgsolve, rxode2, or NONMEM code.
 
 ### Providing external models and changing default settings
 
