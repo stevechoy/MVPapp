@@ -23,14 +23,14 @@
 #' @param user_id Character. Default MVP_user. User ID for LLMs
 #' @param reuse_context Logical. Default FALSE. Set to TRUE to re-use same conversation during retries.
 #' @param model_gemini Character. Default gemini-3-flash-preview. Model for Gemini.
-#' @param model_openai Character. Default gpt-5.4. Model for OpenAI / ChatGPT.
-#' @param model_anthropic Character. Default claude-sonnet-4-6. Model for Anthropic / Claude.
+#' @param model_openai Character. Default gpt-5.6-terra. Model for OpenAI / ChatGPT.
+#' @param model_anthropic Character. Default claude-sonnet-5. Model for Anthropic / Claude.
 #' @param model_openrouter Character. Default arcee-ai/trinity-large-preview:free. Model for OpenRouter.
 #' @param model_openai_compatible Character. Default gpt-5.2. Model for OpenAI-compatible providers.
 #' @param model_deepseek Character. Default deepseek-reasoner. Model for DeepSeek.
 #' @param model_apollo Character. Default gpt-5.2 (BI-only)
 #' @param model_azure Character. Default gpt-5.2. Model for Azure OpenAI.
-#' @param model_aws Character. Default anthropic.claude-sonnet-4-6. Model for AWS Bedrock.
+#' @param model_aws Character. Default anthropic.claude-sonnet-5. Model for AWS Bedrock.
 #' @param temperature Numeric. Default 0, between 0 (more deterministic) to 1 (more creative) (not all models support this).
 #' @param llm_seed Numeric. Default 42. Seed number for LLMs (not all models support this).
 #' @param model_lang Character. Default mrgsolve. Changes model translation language to "mrgsolve", "nonmem" (for testing only), "rxode2" (for testing only)
@@ -74,14 +74,14 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
                     user_id                 = "MVP_user",
                     reuse_context           = FALSE, # Re-use same conversation to keep original context for better re-iteration answers
                     model_gemini            = "gemini-3-flash-preview",
-                    model_openai            = "gpt-5.4", # "gpt-5-mini"
-                    model_anthropic         = "claude-sonnet-4-6", 
+                    model_openai            = "gpt-5.6-terra", # "gpt-5-mini"
+                    model_anthropic         = "claude-sonnet-5", 
                     model_openrouter        = "arcee-ai/trinity-large-preview:free",  # "openrouter/free"
                     model_openai_compatible = "gpt-5.2",
                     model_deepseek          = "deepseek-reasoner",
                     model_apollo            = "claude_4_6_sonnet", # For BI-only
                     model_azure             = "gpt-5.2",
-                    model_aws               = "anthropic.claude-sonnet-4-6",
+                    model_aws               = "anthropic.claude-sonnet-5",
                     temperature             = 0,
                     llm_seed                = 42,
                     model_lang              = c("mrgsolve", "nonmem", "rxode2"),

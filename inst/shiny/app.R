@@ -53,14 +53,14 @@ if(standalone_mode) {
   user_id                 = "MVP_user" # 
   reuse_context           = FALSE # Re-use same conversation to keep original context for better re-iteration answers
   model_gemini            = "gemini-3-flash-preview"
-  model_openai            = "gpt-5.4" # "gpt-5-mini"
-  model_anthropic         = "claude-sonnet-4-6" # "claude-haiku-4-5-20251001" 
+  model_openai            = "gpt-5.6-terra" # "gpt-5-mini"
+  model_anthropic         = "claude-sonnet-5" # "claude-haiku-4-5-20251001" 
   model_openrouter        = "arcee-ai/trinity-large-preview:free"  # "openrouter/free"
   model_openai_compatible = "gpt-5-mini"
   model_deepseek          = "deepseek-reasoner"
   model_apollo            = "claude_4_6_sonnet" # For BI-only
   model_azure             = "gpt-5.2"
-  model_aws               = "anthropic.claude-sonnet-4-6"
+  model_aws               = "anthropic.claude-sonnet-5"
   temperature             = 0
   llm_seed                = 42
   model_lang              = c("mrgsolve", "nonmem", "rxode2")
@@ -84,14 +84,14 @@ if(!exists("user_id"))                 {user_id                  <- "MVP_user"}
 if(!exists("user_id_retry"))           {user_id_retry            <- "MVP_user"}
 if(!exists("reuse_context"))           {reuse_context            <- FALSE}
 if(!exists("model_gemini"))            {model_gemini             <- "gemini-3-flash-preview"}
-if(!exists("model_openai"))            {model_openai             <- "gpt-5.4"}
-if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-4-6"}
+if(!exists("model_openai"))            {model_openai             <- "gpt-5.6-terra"}
+if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-5"}
 if(!exists("model_openrouter"))        {model_openrouter         <- "arcee-ai/trinity-large-preview:free"}
 if(!exists("model_openai_compatible")) {model_openai_compatible  <- "gpt-5-mini"}
 if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-reasoner"}
 if(!exists("model_apollo"))            {model_apollo             <- "claude_4_6_sonnet"}
 if(!exists("model_azure"))             {model_azure              <- "gpt-5.2"}
-if(!exists("model_aws"))               {model_aws                <- "anthropic.claude-sonnet-4-6"}
+if(!exists("model_aws"))               {model_aws                <- "anthropic.claude-sonnet-5"}
 if(!exists("temperature"))             {temperature              <- 0}
 if(!exists("llm_seed"))                {llm_seed                 <- 42}
 if(!exists("model_lang"))              {model_lang               <- c("mrgsolve", "nonmem", "rxode2")}

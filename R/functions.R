@@ -5845,7 +5845,12 @@ translate_model_code <- function(ready_path,
                        "Azure OpenAI"      = model_azure,
                        "AWS Bedrock"       = model_aws)
   
-  models_no_temperature <- c("gpt-5-mini", "gpt-5-nano", "gpt-5", "o1", "o3-mini", "o4")
+  ## Right now it is a blocklist for (mostly) thinking models which do not support temperature setting;
+  ## We may want to reverse this and implement a reverse allow list in the future if the trend continues
+  ## that seems like temperature is pretty much a thing of the past...
+  models_no_temperature <- c("gpt-5-mini", "gpt-5-nano", "gpt-5", "o1", "o3-mini", "o4",
+                             "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
+                             "claude-opus-5", "claude-sonnet-5", "claude-fable-5")
   
   if(debug) {
     print(paste0("translate_model_code: 0) model_name is: ", model_name))
@@ -6147,7 +6152,12 @@ refine_model_code <- function(model_code,
                        "Azure OpenAI"      = model_azure,
                        "AWS Bedrock"       = model_aws)
   
-  models_no_temperature <- c("gpt-5-mini", "gpt-5-nano", "o1", "o3-mini")
+  ## Right now it is a blocklist for (mostly) thinking models which do not support temperature setting;
+  ## We may want to reverse this and implement a reverse allow list in the future if the trend continues
+  ## that seems like temperature is pretty much a thing of the past...
+  models_no_temperature <- c("gpt-5-mini", "gpt-5-nano", "gpt-5", "o1", "o3-mini", "o4",
+                             "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna",
+                             "claude-opus-5", "claude-sonnet-5", "claude-fable-5")
   
   if(model_name %in% models_no_temperature) {
     safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
