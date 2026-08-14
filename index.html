@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -244,11 +244,23 @@
 <ul>
 <li>Normal, Log-normal, uniform, binary categorical distributions are supported.<br>
 </li>
-<li>Once defined, they will be made available in the “Summary Statistics” sub tab and able to be downloaded.</li>
+<li>Once defined, they will be made available in the “Summary Statistics” sub tab and able to be downloaded.<br>
+</li>
+<li>(Optional) If a dataset is uploaded, subject-level (i.e. baseline) covariate distribution(s) or EBEs, e.g. individual <code>CL</code> and/or <code>VC</code> can be drawn from the dataset to <strong>replace</strong> the corresponding parameter name from the model code.
+<ul>
+<li>If the number of unique subjects from the dataset matches the number of subjects to be simulated, sampling without replacement will be used (i.e. a 1:1 substitution). Otherwise, sampling <em>with</em> replacement will be used.<br>
+</li>
+<li>Don’t forget to set the corresponding OMEGAs to 0 if you are sampling EBEs from the dataset (see ‘Assessing Variability’ section below).<br>
+</li>
+<li>Tip: you may use the “Data Input” page’s code editor to rename columns if required.<br>
+</li>
+</ul>
+</li>
+<li>When the simulations are generated, a popup dialog box will appear on the lower right hand corner to notify the user the list of covariates which found a match in the model code (thus are replaced accordingly).</li>
 </ul>
 </li>
 </ol>
-<p><img src="www/egfrexample.png"></p>
+<p><img src="www/egfrexample2.png"></p>
 </div>
 <div class="section level4">
 <h4 id="assessing-variability">Assessing Variability<a class="anchor" aria-label="anchor" href="#assessing-variability"></a>
