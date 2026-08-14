@@ -163,7 +163,7 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
   default_options <- options()
   options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
   options(DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = T)) # dataTable options
-  options(shiny.maxRequestSize = 100*1024^2) # Maximum file upload size
+  options(shiny.maxRequestSize = 200*1024^2) # Maximum file upload size
 
   runApp_args$appDir <- appDir
   do.call(shiny::runApp, runApp_args)

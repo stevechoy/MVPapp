@@ -8475,9 +8475,12 @@ server <- function(input, output, session) {
   ## Logic for dataset covariate distributions
   observe({
     
+    # Default case to deal with the edge case where the checkbox is ticked with no selected columns
+    shiny::req(n_subj_model_1_clean())
+    data_cov_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
+    
     shiny::req(nmdataset_for_plot())
     shiny::req(input$dataset_cov_dist_model_1)
-    shiny::req(n_subj_model_1_clean())
     
     if (show_debugging_msg) {
       message(paste0('Pulling in covariate distributions from the dataset: ', paste(input$dataset_cov_dist_model_1, collapse = ", ")))
@@ -8516,8 +8519,6 @@ server <- function(input, output, session) {
       
       # Update existing reactive dataframe
       data_cov_model_1$df <- dplyr::bind_cols(sampled_df, dplyr::tibble(ID = seq_len(n_subj_model_1_clean())))
-    } else {
-      data_cov_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
     }
   }) %>%
     bindEvent(
@@ -8558,16 +8559,31 @@ server <- function(input, output, session) {
     # Check if all column names are unique
     if (length(unique(column_names_model_1)) == length(column_names_model_1)) {
       if(input$use_dataset_cov_dist_model_1) {
+        
+        # If there are common names from uploaded dataset and external databases, use the one from the dataset
+        common_cols <- intersect(names(dbm1), names(data_cov_model_1$df))
+        common_cols <- setdiff(common_cols, "ID")
+        dbm1 <- dbm1[, !(names(dbm1) %in% common_cols), drop = FALSE]
+        
+        if (length(common_cols) > 0) {
+          shiny::showNotification(
+            paste(paste(common_cols, collapse = ", "),
+                  paste0(" from ", input$db_model_1, " are superceded by the uploaded dataset.")
+            ),
+            type = "warning"
+          )
+        }
+        
         dbm1_cov <- dbm1 %>%
           dplyr::left_join(data_cov_model_1$df, by = "ID") %>%
           dplyr::left_join(rv_cov_1_model_1$df, by = "ID") %>%
           dplyr::left_join(rv_cov_2_model_1$df, by = "ID") %>%
-          dplyr::left_join(rv_cov_3_model_1$df, by = "ID")        
+          dplyr::left_join(rv_cov_3_model_1$df, by = "ID")       
       } else {
         dbm1_cov <- dbm1 %>%
           dplyr::left_join(rv_cov_1_model_1$df, by = "ID") %>%
           dplyr::left_join(rv_cov_2_model_1$df, by = "ID") %>%
-          dplyr::left_join(rv_cov_3_model_1$df, by = "ID")        
+          dplyr::left_join(rv_cov_3_model_1$df, by = "ID")       
       }
     } else {
       shiny::showNotification("ERROR: All custom covariate names must be different from each other. Please rename them first.", type = "error", duration = 10)
@@ -9286,9 +9302,12 @@ server <- function(input, output, session) {
   ## Logic for dataset covariate distributions
   observe({
     
+    # Default case to deal with the edge case where the checkbox is ticked with no selected columns
+    shiny::req(n_subj_model_2_clean())
+    data_cov_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
+    
     shiny::req(nmdataset_for_plot())
     shiny::req(input$dataset_cov_dist_model_2)
-    shiny::req(n_subj_model_2_clean())
     
     if (show_debugging_msg) {
       message(paste0('Pulling in covariate distributions from the dataset: ', paste(input$dataset_cov_dist_model_2, collapse = ", ")))
@@ -9327,8 +9346,6 @@ server <- function(input, output, session) {
       
       # Update existing reactive dataframe
       data_cov_model_2$df <- dplyr::bind_cols(sampled_df, dplyr::tibble(ID = seq_len(n_subj_model_2_clean())))
-    } else {
-      data_cov_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
     }
   }) %>%
     bindEvent(
@@ -9369,16 +9386,31 @@ server <- function(input, output, session) {
     # Check if all column names are unique
     if (length(unique(column_names_model_2)) == length(column_names_model_2)) {
       if(input$use_dataset_cov_dist_model_2) {
+        
+        # If there are common names from uploaded dataset and external databases, use the one from the dataset
+        common_cols <- intersect(names(dbm2), names(data_cov_model_2$df))
+        common_cols <- setdiff(common_cols, "ID")
+        dbm2 <- dbm2[, !(names(dbm2) %in% common_cols), drop = FALSE]
+        
+        if (length(common_cols) > 0) {
+          shiny::showNotification(
+            paste(paste(common_cols, collapse = ", "),
+                  paste0(" from ", input$db_model_2, " are superceded by the uploaded dataset.")
+            ),
+            type = "warning"
+          )
+        }
+        
         dbm2_cov <- dbm2 %>%
           dplyr::left_join(data_cov_model_2$df, by = "ID") %>%
           dplyr::left_join(rv_cov_1_model_2$df, by = "ID") %>%
           dplyr::left_join(rv_cov_2_model_2$df, by = "ID") %>%
-          dplyr::left_join(rv_cov_3_model_2$df, by = "ID")        
+          dplyr::left_join(rv_cov_3_model_2$df, by = "ID")       
       } else {
         dbm2_cov <- dbm2 %>%
           dplyr::left_join(rv_cov_1_model_2$df, by = "ID") %>%
           dplyr::left_join(rv_cov_2_model_2$df, by = "ID") %>%
-          dplyr::left_join(rv_cov_3_model_2$df, by = "ID")        
+          dplyr::left_join(rv_cov_3_model_2$df, by = "ID")       
       }
     } else {
       shiny::showNotification("ERROR: All custom covariate names must be different from each other. Please rename them first.", type = "error", duration = 10)
