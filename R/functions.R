@@ -5682,6 +5682,7 @@ draw_histogram_plot <- function(input_df,
 #'
 #' @returns A shiny showNotification or print to console
 #' @importFrom shiny isRunning showNotification
+#' @importFrom rlang %||%
 #' @seealso `parse`
 #' @export
 #-------------------------------------------------------------------------------
@@ -5797,6 +5798,7 @@ safely_incProgress <- function(amount, detail = NULL) {
 #' @importFrom mime guess_type
 #' @importFrom pdftools pdf_text
 #' @importFrom stats setNames
+#' @importFrom rlang %||%
 #' @export
 #-------------------------------------------------------------------------------
 
@@ -6120,6 +6122,7 @@ translate_model_code <- function(ready_path,
 #'
 #' @returns a named list of "answer", "conversation_id", "chat_obj"
 #' @importFrom stats setNames
+#' @importFrom rlang %||%
 #' @export
 #-------------------------------------------------------------------------------
 
@@ -6501,6 +6504,7 @@ extract_file_content <- function(file_path,
 #'   \item{usage_info}{Named list with \code{input}, \code{output}, \code{total}
 #'     token counts and \code{model} label}
 #' }
+#' @importFrom rlang %||%
 #' @export
 #-------------------------------------------------------------------------------
 
@@ -6593,7 +6597,7 @@ run_dify_chat <- function(instruction_prompt,
     answer          = chat_resp$answer,
     conversation_id = chat_resp$conversation_id,
     usage_info      = list(
-      input  = chat_resp$metadata$usage$prompt_tokens    %||% "N/A",
+      input  = chat_resp$metadata$usage$prompt_tokens     %||% "N/A",
       output = chat_resp$metadata$usage$completion_tokens %||% "N/A",
       total  = chat_resp$metadata$usage$total_tokens      %||% "N/A",
       model  = chat_resp$metadata$usage$model             %||% model_name
@@ -6642,7 +6646,7 @@ run_dify_chat <- function(instruction_prompt,
 #'   \item{usage_info}{Named list with \code{input}, \code{output}, \code{total}
 #'     token counts and \code{model} label}
 #' }
-#'
+#' @importFrom rlang %||%
 #' @export
 #-------------------------------------------------------------------------------
 run_ellmer_chat <- function(service,
@@ -6707,7 +6711,8 @@ run_ellmer_chat <- function(service,
     if(debug) print(paste0("run_ellmer_chat: ", service, " with file upload"))
     
     upload_file <- switch(service,
-                          "Gemini"            = ellmer::google_upload(path = file_path, mime_type = detected_type),
+                          "Gemini"            = ellmer::content_pdf_file(file_path),
+                          #"Gemini"            = ellmer::google_upload(path = file_path, mime_type = detected_type), # seems not work as nice as content_pdf_file
                           "Claude"            = ellmer::claude_file_upload(path = file_path, beta_headers = "files-api-2025-04-14"),
                           "OpenAI"            = ellmer::content_pdf_file(file_path),
                           "OpenRouter"        = ellmer::content_pdf_file(file_path),
@@ -6719,7 +6724,7 @@ run_ellmer_chat <- function(service,
                           "AWS Bedrock"       = ellmer::content_pdf_file(file_path),
     )
     
-    if(debug && service %in% c("Gemini", "Claude")) {
+    if(debug && service %in% c("Claude")) {
       print(paste0("run_ellmer_chat: upload_file - ", upload_file@uri, ", type: ", upload_file@mime_type))
     }
     chat_obj$chat(instruction_prompt, upload_file, echo = FALSE)
