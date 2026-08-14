@@ -15,11 +15,13 @@ standalone_mode <- FALSE
 #######################
 if(standalone_mode) {
 
+  library(magrittr)
+  library(rlang)
   library(ggplot2)
-  library(shiny) # 1.7.5.1
-  library(shinyBS) # 0.61.1 # this needs to be reloaded to make popovers work
-  library(dplyr) # 1.1.3 # required for data code editor
-  library(mrgsolve) # 1.5.2 # required for sim code editor
+  library(shiny) # >= 1.7.5.1
+  library(shinyBS) # >= 0.61.1 # this needs to be reloaded to make popovers work
+  library(dplyr) # >= 1.1.3 # required for data code editor
+  library(mrgsolve) # >= 1.5.2 # required for sim code editor
 
   default_options <- options()
   options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
@@ -103,10 +105,12 @@ if(!exists("bi_logo")) { # Check whether one of the objects in the app exists
   source("packages.R") # Check required packages and update if required
   
   # Loads some required packages when manually launching app with runGithub
+  library(magrittr)
+  library(rlang)
   library(ggplot2)
-  library(shinyBS) # 0.61.1 # this needs to be reloaded to make popovers work
-  library(dplyr) # 1.1.3 # required for data code editor
-  library(mrgsolve) # 1.5.2 # required for sim code editor
+  library(shinyBS) # >= 0.61.1 # this needs to be reloaded to make popovers work
+  library(dplyr) # >= 1.1.3 # required for data code editor
+  library(mrgsolve) # >= 1.5.2 # required for sim code editor
   
   r_files <- list.files("../../R", full.names = TRUE, pattern = "\\.R$")
   sapply(r_files, source)
