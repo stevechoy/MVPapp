@@ -20,6 +20,7 @@ run_single_sim(
   nsubj = 1,
   append_id_text = "m1-",
   ext_db = NULL,
+  show_matches = FALSE,
   parallel_sim = FALSE,
   parallel_n = 200
 )
@@ -82,6 +83,11 @@ run_single_sim(
 - ext_db:
 
   Default NULL, supply R object of external database
+
+- show_matches:
+
+  Default FALSE, shows a notification when external databases found a
+  matching name with model parameters
 
 - parallel_sim:
 

@@ -24,7 +24,7 @@ if(standalone_mode) {
   default_options <- options()
   options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
   options(DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = T)) # dataTable options
-  options(shiny.maxRequestSize = 100*1024^2) # Maximum file upload size
+  options(shiny.maxRequestSize = 200*1024^2) # Maximum file upload size
 
   # Download and load locally the external patient databases ('cdc.expand', 'who.expand', 'nhanes.filtered')
   # The raw data used to create .rda is available on Github inside 'data-raw' folder
@@ -32,9 +32,9 @@ if(standalone_mode) {
   download.file("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/data/who.expand.rda", destfile = file.path(tempdir(), "who.expand.rda"))
   download.file("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/data/cdc.expand.rda", destfile = file.path(tempdir(), "cdc.expand.rda"))
   
-  load(file.path(tempdir(), "nhanes.filtered.rda"))
-  load(file.path(tempdir(), "who.expand.rda"))
-  load(file.path(tempdir(), "cdc.expand.rda"))
+  load(file.path(tempdir(), "nhanes.filtered.rda"), envir = .GlobalEnv) # Cloud-host compatibility to make it available globally
+  load(file.path(tempdir(), "who.expand.rda"),      envir = .GlobalEnv)
+  load(file.path(tempdir(), "cdc.expand.rda"),      envir = .GlobalEnv)
   
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
@@ -1602,7 +1602,7 @@ ui <- shiny::navbarPage(
                                                                   selectizeInput(inputId = 'tor_fix_model_1', label = label_fix_parameters, character(0), multiple = TRUE)
                                                            ),
                                                            column(width = 12,
-                                                                  tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;"))
+                                                                  tags$hr(style="border-color: #CCCCCC; border-width: 4px;")
                                                            ),
                                                            column(width = 6,
                                                                   label_batch_table
@@ -1777,7 +1777,7 @@ ui <- shiny::navbarPage(
                                                                   selectizeInput(inputId = 'tor_fix_model_2', label = label_fix_parameters, character(0), multiple = TRUE)
                                                            ),
                                                            column(width = 12,
-                                                                  tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;"))
+                                                                  tags$hr(style="border-color: #CCCCCC; border-width: 4px;")
                                                            ),
                                                            column(width = 6,
                                                                   label_batch_table
@@ -1983,6 +1983,20 @@ ui <- shiny::navbarPage(
                                                              tabPanel(id = "db_custom_cov_model_1",
                                                                       title = "Covariate Distributions",
                                                                       fluidRow(
+                                                                        style = "display: flex; align-items: center;",
+                                                                        column(width = 6,
+                                                                               checkboxInput('use_dataset_cov_dist_model_1', use_dataset_cov_dist_label, value = FALSE)
+                                                                        ),
+                                                                        column(width = 6,
+                                                                               div(
+                                                                                 style = "margin-top: 8px;",
+                                                                                 selectizeInput(inputId = 'dataset_cov_dist_model_1', label = NULL, character(0), multiple = TRUE)
+                                                                               )
+                                                                        )
+                                                                      ),
+                                                                      tags$hr(style="border-color: #CCCCCC; border-width: 4px; margin-top: 0px;"),
+                                                                      ############# divider ###############
+                                                                      fluidRow(
                                                                         column(width = 6,
                                                                                textInput('custom_cov_1_model_1', paste0(custom_cov_label, " 1"), value = NULL, placeholder = custom_cov_placeholder),
                                                                                shinyBS::bsPopover('custom_cov_1_model_1', paste0(custom_cov_label, " 1"), content = bspop_custom_cov, trigger = 'hover', placement = 'right')
@@ -1996,7 +2010,7 @@ ui <- shiny::navbarPage(
                                                                       ),
                                                                       uiOutput("custom_cov_1_ui_model_1"),
                                                                       uiOutput("cov_1_plot_ui_model_1"),
-                                                                      tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                                      tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                                       ############# divider ###############
                                                                       fluidRow(
                                                                         column(width = 6,
@@ -2012,7 +2026,7 @@ ui <- shiny::navbarPage(
                                                                       ),
                                                                       uiOutput("custom_cov_2_ui_model_1"),
                                                                       uiOutput("cov_2_plot_ui_model_1"),
-                                                                      tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                                      tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                                       ############# divider ###############
                                                                       fluidRow(
                                                                         column(width = 6,
@@ -2059,7 +2073,7 @@ ui <- shiny::navbarPage(
                                                            ),
                                                            column(width = 12,
                                                                   rhandsontable::rHandsontableOutput('omega_model_1'),
-                                                                  tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                                  tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                                   tags$div(h5('SIGMA (Residual Unexplained Variability):', style = "font-weight: bold;")),
                                                                   rhandsontable::rHandsontableOutput('sigma_model_1')
                                                            )
@@ -2111,6 +2125,20 @@ ui <- shiny::navbarPage(
                                                              tabPanel(id = "db_custom_cov_model_2",
                                                                       title = "Covariate Distributions",
                                                                       fluidRow(
+                                                                        style = "display: flex; align-items: center;",
+                                                                        column(width = 6,
+                                                                               checkboxInput('use_dataset_cov_dist_model_2', use_dataset_cov_dist_label, value = FALSE)
+                                                                        ),
+                                                                        column(width = 6,
+                                                                               div(
+                                                                                 style = "margin-top: 8px;",
+                                                                                 selectizeInput(inputId = 'dataset_cov_dist_model_2', label = NULL, character(0), multiple = TRUE)
+                                                                               )
+                                                                        )
+                                                                      ),
+                                                                      tags$hr(style="border-color: #CCCCCC; border-width: 4px; margin-top: 0px;"),
+                                                                      ############# divider ###############
+                                                                      fluidRow(
                                                                         column(width = 6,
                                                                                textInput('custom_cov_1_model_2', paste0(custom_cov_label, " 1"), value = NULL, placeholder = custom_cov_placeholder),
                                                                                shinyBS::bsPopover('custom_cov_1_model_2', paste0(custom_cov_label, " 1"), content = bspop_custom_cov, trigger = 'hover', placement = 'right')
@@ -2124,7 +2152,7 @@ ui <- shiny::navbarPage(
                                                                       ),
                                                                       uiOutput("custom_cov_1_ui_model_2"),
                                                                       uiOutput("cov_1_plot_ui_model_2"),
-                                                                      tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                                      tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                                       ############# divider ###############
                                                                       fluidRow(
                                                                         column(width = 6,
@@ -2140,7 +2168,7 @@ ui <- shiny::navbarPage(
                                                                       ),
                                                                       uiOutput("custom_cov_2_ui_model_2"),
                                                                       uiOutput("cov_2_plot_ui_model_2"),
-                                                                      tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                                      tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                                       ############# divider ###############
                                                                       fluidRow(
                                                                         column(width = 6,
@@ -2189,7 +2217,7 @@ ui <- shiny::navbarPage(
                                                            ),
                                                            column(width = 12,
                                                                   rhandsontable::rHandsontableOutput('omega_model_2'),
-                                                                  tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                                  tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                                   tags$div(h5('SIGMA (Residual Unexplained Variability):', style = "font-weight: bold;")),
                                                                   rhandsontable::rHandsontableOutput('sigma_model_2')
                                                            )
@@ -2238,7 +2266,7 @@ ui <- shiny::navbarPage(
                                                                  checkboxInput('do_iiv_plotly', 'Interactive Plot (Slower)', value = FALSE)
                                                           )
                                                         ),
-                                                        tags$div(tags$hr(style="border-color: #CCCCCC; border-width: 4px;")),
+                                                        tags$hr(style="border-color: #CCCCCC; border-width: 4px;"),
                                                         fluidRow(
                                                           column(width = 3,
                                                                  checkboxInput('show_iiv_model_1', label = 'Show Model 1', value = TRUE),
@@ -2442,6 +2470,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.3 (2026-08-13) - Support for using uploaded datasets to provide covariate distributions when simulating with variability. Minor bug fixes.'),
                                p('v0.4.2 (2026-08-03) - Fixing support for frontier thinking models and updating LLM default models.'),
                                p('v0.4.1 (2026-03-15) - Supporting nonmem2mrgsolve and nonmem2rx for deterministic translation from NONMEM.'),
                                p('v0.4.0 (2026-03-11) - Experimental feature of parsing external files to generate mrgsolve model code. Save and restore session support. Performance improvements.'),
@@ -3036,6 +3065,9 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "facet_by",        choices = names(nmdataset_for_plot()) %>% sort())
       updateSelectizeInput(session, "var_corr",        choices = names(nmdataset_for_plot()) %>% sort())
       updateSelectizeInput(session, "var_hist",        choices = names(nmdataset_for_plot()) %>% sort())
+      updateSelectizeInput(session, "dataset_cov_dist_model_1",        choices = names(nmdataset_for_plot()) %>% sort())
+      updateSelectizeInput(session, "dataset_cov_dist_model_2",        choices = names(nmdataset_for_plot()) %>% sort())
+      
       if ('ID' %in% names(nmdataset_for_plot())) {
         updateSelectizeInput(session, "filter_by_id", choices = unique(nmdataset_for_plot()$ID), server = TRUE)
       }
@@ -3199,6 +3231,16 @@ server <- function(input, output, session) {
                            selected = dplyr::case_when("LLOQ" %in% names(nmdataset_for_plot()) ~ "LLOQ",
                                                        TRUE                                        ~ "")
       )
+      
+      updateSelectizeInput(session,
+                           "dataset_cov_dist_model_1",
+                           choices = names(nmdataset_for_plot()) %>% sort(),
+                           selected = NULL)
+      
+      updateSelectizeInput(session,
+                           "dataset_cov_dist_model_2",
+                           choices = names(nmdataset_for_plot()) %>% sort(),
+                           selected = NULL)
       
     }
   }, label = 'Update selectizeInput after uploaded_data()')
@@ -8052,12 +8094,14 @@ server <- function(input, output, session) {
   rv_cov_1_model_1 <- reactiveValues(df = NULL)
   rv_cov_2_model_1 <- reactiveValues(df = NULL)
   rv_cov_3_model_1 <- reactiveValues(df = NULL)
+  data_cov_model_1 <- reactiveValues(df = NULL)
   
   # Initialize the dataframe
   observe({
     rv_cov_1_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
     rv_cov_2_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
     rv_cov_3_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
+    data_cov_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
   })
   
   observeEvent(input$db_model_1, {
@@ -8428,6 +8472,61 @@ server <- function(input, output, session) {
     print_cov_plot(rv_cov_3_model_1$df) # %>% convert_to_plotly_watermark(plotly_watermark = FALSE)
   })
   
+  ## Logic for dataset covariate distributions
+  observe({
+    
+    shiny::req(nmdataset_for_plot())
+    shiny::req(input$dataset_cov_dist_model_1)
+    shiny::req(n_subj_model_1_clean())
+    
+    if (show_debugging_msg) {
+      message(paste0('Pulling in covariate distributions from the dataset: ', paste(input$dataset_cov_dist_model_1, collapse = ", ")))
+    }
+    
+    if(input$use_dataset_cov_dist_model_1 && input$dataset_cov_dist_model_1[1] != "") {
+      
+      n_target <- n_subj_model_1_clean()
+      
+      # Retain unique subjects and columns of interest
+      subj_level <- nmdataset_for_plot() %>%
+        dplyr::distinct(ID, .keep_all = TRUE) %>%
+        dplyr::select(dplyr::all_of(input$dataset_cov_dist_model_1))
+      
+      subj_level <- subj_level %>%
+        dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(as.character(.)))))
+      
+      n_unique_subj <- nrow(subj_level)
+      
+      set.seed(input$seed_number_model_1 + 40000) # Seed is perturbed for each covariate(s)
+      if (n_unique_subj == n_target) {
+        # Exact match -> use each subject's covariate row once, no replacement
+        shiny::showNotification(paste0("Number of unique subjects in dataset matches the number of subjects to be simulated (", n_target,
+                                      "), sampling without replacement will be used."), type = "message", duration = 10)
+        sample_idx <- sample(seq_len(n_unique_subj), size = n_target, replace = FALSE)
+      } else {
+        # Mismatch -> sample covariate rows with replacement to hit n_target
+        shiny::showNotification(paste0("Number of unique subjects in dataset (", n_unique_subj,
+        ") does not match the number of subjects to be simulated (", n_target,
+        "), sampling with replacement will be used."), type = "warning", duration = 10)
+        sample_idx <- sample(seq_len(n_unique_subj), size = n_target, replace = TRUE)
+      }
+      
+      sampled_df <- subj_level[sample_idx, , drop = FALSE]
+      rownames(sampled_df) <- NULL
+      
+      # Update existing reactive dataframe
+      data_cov_model_1$df <- dplyr::bind_cols(sampled_df, dplyr::tibble(ID = seq_len(n_subj_model_1_clean())))
+    } else {
+      data_cov_model_1$df <- dplyr::tibble(ID = seq_len(n_subj_model_1_clean()))
+    }
+  }) %>%
+    bindEvent(
+      input$use_dataset_cov_dist_model_1,
+      input$dataset_cov_dist_model_1,
+      nmdataset_for_plot(),
+      n_subj_model_1_clean()
+    )
+  
   database_model_1 <- reactive({
     dbm1 <- sample_age_wt(df_name     = input$db_model_1,
                           nsubj       = n_subj_model_1_clean(),
@@ -8441,17 +8540,35 @@ server <- function(input, output, session) {
                           seed.number = d_seed_number_model_1()
     )
     
-    # Get the column names of all dataframes, excluding the common column ("ID")
-    column_names_model_1 <- c(setdiff(names(rv_cov_1_model_1$df), "ID"),
-                              setdiff(names(rv_cov_2_model_1$df), "ID"),
-                              setdiff(names(rv_cov_3_model_1$df), "ID"))
+    if(input$use_dataset_cov_dist_model_1) {
+      # Get the column names of all dataframes, excluding the common column ("ID")
+      column_names_model_1 <- c(setdiff(names(data_cov_model_1$df), "ID"),
+                                setdiff(names(rv_cov_1_model_1$df), "ID"),
+                                setdiff(names(rv_cov_2_model_1$df), "ID"),
+                                setdiff(names(rv_cov_3_model_1$df), "ID")
+      )      
+      
+    } else {
+      column_names_model_1 <- c(setdiff(names(rv_cov_1_model_1$df), "ID"),
+                                setdiff(names(rv_cov_2_model_1$df), "ID"),
+                                setdiff(names(rv_cov_3_model_1$df), "ID")
+      )         
+    }
     
     # Check if all column names are unique
     if (length(unique(column_names_model_1)) == length(column_names_model_1)) {
-      dbm1_cov <- dbm1 %>%
-        dplyr::left_join(rv_cov_1_model_1$df, by = "ID") %>%
-        dplyr::left_join(rv_cov_2_model_1$df, by = "ID") %>%
-        dplyr::left_join(rv_cov_3_model_1$df, by = "ID")
+      if(input$use_dataset_cov_dist_model_1) {
+        dbm1_cov <- dbm1 %>%
+          dplyr::left_join(data_cov_model_1$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_1_model_1$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_2_model_1$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_3_model_1$df, by = "ID")        
+      } else {
+        dbm1_cov <- dbm1 %>%
+          dplyr::left_join(rv_cov_1_model_1$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_2_model_1$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_3_model_1$df, by = "ID")        
+      }
     } else {
       shiny::showNotification("ERROR: All custom covariate names must be different from each other. Please rename them first.", type = "error", duration = 10)
       dbm1_cov <- dbm1
@@ -8468,7 +8585,7 @@ server <- function(input, output, session) {
                                input$custom_cov_2_model_1,
                                input$custom_cov_3_model_1) == "")
     
-    if (no_db_selected && no_custom_covs) {
+    if (no_db_selected && no_custom_covs && !input$use_dataset_cov_dist_model_1) {
       return(htmltools::HTML(paste(
         "<br><strong style='color: red;'><p>",
         "Summary statistics is not available when no database or custom covariates are selected.",
@@ -8713,6 +8830,7 @@ server <- function(input, output, session) {
           divide_by          = time_value(),
           nsubj              = n_subj_model_1_clean(),
           ext_db             = database_model_1(),
+          show_matches       = TRUE,
           parallel_sim       = FALSE, #input$para_checkbox,
           parallel_n         = 100 # input$para_n,
         )
@@ -8787,12 +8905,14 @@ server <- function(input, output, session) {
   rv_cov_1_model_2 <- reactiveValues(df = NULL)
   rv_cov_2_model_2 <- reactiveValues(df = NULL)
   rv_cov_3_model_2 <- reactiveValues(df = NULL)
+  data_cov_model_2 <- reactiveValues(df = NULL)
   
   # Initialize the dataframe
   observe({
     rv_cov_1_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
     rv_cov_2_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
     rv_cov_3_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
+    data_cov_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
   })
   
   observeEvent(input$db_model_2, {
@@ -9163,6 +9283,61 @@ server <- function(input, output, session) {
     print_cov_plot(rv_cov_3_model_2$df) # %>% convert_to_plotly_watermark(plotly_watermark = FALSE)
   })
   
+  ## Logic for dataset covariate distributions
+  observe({
+    
+    shiny::req(nmdataset_for_plot())
+    shiny::req(input$dataset_cov_dist_model_2)
+    shiny::req(n_subj_model_2_clean())
+    
+    if (show_debugging_msg) {
+      message(paste0('Pulling in covariate distributions from the dataset: ', paste(input$dataset_cov_dist_model_2, collapse = ", ")))
+    }
+    
+    if(input$use_dataset_cov_dist_model_2 && input$dataset_cov_dist_model_2[1] != "") {
+      
+      n_target <- n_subj_model_2_clean()
+      
+      # Retain unique subjects and columns of interest
+      subj_level <- nmdataset_for_plot() %>%
+        dplyr::distinct(ID, .keep_all = TRUE) %>%
+        dplyr::select(dplyr::all_of(input$dataset_cov_dist_model_2))
+      
+      subj_level <- subj_level %>%
+        dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(as.character(.)))))
+      
+      n_unique_subj <- nrow(subj_level)
+      
+      set.seed(input$seed_number_model_2 + 40000) # Seed is perturbed for each covariate(s)
+      if (n_unique_subj == n_target) {
+        # Exact match -> use each subject's covariate row once, no replacement
+        shiny::showNotification(paste0("Number of unique subjects in dataset matches the number of subjects to be simulated (", n_target,
+                                       "), sampling without replacement will be used."), type = "message", duration = 10)
+        sample_idx <- sample(seq_len(n_unique_subj), size = n_target, replace = FALSE)
+      } else {
+        # Mismatch -> sample covariate rows with replacement to hit n_target
+        shiny::showNotification(paste0("Number of unique subjects in dataset (", n_unique_subj,
+                                       ") does not match the number of subjects to be simulated (", n_target,
+                                       "), sampling with replacement will be used."), type = "warning", duration = 10)
+        sample_idx <- sample(seq_len(n_unique_subj), size = n_target, replace = TRUE)
+      }
+      
+      sampled_df <- subj_level[sample_idx, , drop = FALSE]
+      rownames(sampled_df) <- NULL
+      
+      # Update existing reactive dataframe
+      data_cov_model_2$df <- dplyr::bind_cols(sampled_df, dplyr::tibble(ID = seq_len(n_subj_model_2_clean())))
+    } else {
+      data_cov_model_2$df <- dplyr::tibble(ID = seq_len(n_subj_model_2_clean()))
+    }
+  }) %>%
+    bindEvent(
+      input$use_dataset_cov_dist_model_2,
+      input$dataset_cov_dist_model_2,
+      nmdataset_for_plot(),
+      n_subj_model_2_clean()
+    )
+  
   database_model_2 <- reactive({
     dbm2 <- sample_age_wt(df_name     = input$db_model_2,
                           nsubj       = n_subj_model_2_clean(),
@@ -9176,17 +9351,35 @@ server <- function(input, output, session) {
                           seed.number = d_seed_number_model_2()
     )
     
-    # Get the column names of all dataframes, excluding the common column ("ID")
-    column_names_model_2 <- c(setdiff(names(rv_cov_1_model_2$df), "ID"),
-                              setdiff(names(rv_cov_2_model_2$df), "ID"),
-                              setdiff(names(rv_cov_3_model_2$df), "ID"))
+    if(input$use_dataset_cov_dist_model_2) {
+      # Get the column names of all dataframes, excluding the common column ("ID")
+      column_names_model_2 <- c(setdiff(names(data_cov_model_2$df), "ID"),
+                                setdiff(names(rv_cov_1_model_2$df), "ID"),
+                                setdiff(names(rv_cov_2_model_2$df), "ID"),
+                                setdiff(names(rv_cov_3_model_2$df), "ID")
+      )      
+      
+    } else {
+      column_names_model_2 <- c(setdiff(names(rv_cov_1_model_2$df), "ID"),
+                                setdiff(names(rv_cov_2_model_2$df), "ID"),
+                                setdiff(names(rv_cov_3_model_2$df), "ID")
+      )         
+    }
     
     # Check if all column names are unique
     if (length(unique(column_names_model_2)) == length(column_names_model_2)) {
-      dbm2_cov <- dbm2 %>%
-        dplyr::left_join(rv_cov_1_model_2$df, by = "ID") %>%
-        dplyr::left_join(rv_cov_2_model_2$df, by = "ID") %>%
-        dplyr::left_join(rv_cov_3_model_2$df, by = "ID")
+      if(input$use_dataset_cov_dist_model_2) {
+        dbm2_cov <- dbm2 %>%
+          dplyr::left_join(data_cov_model_2$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_1_model_2$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_2_model_2$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_3_model_2$df, by = "ID")        
+      } else {
+        dbm2_cov <- dbm2 %>%
+          dplyr::left_join(rv_cov_1_model_2$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_2_model_2$df, by = "ID") %>%
+          dplyr::left_join(rv_cov_3_model_2$df, by = "ID")        
+      }
     } else {
       shiny::showNotification("ERROR: All custom covariate names must be different from each other. Please rename them first.", type = "error", duration = 10)
       dbm2_cov <- dbm2
@@ -9202,7 +9395,7 @@ server <- function(input, output, session) {
                                input$custom_cov_2_model_2,
                                input$custom_cov_3_model_2) == "")
     
-    if (no_db_selected && no_custom_covs) {
+    if (no_db_selected && no_custom_covs && !input$use_dataset_cov_dist_model_2) {
       return(htmltools::HTML(paste(
         "<br><strong style='color: red;'><p>",
         "Summary statistics is not available when no database or custom covariates are selected.",
@@ -9451,6 +9644,7 @@ server <- function(input, output, session) {
           nsubj              = n_subj_model_2_clean(),
           append_id_text     = "m2-",
           ext_db             = database_model_2(),
+          show_matches       = TRUE,
           parallel_sim       = FALSE, #input$para_checkbox,
           parallel_n         = 100 # input$para_n
         )

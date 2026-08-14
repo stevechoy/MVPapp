@@ -1,5 +1,19 @@
 # Changelog
 
+## MVPapp 0.4.3 (2026-08-13)
+
+### Features
+
+- Supporting the use of covariate distributions (or EBEs) from uploaded
+  datasets in variability simulations
+  ([\#13](https://github.com/stevechoy/MVPapp/issues/13))
+
+### Bugfixes
+
+- Fixing an issue where summary statistics with a non-numeric ID column
+  are collapsed into the same subject
+  ([\#12](https://github.com/stevechoy/MVPapp/issues/12))
+
 ## MVPapp 0.4.2 (2026-08-03)
 
 ### Bugfixes

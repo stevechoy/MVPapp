@@ -531,6 +531,8 @@ bspop_do_iiv_plotly   <- 'Interactive plots using the "plotly" package could tak
 show_mean_iiv_label   <- 'Show Mean Trend'
 #' @export
 bspop_select_time_interval_exp <- "(Optional) Select the desired time intervals to derive metrics to be plotted above. The original time scale is provided for selection, independent of whether any scaling of the x-axis from the Simulation page was performed.<br><br>Note: The time interval is inclusive on both ends (i.e. start time <= time interval <= end time)."
+#' @export
+use_dataset_cov_dist_label <- shiny::HTML(paste0("Use Distributions from Dataset: <i class='fa fa-question-circle' title='(Optional) If a dataset has been uploaded, you may pull in covariate distribution(s) / EBEs (baseline, i.e. subject-level) to replace parameters with the same name in the model. Note: If the number of unique IDs equals the number of subjects to be simulated, it will be sampled without replacement (i.e. 1:1). Otherwise, it will be sampled with replacement.' style='margin-left: 3px;'></i>"))
 
 #infoBox
 #' @export

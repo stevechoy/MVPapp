@@ -1155,6 +1155,7 @@ safely_mcode <- purrr::safely(mrgsolve::mcode)
 #' @param nsubj                 Default 1, in which case mrgsolve::zero_re() will be applied
 #' @param append_id_text        A string prefix to be inserted for each ID
 #' @param ext_db                Default NULL, supply R object of external database
+#' @param show_matches          Default FALSE, shows a notification when external databases found a matching name with model parameters
 #' @param parallel_sim          Default TRUE, uses the future and mrgsim.parallel packages !Not implemented live!
 #' @param parallel_n            The number of subjects required before parallelization is used !Not implemented live!
 #'
@@ -1162,6 +1163,7 @@ safely_mcode <- purrr::safely(mrgsolve::mcode)
 #'
 #' @importFrom dplyr mutate select rename
 #' @importFrom data.table merge.data.table fwrite fread
+#' @importFrom shiny showNotification
 #' @export
 #-------------------------------------------------------------------------------
 
@@ -1179,6 +1181,7 @@ run_single_sim <- function(input_model_object,
                            nsubj           = 1,
                            append_id_text  = "m1-",
                            ext_db          = NULL,
+                           show_matches    = FALSE,
                            parallel_sim    = FALSE,
                            parallel_n      = 200) {
   
@@ -1202,6 +1205,25 @@ run_single_sim <- function(input_model_object,
     )
     
     input_model_object <- mrgsolve::update(input_model_object, digits = 5)
+    
+    if(show_matches) {
+      
+      mod_param_names <- names(mrgsolve::param(input_model_object))
+      ext_db_names    <- names(ext_db)
+      matching_names  <- intersect(mod_param_names, ext_db_names)
+      
+      if (length(matching_names) > 0) {
+        
+        shiny::showNotification(
+          paste0(
+            paste(matching_names, collapse = ", "),
+            " from the model are replaced by the custom distributions."
+          ),
+          type = "message",
+          duration = 10
+        )
+      }
+    }
     
     set.seed(seed)
     
@@ -1400,9 +1422,10 @@ calc_summary_stats <- function(orig_data,
   data <- orig_data
   
   if (convert_to_numeric) {
-    data <- data.table::as.data.table(
-      lapply(orig_data, function(x) suppressWarnings(as.numeric(as.character(x))))
-    )
+    cols_to_convert <- setdiff(names(orig_data), id_colname)
+    data <- data.table::as.data.table(data)
+    data[, (cols_to_convert) := lapply(.SD, function(x) suppressWarnings(as.numeric(as.character(x)))),
+         .SDcols = cols_to_convert]
   } else {
     data <- data.table::as.data.table(data)  # ensure data.table before any := usage
   }

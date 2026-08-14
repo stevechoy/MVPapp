@@ -19,6 +19,7 @@ run_single_sim(
   nsubj = 1,
   append_id_text = "m1-",
   ext_db = NULL,
+  show_matches = FALSE,
   parallel_sim = FALSE,
   parallel_n = 200
 )
@@ -51,6 +52,8 @@ run_single_sim(
 \item{append_id_text}{A string prefix to be inserted for each ID}
 
 \item{ext_db}{Default NULL, supply R object of external database}
+
+\item{show_matches}{Default FALSE, shows a notification when external databases found a matching name with model parameters}
 
 \item{parallel_sim}{Default TRUE, uses the future and mrgsim.parallel packages !Not implemented live!}
 

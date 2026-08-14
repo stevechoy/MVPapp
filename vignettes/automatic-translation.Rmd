@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-_Last update: 2026-08-03_
+_Last updated: 2026-08-03_
 
 ## Motivation  
 

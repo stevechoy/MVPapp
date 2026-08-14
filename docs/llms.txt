@@ -332,9 +332,26 @@ live)!
     - Normal, Log-normal, uniform, binary categorical distributions are
       supported.  
     - Once defined, they will be made available in the “Summary
-      Statistics” sub tab and able to be downloaded.
+      Statistics” sub tab and able to be downloaded.  
+    - (Optional) If a dataset is uploaded, subject-level (i.e. baseline)
+      covariate distribution(s) or EBEs, e.g. individual `CL` and/or
+      `VC` can be drawn from the dataset to **replace** the
+      corresponding parameter name from the model code.
+      - If the number of unique subjects from the dataset matches the
+        number of subjects to be simulated, sampling without replacement
+        will be used (i.e. a 1:1 substitution). Otherwise, sampling
+        *with* replacement will be used.  
+      - Don’t forget to set the corresponding OMEGAs to 0 if you are
+        sampling EBEs from the dataset (see ‘Assessing Variability’
+        section below).  
+      - Tip: you may use the “Data Input” page’s code editor to rename
+        columns if required.  
+    - When the simulations are generated, a popup dialog box will appear
+      on the lower right hand corner to notify the user the list of
+      covariates which found a match in the model code (thus are
+      replaced accordingly).
 
-![](www/egfrexample.png)
+![](www/egfrexample2.png)
 
 #### Assessing Variability
 
