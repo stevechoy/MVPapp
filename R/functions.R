@@ -5874,6 +5874,7 @@ translate_model_code <- function(ready_path,
   
   ## Allow list to explicitly list some popular legacy models that supports temperature settings
   models_yes_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
+                              "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
                               "gpt-5.2")
   
   if(model_name %in% models_yes_temperature) {
@@ -6174,6 +6175,7 @@ refine_model_code <- function(model_code,
   
   ## Allow list to explicitly list some popular legacy models that supports temperature settings
   models_yes_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
+                              "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
                               "gpt-5.2")
   
   if(model_name %in% models_yes_temperature) {
