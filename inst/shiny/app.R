@@ -41,6 +41,7 @@ if(standalone_mode) {
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
+  #source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R") # Prompts file for automatic model translation
 
   ## Start-up options for the App when not running through run_mvp()

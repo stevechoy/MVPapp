@@ -1255,9 +1255,11 @@ run_single_sim <- function(input_model_object,
     )
     
     solved_output <- input_model_object %>%
-      mrgsolve::obsonly() %>%
+      mrgsolve::data_set(as.data.frame(ev_df) %>% dplyr::mutate(ID = 1)) %>%
+      mrgsolve::carry_out(amt, rate, ii, cmt, evid, tinf) %>%
+      #mrgsolve::obsonly() %>%
       mrgsolve::zero_re() %>%
-      safely_mrgsim_df(events = ev_df,
+      safely_mrgsim_df(#events = ev_df,
                        tgrid  = sampling_times,
                        tad    = TRUE)
   }
@@ -1275,7 +1277,10 @@ run_single_sim <- function(input_model_object,
     solved_output <- NULL
   }
   
+  tmp_ev_df <<- ev_df
+  tmp_data <<- solved_output
   return(solved_output)
+
 }
 
 
@@ -5786,6 +5791,7 @@ safely_incProgress <- function(amount, detail = NULL) {
 #' @param rxode2_long_user_prompt String for rxode2 long user prompt
 #' @param rxode2_short_user_prompt String for rxode2 short user prompt
 #' @param internal_version Logical. Only relevant for BI
+#' @param max_tokens Numeric. Maximum output tokens.
 #' @param debug Displays debug messages
 #'
 #' @returns a named list with \code{answer}, \code{conversation_id}, and
@@ -5835,6 +5841,7 @@ translate_model_code <- function(ready_path,
                                  rxode2_long_user_prompt,
                                  rxode2_short_user_prompt,                                 
                                  internal_version = TRUE,
+                                 max_tokens = 128000,
                                  debug = TRUE
 ) {
 
@@ -5880,10 +5887,10 @@ translate_model_code <- function(ready_path,
                               "gpt-5.2")
   
   if(model_name %in% models_yes_temperature) {
-    optimal_params <- ellmer::params(temperature = temperature, seed = seed)
+    optimal_params <- ellmer::params(temperature = temperature, seed = seed, max_tokens = max_tokens)
   } else {
     safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
-    optimal_params <- ellmer::params(seed = seed)
+    optimal_params <- ellmer::params(seed = seed, max_tokens = max_tokens)
   }
   
   if(debug) {
@@ -6118,6 +6125,7 @@ translate_model_code <- function(ready_path,
 #' @param short_user_prompt Character. Short user prompt
 #' @param internal_version Logical. Only relevant for BI
 #' @param feedback_success Logical. Only relevant for BI, and if reuse_context = TRUE
+#' @param max_tokens Numeric. Maximum output tokens.
 #' @param debug Displays debug messages
 #'
 #' @returns a named list of "answer", "conversation_id", "chat_obj"
@@ -6157,6 +6165,7 @@ refine_model_code <- function(model_code,
                               short_user_prompt,
                               internal_version,
                               feedback_success = FALSE,
+                              max_tokens = 128000,
                               debug = TRUE
 ) {
   
@@ -6182,10 +6191,10 @@ refine_model_code <- function(model_code,
                               "gpt-5.2")
   
   if(model_name %in% models_yes_temperature) {
-    optimal_params <- ellmer::params(temperature = temperature, seed = seed)
+    optimal_params <- ellmer::params(temperature = temperature, seed = seed, max_tokens = max_tokens)
   } else {
-    safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
-    optimal_params <- ellmer::params(seed = seed)
+    #safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
+    optimal_params <- ellmer::params(seed = seed, max_tokens = max_tokens)
   }
   
   # Calculate the width of one retry segment (e.g., 0.2 if max_retries is 3)
