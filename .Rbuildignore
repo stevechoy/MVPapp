@@ -9,4 +9,5 @@
 ^www$
 ^\.github$
 ^\.Rprofile$
+^llm-eval$
 
