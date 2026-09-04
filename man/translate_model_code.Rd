@@ -38,6 +38,7 @@ translate_model_code(
   rxode2_long_user_prompt,
   rxode2_short_user_prompt,
   internal_version = TRUE,
+  max_tokens = 128000,
   debug = TRUE
 )
 }
@@ -110,6 +111,8 @@ for MIME type detection). If \code{NULL}, derived from \code{ready_path}.}
 \item{rxode2_short_user_prompt}{String for rxode2 short user prompt}
 
 \item{internal_version}{Logical. Only relevant for BI}
+
+\item{max_tokens}{Numeric. Maximum output tokens.}
 
 \item{debug}{Displays debug messages}
 }

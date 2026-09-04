@@ -36,6 +36,7 @@ refine_model_code(
   short_user_prompt,
   internal_version,
   feedback_success = FALSE,
+  max_tokens = 128000,
   debug = TRUE
 )
 }
@@ -102,6 +103,8 @@ refine_model_code(
 \item{internal_version}{Logical. Only relevant for BI}
 
 \item{feedback_success}{Logical. Only relevant for BI, and if reuse_context = TRUE}
+
+\item{max_tokens}{Numeric. Maximum output tokens.}
 
 \item{debug}{Displays debug messages}
 }

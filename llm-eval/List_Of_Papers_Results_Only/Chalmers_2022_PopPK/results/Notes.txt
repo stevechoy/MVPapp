@@ -1,0 +1,12 @@
+Original translation had a syntax error for $SIGMA (missing last :), and had no $TABLE or $CAPTURE output.
+
+I've added this section:
+
+$SIGMA @annotated
+PROP : 0 : prop error
+
+$TABLE
+double CP = CENT/VCI;
+
+$CAPTURE
+CP

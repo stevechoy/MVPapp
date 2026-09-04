@@ -23,7 +23,7 @@ run_mvp(
   api_chat = NA_character_,
   user_id = "MVP_user",
   reuse_context = FALSE,
-  model_gemini = "gemini-3.6-flash",
+  model_gemini = "gemini-3.8-flash",
   model_openai = "gpt-5.6-terra",
   model_anthropic = "claude-sonnet-5",
   model_openrouter = "arcee-ai/trinity-large-preview:free",
@@ -99,7 +99,7 @@ run_mvp(
 
 - model_gemini:
 
-  Character. Default gemini-3.6-flash. Model for Gemini.
+  Character. Default gemini-3.8-flash. Model for Gemini.
 
 - model_openai:
 

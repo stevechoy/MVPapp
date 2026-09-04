@@ -38,6 +38,7 @@ refine_model_code(
   short_user_prompt,
   internal_version,
   feedback_success = FALSE,
+  max_tokens = 128000,
   debug = TRUE
 )
 ```
@@ -172,6 +173,10 @@ refine_model_code(
 - feedback_success:
 
   Logical. Only relevant for BI, and if reuse_context = TRUE
+
+- max_tokens:
+
+  Numeric. Maximum output tokens.
 
 - debug:
 

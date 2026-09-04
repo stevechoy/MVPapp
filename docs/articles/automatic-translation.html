@@ -67,7 +67,7 @@
 
     
     
-<p><em>Last updated: 2026-08-03</em></p>
+<p><em>Last updated: 2026-09-04</em></p>
 <div class="section level2">
 <h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
 </h2>
@@ -371,7 +371,54 @@ global environment for review.</li>
 <div class="section level2">
 <h2 id="performance-evaluation">Performance Evaluation<a class="anchor" aria-label="anchor" href="#performance-evaluation"></a>
 </h2>
-<p>This section will be populated in the near future.</p>
+<p>To assess the translation accuracy of AI using MVP, a curated list of
+20 published models from the literature with a range of model complexity
+was used as the reference. Translation performance was evaluated
+according to the following hierarchical criterion of (generally)
+increasing difficulty:</p>
+<ul>
+<li>
+<strong>Level 1: </strong> Successful compilation<br>
+</li>
+<li>
+<strong>Level 2: </strong> Successful translation of fixed
+effects</li>
+<li>
+<strong>Level 3: </strong> Successful translation of random effects
+(including residuals)</li>
+<li>
+<strong>Level 4: </strong> Successful translation of model
+relationships (i.e. ODEs, covariate relationships)</li>
+</ul>
+<p>The test was conducted using <code>claude-sonnet-5</code>, with a
+temperature of <code>1</code> (i.e. adaptive thinking), with up to 2
+retries per journal article. If supplementary materials contains
+relevant information such as parameter tables or model code, those would
+also be included as part of the input files. Standardized prompts as
+provided in the <a href="https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R" target="_blank" class="external-link">prompts.R</a> file is used.</p>
+<p>The spreadsheet containing results per journal article, and
+miscellaneous notes is available <a href="https://github.com/stevechoy/MVPapp/blob/master/llm-eval/LLM_Results.xlsx" target="_blank" class="external-link">here</a>, and the actual translated code are available
+<a href="https://github.com/stevechoy/MVPapp/blob/master/llm-eval/List_Of_Papers_Results_Only" target="_blank" class="external-link">here</a>.</p>
+<p>In summary, successful compilation and correct translation of fixed
+effects occurred 85-90% of the time, while random effects were
+successful around half the time. Most failures on translating random
+effects were related to the LLMs failing to distinguish between
+variance, standard deviations, or %CV to be used as the correct value.
+Model relationships generally can be accurately translated (~80%),
+provided that the original text contains key information such as
+equations and ODEs. Overall, success rates tend to be inversely
+proportional to how complex the model structure is (e.g. QSP models
+tended to struggle more).</p>
+<p>Based on this assessment, <strong>translating from the literature is
+generally reliable</strong> (at least for the structural model),
+assuming a parameter table is present and model relationships are well
+explained in the text. When there happen to be errors, they are usually
+obvious and easy to spot and correct from the user’s perspective. Given
+that this is as worst as it’s going to get (as of Sept 2026), future
+LLMs are expected to score even better than the current state-of-the-art
+models, which becomes quickly outdated every few months.</p>
+<p>This work is presented in ACoP 2026, with the poster available here
+(link TBD).</p>
 </div>
 <div class="section level2">
 <h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>

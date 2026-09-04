@@ -55,7 +55,7 @@ if(standalone_mode) {
   api_chat                = NA_character_ 
   user_id                 = "MVP_user" # 
   reuse_context           = FALSE # Re-use same conversation to keep original context for better re-iteration answers
-  model_gemini            = "gemini-3.7-flash"
+  model_gemini            = "gemini-3.8-flash"
   model_openai            = "gpt-5.6-terra" # "gpt-5-mini"
   model_anthropic         = "claude-sonnet-5" # "claude-haiku-4-5-20251001" 
   model_openrouter        = "openrouter/free"  # "openrouter/free"
@@ -86,7 +86,7 @@ if(!exists("api_chat"))                {api_chat                 <- NA_character
 if(!exists("user_id"))                 {user_id                  <- "MVP_user"}
 if(!exists("user_id_retry"))           {user_id_retry            <- "MVP_user"}
 if(!exists("reuse_context"))           {reuse_context            <- FALSE}
-if(!exists("model_gemini"))            {model_gemini             <- "gemini-3.7-flash"}
+if(!exists("model_gemini"))            {model_gemini             <- "gemini-3.8-flash"}
 if(!exists("model_openai"))            {model_openai             <- "gpt-5.6-terra"}
 if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-5"}
 if(!exists("model_openrouter"))        {model_openrouter         <- "arcee-ai/trinity-large-preview:free"}

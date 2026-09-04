@@ -1,6 +1,6 @@
 # Automatic Model Translation
 
-*Last updated: 2026-08-03*
+*Last updated: 2026-09-04*
 
 ## Motivation
 
@@ -268,7 +268,55 @@ for the user’s information.
 
 ## Performance Evaluation
 
-This section will be populated in the near future.
+To assess the translation accuracy of AI using MVP, a curated list of 20
+published models from the literature with a range of model complexity
+was used as the reference. Translation performance was evaluated
+according to the following hierarchical criterion of (generally)
+increasing difficulty:
+
+- **Level 1:** Successful compilation  
+- **Level 2:** Successful translation of fixed effects
+- **Level 3:** Successful translation of random effects (including
+  residuals)
+- **Level 4:** Successful translation of model relationships (i.e. ODEs,
+  covariate relationships)
+
+The test was conducted using `claude-sonnet-5`, with a temperature of
+`1` (i.e. adaptive thinking), with up to 2 retries per journal article.
+If supplementary materials contains relevant information such as
+parameter tables or model code, those would also be included as part of
+the input files. Standardized prompts as provided in the
+[prompts.R](https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R)
+file is used.
+
+The spreadsheet containing results per journal article, and
+miscellaneous notes is available
+[here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/LLM_Results.xlsx),
+and the actual translated code are available
+[here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/List_Of_Papers_Results_Only).
+
+In summary, successful compilation and correct translation of fixed
+effects occurred 85-90% of the time, while random effects were
+successful around half the time. Most failures on translating random
+effects were related to the LLMs failing to distinguish between
+variance, standard deviations, or %CV to be used as the correct value.
+Model relationships generally can be accurately translated (~80%),
+provided that the original text contains key information such as
+equations and ODEs. Overall, success rates tend to be inversely
+proportional to how complex the model structure is (e.g. QSP models
+tended to struggle more).
+
+Based on this assessment, **translating from the literature is generally
+reliable** (at least for the structural model), assuming a parameter
+table is present and model relationships are well explained in the text.
+When there happen to be errors, they are usually obvious and easy to
+spot and correct from the user’s perspective. Given that this is as
+worst as it’s going to get (as of Sept 2026), future LLMs are expected
+to score even better than the current state-of-the-art models, which
+becomes quickly outdated every few months.
+
+This work is presented in ACoP 2026, with the poster available here
+(link TBD).
 
 ## Summary
 
