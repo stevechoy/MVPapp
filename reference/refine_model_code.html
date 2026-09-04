@@ -80,6 +80,7 @@ LLM API for correction.</p>
 <span>  <span class="va">short_user_prompt</span>,</span>
 <span>  <span class="va">internal_version</span>,</span>
 <span>  feedback_success <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  max_tokens <span class="op">=</span> <span class="fl">128000</span>,</span>
 <span>  debug <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -211,6 +212,10 @@ LLM API for correction.</p>
 
 <dt id="arg-feedback-success">feedback_success<a class="anchor" aria-label="anchor" href="#arg-feedback-success"></a></dt>
 <dd><p>Logical. Only relevant for BI, and if reuse_context = TRUE</p></dd>
+
+
+<dt id="arg-max-tokens">max_tokens<a class="anchor" aria-label="anchor" href="#arg-max-tokens"></a></dt>
+<dd><p>Numeric. Maximum output tokens.</p></dd>
 
 
 <dt id="arg-debug">debug<a class="anchor" aria-label="anchor" href="#arg-debug"></a></dt>

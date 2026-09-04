@@ -41,6 +41,7 @@ translate_model_code(
   rxode2_long_user_prompt,
   rxode2_short_user_prompt,
   internal_version = TRUE,
+  max_tokens = 128000,
   debug = TRUE
 )
 ```
@@ -185,6 +186,10 @@ translate_model_code(
 - internal_version:
 
   Logical. Only relevant for BI
+
+- max_tokens:
+
+  Numeric. Maximum output tokens.
 
 - debug:
 
