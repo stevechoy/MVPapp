@@ -268,10 +268,10 @@ for the user’s information.
 ## Performance Evaluation
 
 To assess the translation accuracy of AI using MVP, a curated list of 20
-published models from the literature with a range of model complexity
-was used as the reference. Translation performance was evaluated
-according to the following hierarchical criterion of (generally)
-increasing difficulty:
+published models from the literature representing a range of model
+complexity was used as the reference. Translation performance was
+evaluated according to the following hierarchical criterion of
+(generally) increasing difficulty:
 
 - **Level 1:** Successful compilation  
 - **Level 2:** Successful translation of fixed effects
@@ -291,7 +291,7 @@ file is used.
 The spreadsheet containing results per journal article, and
 miscellaneous notes is available
 [here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/LLM_Results.xlsx),
-and the actual translated code are available
+and the translated code are available
 [here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/List_Of_Papers_Results_Only)
 (after being re-formatted with mrgsolve’s `mwrite_cpp` function).
 
@@ -309,11 +309,11 @@ tended to struggle more).
 Based on this assessment, **translating from the literature is generally
 reliable** (at least for the structural model), assuming a parameter
 table is present and model relationships are well explained in the text.
-When there happen to be errors, they are usually obvious and easy to
-spot and correct from the user’s perspective. Given that this is as
-worst as it’s going to get (as of Sept 2026), future LLMs are expected
-to score even better than the current state-of-the-art models, which
-becomes quickly outdated every few months.
+When there happen to be errors, they are usually quite obvious and easy
+to correct from the user’s perspective. Given that this is as worst as
+it’s going to get (as of Sept 2026), future LLMs are expected to score
+even better than the current state-of-the-art models, which becomes
+quickly outdated every few months.
 
 This work is presented in ACoP 2026, with the poster available here
 (link TBD).
