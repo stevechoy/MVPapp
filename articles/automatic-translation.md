@@ -292,7 +292,8 @@ The spreadsheet containing results per journal article, and
 miscellaneous notes is available
 [here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/LLM_Results.xlsx),
 and the actual translated code are available
-[here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/List_Of_Papers_Results_Only).
+[here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/List_Of_Papers_Results_Only)
+(after being re-formatted with mrgsolve’s `mwrite_cpp` function).
 
 In summary, successful compilation and correct translation of fixed
 effects occurred 85-90% of the time, while random effects were
