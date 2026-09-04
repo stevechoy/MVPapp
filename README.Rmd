@@ -38,7 +38,7 @@ knitr::opts_chunk$set(
 
 ## Installation
 
-`MVPapp` is not currently on CRAN. Install it via `devtools`:
+`MVPapp` is not currently on CRAN. Install it via the `pak` R package:
 
 ``` r
 ## Install pak first if required
@@ -58,7 +58,7 @@ run_mvp()
 # run_mvp(insert_watermarks = FALSE)
 ```
 
-Alternatively, you may run `MVPapp` directly *without* installation (requires additional packages):
+Alternatively, you may run `MVPapp` directly *without* installation (this may require additional packages):
 
 ``` r
 shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)

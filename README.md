@@ -49,7 +49,7 @@ internal discussions more efficiently.**
 
 ## Installation
 
-`MVPapp` is not currently on CRAN. Install it via `devtools`:
+`MVPapp` is not currently on CRAN. Install it via the `pak` R package:
 
 ``` r
 ## Install pak first if required
@@ -70,7 +70,7 @@ run_mvp()
 ```
 
 Alternatively, you may run `MVPapp` directly *without* installation
-(requires additional packages):
+(this may require additional packages):
 
 ``` r
 shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
