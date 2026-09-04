@@ -42,10 +42,10 @@ internal discussions more efficiently.**
 
 ``` r
 
-## Install devtools first if required
-# install.packages("devtools")
+## Install pak first if required
+# install.packages("pak")
 
-devtools::install_github("stevechoy/MVPapp", build_vignettes = TRUE)
+pak::pak("stevechoy/MVPapp")
 ```
 
 Once installed, launch MVP using the following commands:
