@@ -901,7 +901,7 @@ do_data_page_ind_plot <- function(nmd,
         ggplot2::geom_text(data    = id_dose_unique,
                            mapping = ggplot2::aes(x = .data[[x_axis]], y = SAMT,
                                                   label = dosename, group = NULL, color = NULL),
-                           hjust = 1, vjust = 1, show.legend = FALSE,
+                           hjust = 0, vjust = 0, show.legend = FALSE, # hjust 0 and vjust 0 ensures text stays within plot margin
                            size = label_size, alpha = 0.8)
     }
     
