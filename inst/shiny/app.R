@@ -2488,6 +2488,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.4 (2026-09-19) - Change from baseline automatic derivation support. All simulation outputs are NONMEM-ready with dosing info included. Minor bug fixes and QoL changes.'),
                                p('v0.4.3 (2026-08-13) - Support for using uploaded datasets to provide covariate distributions when simulating with variability. Minor bug fixes.'),
                                p('v0.4.2 (2026-08-03) - Fixing support for frontier thinking models and updating LLM default models.'),
                                p('v0.4.1 (2026-03-15) - Supporting nonmem2mrgsolve and nonmem2rx for deterministic translation from NONMEM.'),
