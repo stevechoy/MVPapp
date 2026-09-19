@@ -490,7 +490,7 @@ bspop_nsubj_warning   <- paste0("Caution is advised when simulating a large numb
 #' @export
 max_sim_n_error       <- paste0("Maximum number of subjects cannot exceed ", max_sim_n, ". Reverting to using 20.")
 #' @export
-label_db              <- "Select Population (Covariate) Database:"
+label_db              <- "Select Virtual Patients Database:"
 #' @export
 bspop_db              <- 'The choice of database is specific to project needs, where:<br><br>"None" - only number of subjects and seed are relevant, other settings are disabled (apart from custom covariates, if defined).<br><br><a href="https://wwwn.cdc.gov/nchs/nhanes/Default.aspx" target="_blank">NHANES - All ages</a> (general population [1999 - 2023], usually suitable for adults (>18))<br><br><a href="https://www.cdc.gov/growthcharts/percentile_data_files.htm" target="_blank">CDC - Age 0 - 20 yo</a> (general ped use between 2 - <18 yo)<br><br><a href="https://www.who.int/childgrowth/standards/weight_for_age/en/" target="_blank">WHO - Age 0 to 10 yo</a> (better granularity for neonates to toddlers)<br><br>Note: The covariates will replace whatever it is defined in $PARAM'
 #' @export
@@ -533,6 +533,8 @@ show_mean_iiv_label   <- 'Show Mean Trend'
 bspop_select_time_interval_exp <- "(Optional) Select the desired time intervals to derive metrics to be plotted above. The original time scale is provided for selection, independent of whether any scaling of the x-axis from the Simulation page was performed.<br><br>Note: The time interval is inclusive on both ends (i.e. start time <= time interval <= end time)."
 #' @export
 use_dataset_cov_dist_label <- shiny::HTML(paste0("Use Distributions from Dataset: <i class='fa fa-question-circle' title='(Optional) If a dataset has been uploaded, you may pull in covariate distribution(s) / EBEs (baseline, i.e. subject-level) to replace parameters with the same name in the model. Note: If the number of unique IDs equals the number of subjects to be simulated, it will be sampled without replacement (i.e. 1:1). Otherwise, it will be sampled with replacement.' style='margin-left: 3px;'></i>"))
+#' @export
+bspop_download_demog  <- 'Download generated virtual patients (and any custom covariates, if applicable) in a .csv file.'
 
 #infoBox
 #' @export

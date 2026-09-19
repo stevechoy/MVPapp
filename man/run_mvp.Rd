@@ -22,7 +22,7 @@ run_mvp(
   model_anthropic = "claude-sonnet-5",
   model_openrouter = "arcee-ai/trinity-large-preview:free",
   model_openai_compatible = "gpt-5.2",
-  model_deepseek = "deepseek-v4-flash",
+  model_deepseek = "deepseek-flash",
   model_apollo = "claude_4_6_sonnet",
   model_azure = "gpt-5.2",
   model_aws = "anthropic.claude-sonnet-5",
@@ -67,7 +67,7 @@ run_mvp(
 
 \item{model_openai_compatible}{Character. Default gpt-5.2. Model for OpenAI-compatible providers.}
 
-\item{model_deepseek}{Character. Default deepseek-v4-flash. Model for DeepSeek.}
+\item{model_deepseek}{Character. Default deepseek-flash. Model for DeepSeek.}
 
 \item{model_apollo}{Character. Default gpt-5.2 (BI-only)}
 

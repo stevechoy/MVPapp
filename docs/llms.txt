@@ -61,7 +61,7 @@ run_mvp()
 ```
 
 Alternatively, you may run `MVPapp` directly *without* installation
-(this may require additional packages):
+(note: may require additional packages):
 
 ``` r
 

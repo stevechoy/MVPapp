@@ -1,3 +1,20 @@
+# MVPapp 0.4.4 (2026-09-19)
+
+## Features
+
+* Automatic Change From Baseline (CFB) derivations for uploaded datasets using the DV column, per ID and CMT (using the first instance of EVID == 0, if present) (#18)
+* Separating the original character-type ID column into USUBJID and a numeric ID column for simulation outputs to make it more NONMEM friendly (#16)
+
+## Bugfixes
+
+* Dosing information now correctly included in all simulation outputs such that outputs are NONMEM-ready (#15, #17)
+
+## QoL Changes
+
+* Extra download button for demographics for easier-access directly on the Demographics tab in Variability page (#14)
+* Updated the model code for the "2 Compartment PK/PD (Indirect Effect)" model to be more general
+* Updated default LLM model names
+
 # MVPapp 0.4.3 (2026-08-13)
 
 ## Features

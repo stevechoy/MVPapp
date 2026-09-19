@@ -1,5 +1,7 @@
 # Effective Exploratory Data Analysis
 
+*Last updated: 2026-09-19*
+
 ## Motivation
 
 > “If you know the enemy and know yourself, you need not fear the result
@@ -35,6 +37,13 @@ browser screen and follow the instructions on this page.
     left hand side of the page provides this flexibility (e.g. renaming
     Concentration and Time columns to be `DV` and `TIME`, respectively,
     if using non-NONMEM formatted datasets).
+
+- **Change from baselines (CFB) are automatically created** using the
+  `DV` column, per `ID` and `CMT` (`DV_CFB` and `DV_CFBPCT` for absolute
+  and percentage CFB, respectively). If the `EVID` column is present,
+  the first instance where `EVID == 0` (i.e. observation row) will be
+  taken as the baseline value per subject.
+
 3.  Click on the Apply button on the code editor when you are done with
     filtering via code - a dynamic table showing the filtered data
     should now show up on the right hand side of the screen (the

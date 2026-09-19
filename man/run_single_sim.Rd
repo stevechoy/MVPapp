@@ -17,6 +17,7 @@ run_single_sim(
   divide_by = 1,
   debug = FALSE,
   nsubj = 1,
+  nsubj_offset = 0,
   append_id_text = "m1-",
   ext_db = NULL,
   show_matches = FALSE,
@@ -49,7 +50,9 @@ run_single_sim(
 
 \item{nsubj}{Default 1, in which case mrgsolve::zero_re() will be applied}
 
-\item{append_id_text}{A string prefix to be inserted for each ID}
+\item{nsubj_offset}{Default 0, uses this value +1 to start ID count}
+
+\item{append_id_text}{A string prefix to be inserted for each ID to become their USUBJID}
 
 \item{ext_db}{Default NULL, supply R object of external database}
 

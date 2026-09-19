@@ -877,106 +877,94 @@ pkpd_te <- paste0(code_preamble, '
 
 "
 $PROB
-# Model: `XXXXXX Preclinical PK/TE model`
-  - Two-compartment linear PK model, allometric scaling
-  - Indirect effect PD model (inhibit XXX KIN)
-  
-$PARAM @ annotated
-TVF1       : 0.5       : Bioavailability (-)
-TVKA       : 0.6       : Absorption rate constant (1/h)
-TVCL       : 0.2       : Systemic clearance (L/h/kg)
-TVVC       : 0.3       : Central volume (L/kg)
-TVQ        : 0.1       : Intercompartmental clearance (L/h/kg)
-TVVP       : 0.4       : Peripheral volume (L/kg)
-WT         : 70        : Baseline total body weight (kg)
-TVIC50     : 20        : XXXXXX concentration producing half IMAX (nM)
-TVKOUT     : 0.3       : Turnover rate constant for XXX (1/h)
-KIN_KO     : 0.4       : Production rate constant for XXX in knockout mice (XXX units/h)
-KIN_WT     : 0.1       : Production rate constant for XXX in wild-type mice (XXX units/h)
-KO_FLAG    : 0         : Flag for knockout vs. wild-type KIN (1=Y / 0=N)
+- 2 Compartment model + Absorption CMT w/ Weight effect on PK parameters
+- Indirect response PD (inhibition of Kin)
 
-$CMT @ annotated
-GUT    : Depot
-CENT   : Central
-PERI   : Peripheral
-AUC    : Plasma AUC
-PD     : XXX Gene Score
-PDAUC  : AUC of PD
-  
-$SET
-delta = 0.1
+$CMT  @annotated
+ABS  : Absorption compartment
+CENT : Central compartment (mg)
+PERI : Peripheral (mg)
+RESP : PD response
+
+$PARAM @annotated
+KA    :  1   : Absorption rate constant (1/time)
+CL    :  2   : Clearance (volume/time)
+VC    : 20   : Central volume (volume)
+VP    :  2   : Peripheral volume (volume)
+Q     :  1   : Intercompartmental clearance (volume/time)
+WT    : 70   : Weight (kg)
+WTCL  : 0.75 : Exponent of weight effect on CL
+WTV   : 1.0  : Exponent of weight effect on V
+F1    : 1.0  : Bioavailability (fraction)
+BASE  : 100  : Baseline response
+KOUT  : 0.1  : Response turnover rate constant (1/time)
+IMAX  : 1    : Maximum fractional inhibition of Kin (0-1)
+IC50  : 1    : Concentration at 50% of IMAX (conc units)
+HILL  : 1    : Hill coefficient
 
 $MAIN
+double KAVAR = KA * exp(EKA);
+double CLCOV = (CL * exp(ECL))*pow(WT/70, WTCL);
+double VCCOV = (VC * exp(EVC))*pow(WT/70, WTV);
+double QCOV  = (Q * exp(EQ))*pow(WT/70, WTCL);
+double VPCOV = (VP * exp(EVP))*pow(WT/70, WTV);
+double K20   = CLCOV/VCCOV;
+double K23   = QCOV/VCCOV;
+double K32   = QCOV/VPCOV;
+double RBASE = BASE * exp(EBASE);
+double KOUTE = KOUT * exp(EKOUT);
+double IC50E = IC50 * exp(EIC50);
 
-double F1   = TVF1;
-F_GUT       = F1;
+F_ABS        = F1;
 
-double KA   = TVKA                           * exp(ETA(1));
-double CL   = TVCL * WT * pow((WT/70), 0.75) * exp(ETA(2)); 
-double VC   = TVVC * WT * pow((WT/70), 1)    * exp(ETA(3));
-double Q    = TVQ  * WT * pow((WT/70), 0.75) * exp(ETA(4));
-double VP   = TVVP * WT * pow((WT/70), 1)    * exp(ETA(5));
-double IC50 = TVIC50                         * exp(ETA(6));
-double KOUT = TVKOUT                         * exp(ETA(7));
-
-double KIN     = KIN_KO * KO_FLAG + KIN_WT * (1 - KO_FLAG);
-double BASE_WT = KIN_WT/KOUT;
-double BASE_KO = KIN_KO/KOUT;
-double IMAX    = (1 - (BASE_WT/BASE_KO)); 
-
-PD_0 = KIN/KOUT;
-
-$OMEGA @annotated
-EKA     : 0.09     : ETA on KA
-ECL     : 0.09     : ETA on CL
-EVC     : 0.09     : ETA on VC
-EQ      : 0        : ETA on Q
-EVP     : 0        : ETA on VP
-EIC50   : 0.09     : ETA on IC50
-EKOUT   : 0.09     : ETA on KOUT
-
-$SIGMA @ annotated
-RVPK    : 0     : RUV PK
-RVPD    : 0     : RUV PD
-
+// PD: start at baseline, and set Kin so baseline is the steady state
+RESP_0       = RBASE;
+double KIN   = RBASE * KOUTE;
+ 
 $ODE
-double KEL   = CL/VC;
-double K12   = Q/VC;
-double K21   = Q/VP;
-double CP    = CENT/VC;
-double REDUC = 100 * (BASE_KO - PD)/(BASE_KO - BASE_WT);
+dxdt_ABS     = -KAVAR*ABS;
+dxdt_CENT    = KAVAR*ABS - K20*CENT - K23*CENT + K32*PERI;
+dxdt_PERI    = K23*CENT - K32*PERI;
 
-dxdt_GUT     = - KA * GUT;
-dxdt_CENT    = KA * GUT - KEL * CENT - K12 * CENT + K21 * PERI;
-dxdt_PERI    = K12 * CENT - K21 * PERI;
-dxdt_AUC     = CP;
-dxdt_PD      = KIN * (1 - IMAX * CP/(IC50 + CP)) - KOUT * PD;
-dxdt_PDAUC   = PD;
+// Drive the effect with true central concentration (no residual error)
+double CONC  = CENT/VCCOV;
+double INH   = IMAX * pow(CONC, HILL) / (pow(IC50E, HILL) + pow(CONC, HILL));
+dxdt_RESP    = KIN*(1 - INH) - KOUTE*RESP;
 
-$TABLE 
-double IPRED_PK = CP;
-double IPRED_PD = REDUC;
+$OMEGA @annotated @block
+EKA :  0.09 : ETA on KA
+ECL :  0.01 0.09 : ETA on CL
+EVC :  0.01 0.02 0.09 : ETA on VC
+$OMEGA @annotated
+EVP : 0 : ETA on VP
+EQ  : 0 : ETA on Q
+$OMEGA @annotated
+EBASE : 0.09 : ETA on BASE
+EKOUT : 0.09 : ETA on KOUT
+EIC50 : 0.09 : ETA on IC50
 
-double DV_PK    = IPRED_PK * (1 + EPS(1));
-double DV_PD    = IPRED_PD * (1 + EPS(2));
+$SIGMA @annotated
+PROP   : 0.1  : Proportional residual error (PK)
+ADD    : 0    : Additive residual error (PK)
+PDPROP : 0.05 : Proportional residual error (PD)
+PDADD  : 0    : Additive residual error (PD)
+
+$TABLE
+double CP = (CENT/VCCOV) * (1 + PROP) + ADD;
+double CT = (PERI/VPCOV);
 
 //prevent simulation of negative concentrations
 int i = 0;
-while(DV_PK <0 && i < 100){
-	simeps();
-	DV_PK = IPRED_PK * (1 + EPS(1));
-	++i;
+while(CP <0 && i < 100){
+    simeps();
+    CP = (CENT/VCCOV) * (1 + PROP) + ADD;
+    ++i;
 }
 
-while(DV_PD <0 && i < 100){
-	simeps();
-	DV_PD = IPRED_PD * (1 + EPS(2)) + EPS(3);
-	++i;
-}
+double PD = RESP * (1 + PDPROP) + PDADD;
 
 $CAPTURE
-DV_PK DV_PD
-
+CP CT PD
 "
 ', code_postamble)
 

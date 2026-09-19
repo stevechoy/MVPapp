@@ -1153,7 +1153,8 @@ safely_mcode <- purrr::safely(mrgsolve::mcode)
 #' @param divide_by             Divide the TIME by this value, used for scaling x-axis
 #' @param debug                 Default FALSE, set to TRUE to show more messages in console
 #' @param nsubj                 Default 1, in which case mrgsolve::zero_re() will be applied
-#' @param append_id_text        A string prefix to be inserted for each ID
+#' @param nsubj_offset          Default 0, uses this value +1 to start ID count
+#' @param append_id_text        A string prefix to be inserted for each ID to become their USUBJID
 #' @param ext_db                Default NULL, supply R object of external database
 #' @param show_matches          Default FALSE, shows a notification when external databases found a matching name with model parameters
 #' @param parallel_sim          Default TRUE, uses the future and mrgsim.parallel packages !Not implemented live!
@@ -1161,7 +1162,7 @@ safely_mcode <- purrr::safely(mrgsolve::mcode)
 #'
 #' @returns a df
 #'
-#' @importFrom dplyr mutate select rename
+#' @importFrom dplyr mutate select rename relocate
 #' @importFrom data.table merge.data.table fwrite fread
 #' @importFrom shiny showNotification
 #' @export
@@ -1179,6 +1180,7 @@ run_single_sim <- function(input_model_object,
                            divide_by       = 1,
                            debug           = FALSE,
                            nsubj           = 1,
+                           nsubj_offset    = 0,
                            append_id_text  = "m1-",
                            ext_db          = NULL,
                            show_matches    = FALSE,
@@ -1204,6 +1206,13 @@ run_single_sim <- function(input_model_object,
       wt_name         = wt_name
     )
     
+    if(nsubj_offset > 0) {
+      ext_db <- ext_db %>%
+        mutate(ID = ID + nsubj_offset)
+      ext_db_ev <- ext_db_ev %>%
+        mutate(ID = ID + nsubj_offset)
+    }   
+    
     input_model_object <- mrgsolve::update(input_model_object, digits = 5)
     
     if(show_matches) {
@@ -1227,18 +1236,25 @@ run_single_sim <- function(input_model_object,
     
     set.seed(seed)
     
-    solved_output <- safely_qsim(
-      input_model_object,
-      data    = ext_db_ev,
-      obsonly = TRUE,
-      tgrid   = sampling_times,
-      tad     = TRUE,
-      output  = "df"
-    )
+    # solved_output <- safely_qsim(
+    #   input_model_object,
+    #   data    = ext_db_ev,
+    #   obsonly = FALSE,
+    #   tgrid   = sampling_times,
+    #   tad     = TRUE,
+    #   output  = "df"
+    # )
+    
+    solved_output <- input_model_object %>%
+      mrgsolve::data_set(as.data.frame(ext_db_ev)) %>%
+      mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
+      safely_mrgsim_df(#events = ev_df,
+        tgrid  = sampling_times,
+        tad    = TRUE)
     
     if (is.null(solved_output$error))
       solved_output$result <- data.table::merge.data.table(
-        solved_output$result, ext_db, by = "ID", all.x = TRUE
+        solved_output$result, ext_db, by = c("ID"), all.x = TRUE
       )
     
   } else {
@@ -1254,9 +1270,13 @@ run_single_sim <- function(input_model_object,
       wt_name         = wt_name
     )
     
+    id_num <- dplyr::case_when(append_id_text == "m1-"  ~ 1 + nsubj_offset,
+                               append_id_text == "m2-"  ~ 2 + nsubj_offset,
+                               TRUE                     ~ 1 + nsubj_offset) # handles iterate_batch_runs()
+    
     solved_output <- input_model_object %>%
-      mrgsolve::data_set(as.data.frame(ev_df) %>% dplyr::mutate(ID = 1)) %>%
-      mrgsolve::carry_out(amt, rate, ii, cmt, evid, tinf) %>%
+      mrgsolve::data_set(as.data.frame(ev_df) %>% dplyr::mutate(ID = id_num)) %>%
+      mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
       #mrgsolve::obsonly() %>%
       mrgsolve::zero_re() %>%
       safely_mrgsim_df(#events = ev_df,
@@ -1269,7 +1289,8 @@ run_single_sim <- function(input_model_object,
     solved_output <- solved_output$result %>%
       dplyr::rename(TIME    = time) %>%
       dplyr::mutate(TIMEADJ = TIME / divide_by,
-                    ID      = as.factor(paste0(append_id_text, ID)))
+                    USUBJID = as.factor(paste0(append_id_text, ID))) %>%
+      dplyr::relocate(USUBJID, .before = ID)
   } else {
     shiny::showNotification(
       paste0(solved_output$error, " Potentially due to non-sensible parameter values."),
@@ -1277,10 +1298,8 @@ run_single_sim <- function(input_model_object,
     solved_output <- NULL
   }
   
-  tmp_ev_df <<- ev_df
-  tmp_data <<- solved_output
+  #tmp_solved_output  <<- solved_output
   return(solved_output)
-
 }
 
 
@@ -4371,13 +4390,13 @@ exposures_table <- function(input_simulated_table,
                             output_conc,
                             start_time = NULL,
                             end_time   = NULL,
-                            carry_out  = "ID",
+                            carry_out  = "ID", # would be replaced during function call
                             debug      = FALSE
 ) {
 
   input_simulated_table$YVARNAME <- input_simulated_table[[output_conc]]
 
-  base_columns      <- c("ID", "YVARNAME", "TIME")
+  base_columns      <- c("USUBJID", "ID", "YVARNAME", "TIME")
   columns_to_select <- c(base_columns, carry_out)
 
   input_simulated_table <- input_simulated_table %>%
@@ -4393,7 +4412,7 @@ exposures_table <- function(input_simulated_table,
   # }
 
   metrics_table <- input_simulated_table %>% dplyr::filter(TIME >= start_time, TIME <= end_time) %>%
-    dplyr::group_by(ID) %>%
+    dplyr::group_by(USUBJID) %>%
     dplyr::mutate(Cmin  = min(YVARNAME, na.rm = TRUE)[1],
                   Cmax  = max(YVARNAME, na.rm = TRUE)[1], ### First element if multiple values found
                   Cavg  = mean(YVARNAME, na.rm = TRUE),
@@ -4403,13 +4422,13 @@ exposures_table <- function(input_simulated_table,
 
   # Calculate TMAX in a separate table
   tmax_table <- metrics_table %>%
-    dplyr::group_by(ID) %>%
+    dplyr::group_by(USUBJID) %>%
     dplyr::summarise(Tmin = TIME[which.min(YVARNAME)[1]],
                      Tmax = TIME[which.max(YVARNAME)[1]]) %>% # First element if multiple values found
     dplyr::ungroup()
 
-  metrics_table <- left_join(metrics_table, tmax_table, by = "ID") %>%
-    dplyr::group_by(ID) %>%
+  metrics_table <- left_join(metrics_table, tmax_table, by = "USUBJID") %>%
+    dplyr::group_by(USUBJID) %>%
     dplyr::mutate(YLAG          = dplyr::lag(YVARNAME),
                   XLAG          = dplyr::lag(TIME),
                   dYVAR         = (YVARNAME + YLAG) * (TIME - XLAG) * 0.5, # Area for trapezoid
@@ -4417,11 +4436,11 @@ exposures_table <- function(input_simulated_table,
                   AUC           = sum(dYVAR)) %>%
     dplyr::ungroup()
 
-  list_of_exposures <- c("ID", "Cmin", "Cmax", "Cavg", "Clast", "AUC", "Tmax", "Tmin")
+  list_of_exposures <- c("USUBJID", "ID", "Cmin", "Cmax", "Cavg", "Clast", "AUC", "Tmax", "Tmin")
 
   metrics_table_id <- metrics_table %>%
     dplyr::select(dplyr::any_of(c(list_of_exposures, carry_out))) %>%
-    dplyr::distinct(ID, .keep_all = TRUE)
+    dplyr::distinct(USUBJID, .keep_all = TRUE)
 
   return(metrics_table_id)
 }
@@ -4937,6 +4956,7 @@ iterate_batch_runs <- function(batch_run_df,
                                append_id_text     = "m1-",
                                show_progress      = TRUE,
                                gradient           = FALSE,
+                               nsubj_offset       = 0,
                                parallel_sim       = FALSE,
                                parallel_n         = 200#,
 ) {
@@ -5038,6 +5058,7 @@ iterate_batch_runs <- function(batch_run_df,
       divide_by          = divide_by,
       debug              = debug,
       append_id_text     = "ref",
+      #nsubj_offset       = 0,
       parallel_sim       = parallel_sim,
       parallel_n         = parallel_n
     )
@@ -5077,6 +5098,7 @@ iterate_batch_runs <- function(batch_run_df,
         divide_by          = divide_by,
         debug              = debug,
         append_id_text     = s$run_name,
+        nsubj_offset       = run_i - 1L,
         parallel_sim       = parallel_sim,
         parallel_n         = parallel_n
       )
@@ -5092,6 +5114,8 @@ iterate_batch_runs <- function(batch_run_df,
     }
     
   }) # end withProgress
+  
+  #tmp_batch_run_bind <<- dplyr::bind_rows(list_of_runs)
   
   dplyr::bind_rows(list_of_runs)
 }
@@ -5815,12 +5839,12 @@ translate_model_code <- function(ready_path,
                                  api_upload = NULL,
                                  api_chat = NULL,
                                  user_id = "mrgsolve_translator",
-                                 model_gemini = "gemini-3.6-flash",
+                                 model_gemini = "gemini-3.8-flash",
                                  model_openai = "gpt-5-mini",
                                  model_anthropic = "claude-haiku-4-5-20251001",
                                  model_openrouter = "arcee-ai/trinity-large-preview:free",
                                  model_openai_compatible = "gpt-5-mini",
-                                 model_deepseek = "deepseek-reasoner",
+                                 model_deepseek = "deepseek-flash",
                                  model_apollo = "gpt-5.6-terra",
                                  model_azure = "gpt-5.6-terra",
                                  model_aws = "anthropic.claude-sonnet-5",
@@ -6143,12 +6167,12 @@ refine_model_code <- function(model_code,
                               api_upload = NULL,
                               api_chat = NULL,
                               user_id = "mrgsolve_translator",
-                              model_gemini = "gemini-3.6-flash",
+                              model_gemini = "gemini-3.8-flash",
                               model_openai = "gpt-5-mini",
                               model_anthropic = "claude-haiku-4-5-20251001",
                               model_openrouter = "arcee-ai/trinity-large-preview:free",
                               model_openai_compatible = "gpt-5-mini",
-                              model_deepseek = "deepseek-reasoner",
+                              model_deepseek = "deepseek-flash",
                               model_apollo = "gpt-5.6-terra",
                               model_azure = "gpt-5.6-terra",
                               model_aws = "anthropic.claude-sonnet-5",
@@ -7228,7 +7252,7 @@ get_apollo_token_ext <- function() {
 #' @export
 get_session_state <- function(input, rv, uploaded_data) {
   list(
-    version = "0.4.1",  # tag with app version for forward-compat checks
+    version = "0.4.4",  # tag with app version for forward-compat checks
     saved_at = Sys.time(),
     
     # --- Model code & settings ---

@@ -10,7 +10,7 @@
 # Set standalone_mode = TRUE to run app.R as standalone app without loading MVPapp
 # (i.e. not using run_mvp())
 #-------------------------------------------------------------------------------
-standalone_mode <- FALSE
+standalone_mode <- TRUE
 
 #######################
 if(standalone_mode) {
@@ -38,10 +38,12 @@ if(standalone_mode) {
   load(file.path(tempdir(), "who.expand.rda"),      envir = .GlobalEnv)
   load(file.path(tempdir(), "cdc.expand.rda"),      envir = .GlobalEnv)
   
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
-  #source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
+  #source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
+  source("C:/MYREPOS/MVPapp/R/ui_settings.R") # example for local edit
+  #source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
+  source("C:/MYREPOS/MVPapp/R/code_templates.R") # example for local edit
+  #source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
+  source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R") # Prompts file for automatic model translation
 
   ## Start-up options for the App when not running through run_mvp()
@@ -60,7 +62,7 @@ if(standalone_mode) {
   model_anthropic         = "claude-sonnet-5" # "claude-haiku-4-5-20251001" 
   model_openrouter        = "openrouter/free"  # "openrouter/free"
   model_openai_compatible = "gpt-5-mini"
-  model_deepseek          = "deepseek-v4-flash"
+  model_deepseek          = "deepseek-flash"
   model_apollo            = "claude_4_6_sonnet" # For BI-only
   model_azure             = "gpt-5.2"
   model_aws               = "anthropic.claude-sonnet-5"
@@ -91,7 +93,7 @@ if(!exists("model_openai"))            {model_openai             <- "gpt-5.6-ter
 if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-5"}
 if(!exists("model_openrouter"))        {model_openrouter         <- "arcee-ai/trinity-large-preview:free"}
 if(!exists("model_openai_compatible")) {model_openai_compatible  <- "gpt-5-mini"}
-if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-v4-flash"}
+if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-flash"}
 if(!exists("model_apollo"))            {model_apollo             <- "claude_4_6_sonnet"}
 if(!exists("model_azure"))             {model_azure              <- "gpt-5.2"}
 if(!exists("model_aws"))               {model_aws                <- "anthropic.claude-sonnet-5"}
@@ -168,6 +170,7 @@ ui <- shiny::navbarPage(
                                                 checkboxInput('create_cmt_col', 'Create CMT column if not found (CMT = 2)', width = '100%', TRUE),
                                                 checkboxInput('create_id_col', 'Create ID column if not found (from "SUBJIDN", "USUBJID", or "PTNO")', width = '100%', TRUE),
                                                 checkboxInput('create_time_col', 'Create TIME column if not found (from "TAFD", "TSFD", "ATFD", or "ATSD")', width = '100%', TRUE),
+                                                checkboxInput('CFB_from_DV', 'Create Change From Baselines (CFB) from "DV" column [applied after editor]', width = '100%', TRUE),
                                                 checkboxInput('BLQ_filter', 'Remove BLQ observations (exclude BLQ >= 1)', width = '100%', TRUE),
                                                 checkboxInput('EVID_filter', 'Remove dosing rows (exclude EVID >= 1)', width = '100%', FALSE),
                                                 checkboxInput('distinct_by_ID', 'Keep unique subjects only (distinct by "ID") [applied after editor]', width = '100%', FALSE),
@@ -1958,10 +1961,14 @@ ui <- shiny::navbarPage(
                                                            tabsetPanel(
                                                              id = 'sim_subj_panel_model_1',
                                                              tabPanel(id = 'px_db_model_1', title = "Demographics",
-                                                                      column(width = 12,
+                                                                      column(width = 9,
                                                                              selectizeInput('db_model_1', label_db, choices = c("None", "NHANES", "CDC", "WHO"), selected = "None"),
                                                                              shinyBS::bsPopover('db_model_1',  'Patient Database', content = bspop_db, placement = 'right', trigger = 'focus'),
                                                                              update_resistant_popover('db_model_1',  'Patient Database', content = bspop_db, placement = 'right', trigger = 'focus')
+                                                                      ),
+                                                                      column(width = 3,
+                                                                             downloadButton("download_demog_data_model_1_b", label = 'Download', class = 'pull-right', icon  = shiny::icon("users"), style = "margin-top: 15px;"),
+                                                                             shinyBS::bsPopover('download_demog_data_model_1_b', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover"),
                                                                       ),
                                                                       column(width = 6,
                                                                              numericInput('n_subj_model_1', label = 'Number of Subjects', value = 20, min = 1, max = 3000, step = 1),
@@ -2052,7 +2059,8 @@ ui <- shiny::navbarPage(
                                                                       title = "Summary Statistics",
                                                                       column(width = 12,
                                                                              uiOutput("demog_info_model_1") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
-                                                                             downloadButton("download_demog_data_model_1", "Download Demographics")
+                                                                             downloadButton("download_demog_data_model_1", "Download Demographics"),
+                                                                             shinyBS::bsPopover('download_demog_data_model_1', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover")
                                                                       )
                                                              ), # end of Demographics tabPanel
                                                              tabPanel(id = "px_db_plots_model_1",
@@ -2100,10 +2108,14 @@ ui <- shiny::navbarPage(
                                                              tabPanel(
                                                                id = 'px_db_model_2',
                                                                title = "Demographics",
-                                                               column(width = 12,
+                                                               column(width = 9,
                                                                       selectizeInput('db_model_2', label_db, choices = c("None", "NHANES", "CDC", "WHO"), selected = "None"),
                                                                       shinyBS::bsPopover('db_model_2',  'Patient Database', content = bspop_db, placement = 'right', trigger = 'focus'),
                                                                       update_resistant_popover('db_model_2',  'Patient Database', content = bspop_db, placement = 'right', trigger = 'focus')
+                                                               ),
+                                                               column(width = 3,
+                                                                      downloadButton("download_demog_data_model_2_b", label = 'Download', class = 'pull-right', icon  = shiny::icon("users"), style = "margin-top: 15px;"),
+                                                                      shinyBS::bsPopover('download_demog_data_model_2_b', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover"),
                                                                ),
                                                                column(width = 6,
                                                                       numericInput('n_subj_model_2', label = 'Number of Subjects', value = 20, min = 1, max = 3000, step = 1),
@@ -2195,7 +2207,8 @@ ui <- shiny::navbarPage(
                                                                title = "Summary Statistics",
                                                                column(width = 12,
                                                                       uiOutput("demog_info_model_2") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
-                                                                      downloadButton("download_demog_data_model_2", "Download Demographics")
+                                                                      downloadButton("download_demog_data_model_2", "Download Demographics"),
+                                                                      shinyBS::bsPopover('download_demog_data_model_2', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover")
                                                                )
                                                              ), # end of Demographics tabPanel
                                                              tabPanel(
@@ -2963,6 +2976,50 @@ server <- function(input, output, session) {
         if('ID' %in% names(nonmem_dataset)) {
           nonmem_dataset <- nonmem_dataset %>% dplyr::distinct(ID, .keep_all = TRUE)
           shiny::showNotification(paste0("Dataset has been filtered to retain one row per ID only (N=", nrow(nonmem_dataset), ")"), type = "message", duration = 10)
+        }
+      }
+      
+      if(input$CFB_from_DV) {
+        if(all(c("ID", "CMT", "DV") %in% names(nonmem_dataset))) {
+          dv <- suppressWarnings(as.numeric(nonmem_dataset$DV))   # handles "." -> NA
+          
+          # Use EVID == 0 only if the column exists; otherwise treat every row as eligible
+          obs <- if ("EVID" %in% names(nonmem_dataset)) {
+            !is.na(nonmem_dataset$EVID) & nonmem_dataset$EVID == 0
+          } else {
+            rep(TRUE, nrow(nonmem_dataset))
+          }
+          
+          # Baseline per ID/CMT: first non-missing DV among eligible rows, more performant, fully vectorised
+          key   <- paste(nonmem_dataset$ID, nonmem_dataset$CMT, sep = "\r")
+          ok    <- obs & !is.na(dv)
+          first <- which(ok)[!duplicated(key[ok])]    # row index of first eligible record per group
+          bl    <- dv[first][match(key, key[first])]  # NA where a group has no eligible record
+          
+          nonmem_dataset$DV_CFB    <- ifelse(obs, dv - bl, NA_real_)
+          nonmem_dataset$DV_CFBPCT <- ifelse(obs & !is.na(bl) & bl != 0,
+                                  100 * (dv - bl) / bl, NA_real_)
+          
+          # Move DV_CFB and DV_CFBPCT directly after DV
+          new_cols <- c("DV_CFB", "DV_CFBPCT")
+          other    <- setdiff(names(nonmem_dataset), new_cols)
+          dv_pos   <- match("DV", other)
+          new_order <- c(other[seq_len(dv_pos)], new_cols, other[-seq_len(dv_pos)])
+          
+          if (data.table::is.data.table(nonmem_dataset)) {
+            data.table::setcolorder(nonmem_dataset, new_order)
+          } else {
+            nonmem_dataset <- nonmem_dataset[, new_order, drop = FALSE]
+          }
+          
+          if("EVID" %in% names(nonmem_dataset)) {
+            shiny::showNotification(paste0("Absolute and % CFB columns (DV_CFB and DV_CFBPCT) has been created using the first EVID == 0 value from the DV column, per ID and CMT."), type = "message", duration = 15)  
+          } else {
+            shiny::showNotification(paste0("Absolute and % CFB columns (DV_CFB and DV_CFBPCT) has been created using the first value from the DV column, per ID and CMT."), type = "message", duration = 15)  
+          }
+          
+        } else {
+          shiny::showNotification(paste0("WARNING: CFB columns not created: ID, CMT and DV columns must all be present."), type = "warning", duration = 10)  
         }
       }
       
@@ -6805,7 +6862,7 @@ server <- function(input, output, session) {
     )
   }, label = 'psa_dosing_regimen_model_1')
   
-  make_psa_sim <- function(applied_param_reactive, label) {
+  make_psa_sim <- function(applied_param_reactive, nsubj_offset, label) {
     reactive({
       shiny::req(model_1_is_valid())
       shiny::req(applied_param_reactive())
@@ -6820,14 +6877,15 @@ server <- function(input, output, session) {
         model_rate         = model_rate_argument_model_1(),
         sampling_times     = sampling_options(),
         divide_by          = time_value(),
+        nsubj_offset       = nsubj_offset,
         debug              = show_debugging_msg
       )
     }, label = label)
   }
   
-  new_sim_min_model_1 <- make_psa_sim(applied_param_min_model_1, 'new_sim_min_model_1')
-  new_sim_mid_model_1 <- make_psa_sim(applied_param_mid_model_1, 'new_sim_mid_model_1')
-  new_sim_max_model_1 <- make_psa_sim(applied_param_max_model_1, 'new_sim_max_model_1')
+  new_sim_min_model_1 <- make_psa_sim(applied_param_min_model_1, 0, 'new_sim_min_model_1')
+  new_sim_mid_model_1 <- make_psa_sim(applied_param_mid_model_1, 1, 'new_sim_mid_model_1')
+  new_sim_max_model_1 <- make_psa_sim(applied_param_max_model_1, 2, 'new_sim_max_model_1')
   
   output$param_widget_output_min_model_1 <- renderUI(param_min_ui_model_1())
   output$param_widget_output_mid_model_1 <- renderUI(param_mid_ui_model_1())
@@ -7134,6 +7192,8 @@ server <- function(input, output, session) {
       model_rate         = model_rate_argument_model_2(),
       sampling_times     = sampling_options(),
       divide_by          = time_value(),
+      nsubj_offset       = 2,
+      append_id_text     = "m2-",
       debug              = show_debugging_msg
     )
   }, label = 'new_sim_min_model_2')
@@ -7152,6 +7212,8 @@ server <- function(input, output, session) {
       model_rate         = model_rate_argument_model_2(),
       sampling_times     = sampling_options(),
       divide_by          = time_value(),
+      nsubj_offset       = 3,
+      append_id_text     = "m2-",
       debug              = show_debugging_msg
     )
   }, label = 'new_sim_mid_model_2')
@@ -7170,6 +7232,8 @@ server <- function(input, output, session) {
       model_rate         = model_rate_argument_model_2(),
       sampling_times     = sampling_options(),
       divide_by          = time_value(),
+      nsubj_offset       = 4,
+      append_id_text     = "m2-",
       debug              = show_debugging_msg
     )
   }, label = 'new_sim_max_model_2')
@@ -7452,7 +7516,6 @@ server <- function(input, output, session) {
   
   observeEvent(input$generate_batch_model_1, {
     shiny::req(tor_tab_new_model_1())
-    
     batch_runs <- iterate_batch_runs(
       batch_run_df       = tor_tab_new_model_1(),
       input_model_object = changed_reacted_param_model_1(),
@@ -8703,6 +8766,17 @@ server <- function(input, output, session) {
     contentType = "text/csv"
   )
   
+  output$download_demog_data_model_1_b <- downloadHandler(
+    filename = function() {
+      paste0(today_numeric(), "_demog_data_model_1.csv")
+    },
+    content = function(file) {
+      #write.csv(database_model_1(), file, row.names = FALSE)
+      data.table::fwrite(database_model_1(), file, quote = FALSE, row.names = FALSE)
+    },
+    contentType = "text/csv"
+  )
+  
   output$download_demog_plot_model_1 <- downloadHandler(
     filename = function() {
       paste0(today_numeric(), "_demographics_plot_model_1.pdf")
@@ -8850,6 +8924,7 @@ server <- function(input, output, session) {
           debug              = show_debugging_msg,
           divide_by          = time_value(),
           nsubj              = n_subj_model_1_clean(),
+          nsubj_offset       = 0,
           ext_db             = database_model_1(),
           show_matches       = TRUE,
           parallel_sim       = FALSE, #input$para_checkbox,
@@ -9422,6 +9497,10 @@ server <- function(input, output, session) {
       dbm2_cov <- dbm2
     }
     
+    # ID offset
+    dbm2_cov <- dbm2_cov %>%
+      mutate(ID = ID + n_subj_model_1_clean())
+    
     return(dbm2_cov)
   })
   
@@ -9528,6 +9607,17 @@ server <- function(input, output, session) {
     },
     contentType = "text/csv"
   )
+  
+  output$download_demog_data_model_2_b <- downloadHandler(
+    filename = function() {
+      paste0(today_numeric(), "_demog_data_model_2.csv")
+    },
+    content = function(file) {
+      #write.csv(database_model_2(), file, row.names = FALSE)
+      data.table::fwrite(database_model_2(), file, quote = FALSE, row.names = FALSE)
+    },
+    contentType = "text/csv"
+  )  
   
   output$download_demog_plot_model_2 <- downloadHandler(
     filename = function() {
@@ -9679,6 +9769,7 @@ server <- function(input, output, session) {
           debug              = show_debugging_msg,
           divide_by          = time_value(),
           nsubj              = n_subj_model_2_clean(),
+          nsubj_offset       = n_subj_model_1_clean(),
           append_id_text     = "m2-",
           ext_db             = database_model_2(),
           show_matches       = TRUE,

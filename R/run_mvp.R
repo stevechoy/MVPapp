@@ -27,7 +27,7 @@
 #' @param model_anthropic Character. Default claude-sonnet-5. Model for Anthropic / Claude.
 #' @param model_openrouter Character. Default arcee-ai/trinity-large-preview:free. Model for OpenRouter.
 #' @param model_openai_compatible Character. Default gpt-5.2. Model for OpenAI-compatible providers.
-#' @param model_deepseek Character. Default deepseek-v4-flash. Model for DeepSeek.
+#' @param model_deepseek Character. Default deepseek-flash. Model for DeepSeek.
 #' @param model_apollo Character. Default gpt-5.2 (BI-only)
 #' @param model_azure Character. Default gpt-5.2. Model for Azure OpenAI.
 #' @param model_aws Character. Default anthropic.claude-sonnet-5. Model for AWS Bedrock.
@@ -78,7 +78,7 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
                     model_anthropic         = "claude-sonnet-5", 
                     model_openrouter        = "arcee-ai/trinity-large-preview:free",  # "openrouter/free"
                     model_openai_compatible = "gpt-5.2",
-                    model_deepseek          = "deepseek-v4-flash",
+                    model_deepseek          = "deepseek-flash",
                     model_apollo            = "claude_4_6_sonnet", # For BI-only
                     model_azure             = "gpt-5.2",
                     model_aws               = "anthropic.claude-sonnet-5",

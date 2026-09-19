@@ -14,6 +14,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+_Last updated: 2026-09-19_
+
 ## Motivation  
 
 > "If you know the enemy and know yourself, you need not fear the result of a hundred battles."
@@ -31,7 +33,10 @@ This vignette is meant to introduce a __workflow of using MVP to perform quick e
 ## Uploading and Filtering Data
 
 1. The first step is upload a NONMEM-compatible (.csv) dataset, or a tab-delimited text file (.txt). For full compatibility for the rest of the app, the `ID`, `DV`, and `TIME` columns should be present in the dataset. __At minimum, the `ID` column should be present__ to at least support plotting in the Data Exploration pages on the right hand side of the page.  
-2. There are built-in dataset cleaning options (options collapsed by default - click on the "+" icon to expand the box) that provides short-cuts to commonly used options to filter the dataset. For more custom filtering needs beyond the basics, the code editor on the left hand side of the page provides this flexibility (e.g. renaming Concentration and Time columns to be `DV` and `TIME`, respectively, if using non-NONMEM formatted datasets). 
+2. There are built-in dataset cleaning options (options collapsed by default - click on the "+" icon to expand the box) that provides short-cuts to commonly used options to filter the dataset. For more custom filtering needs beyond the basics, the code editor on the left hand side of the page provides this flexibility (e.g. renaming Concentration and Time columns to be `DV` and `TIME`, respectively, if using non-NONMEM formatted datasets).  
+
+  -  __Change from baselines (CFB) are automatically created__ using the `DV` column, per `ID` and `CMT` (`DV_CFB` and `DV_CFBPCT` for absolute and percentage CFB, respectively). If the `EVID` column is present, the first instance where `EVID == 0` (i.e. observation row) will be taken as the baseline value per subject.
+
 3. Click on the Apply button on the code editor when you are done with filtering via code - a dynamic table showing the filtered data should now show up on the right hand side of the screen (the "Filtered Data" tab) and able to be downloaded if required. If not, check the Console below the Code Editor for potential error messages.
 
 `r "\U0001F4A1"` In general, the filters applied here should match with what eventually will be used in the NONMEM control stream files.

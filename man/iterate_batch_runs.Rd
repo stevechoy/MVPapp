@@ -19,6 +19,7 @@ iterate_batch_runs(
   append_id_text = "m1-",
   show_progress = TRUE,
   gradient = FALSE,
+  nsubj_offset = 0,
   parallel_sim = FALSE,
   parallel_n = 200
 )
