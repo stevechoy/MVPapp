@@ -10,7 +10,7 @@
 # Set standalone_mode = TRUE to run app.R as standalone app without loading MVPapp
 # (i.e. not using run_mvp())
 #-------------------------------------------------------------------------------
-standalone_mode <- TRUE
+standalone_mode <- FALSE
 
 #######################
 if(standalone_mode) {
@@ -38,12 +38,12 @@ if(standalone_mode) {
   load(file.path(tempdir(), "who.expand.rda"),      envir = .GlobalEnv)
   load(file.path(tempdir(), "cdc.expand.rda"),      envir = .GlobalEnv)
   
-  #source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
-  source("C:/MYREPOS/MVPapp/R/ui_settings.R") # example for local edit
-  #source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
-  source("C:/MYREPOS/MVPapp/R/code_templates.R") # example for local edit
-  #source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
-  source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
+  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
+  #source("C:/MYREPOS/MVPapp/R/ui_settings.R") # example for local edit
+  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
+  #source("C:/MYREPOS/MVPapp/R/code_templates.R") # example for local edit
+  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
+  #source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R") # Prompts file for automatic model translation
 
   ## Start-up options for the App when not running through run_mvp()
