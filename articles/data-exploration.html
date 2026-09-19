@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.4</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,6 +67,7 @@
 
     
     
+<p><em>Last updated: 2026-09-19</em></p>
 <div class="section level2">
 <h2 id="motivation">Motivation<a class="anchor" aria-label="anchor" href="#motivation"></a>
 </h2>
@@ -109,6 +110,18 @@ hand side of the page provides this flexibility (e.g. renaming
 Concentration and Time columns to be <code>DV</code> and
 <code>TIME</code>, respectively, if using non-NONMEM formatted
 datasets).</li>
+</ol>
+<ul>
+<li>
+<strong>Change from baselines (CFB) are automatically
+created</strong> using the <code>DV</code> column, per <code>ID</code>
+and <code>CMT</code> (<code>DV_CFB</code> and <code>DV_CFBPCT</code> for
+absolute and percentage CFB, respectively). If the <code>EVID</code>
+column is present, the first instance where <code>EVID == 0</code>
+(i.e. observation row) will be taken as the baseline value per
+subject.</li>
+</ul>
+<ol start="3" style="list-style-type: decimal">
 <li>Click on the Apply button on the code editor when you are done with
 filtering via code - a dynamic table showing the filtered data should
 now show up on the right hand side of the screen (the “Filtered Data”
