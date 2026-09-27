@@ -436,7 +436,7 @@ workflow, allowing it to be easily QC’d. 
 Please see the article on [Automatic Model
 Translation](https://stevechoy.github.io/MVPapp/articles/automatic-translation.html),
 or access the vignette on this topic in R
-(`vignette("automatic-translation", package = "MVPapp"`) for a short
+(`vignette("automatic-translation", package = "MVPapp")`) for a short
 guide on how to set up MVP to use generative AI models to translate any
 document into mrgsolve, rxode2, or NONMEM code.
 
@@ -445,7 +445,7 @@ document into mrgsolve, rxode2, or NONMEM code.
 Please see the article on [Supplying Passworded
 Models](https://stevechoy.github.io/MVPapp/articles/supply-passwords.html),
 or access the vignette on this topic in R
-(`vignette("supply-passwords", package = "MVPapp"`) for instructions on
+(`vignette("supply-passwords", package = "MVPapp")`) for instructions on
 how to provide external models on App start-up.
 
 ### Effective Exploratory Data Analysis (EDA)
@@ -453,8 +453,8 @@ how to provide external models on App start-up.
 Please see the article on [Effective Exploratory Data Analysis
 (EDA)](https://stevechoy.github.io/MVPapp/articles/data-exploration.html),
 or access the vignette on this topic in R
-(`vignette("data-exploration", package = "MVPapp"`) for a short guide on
-using MVP to perform quick EDA.
+(`vignette("data-exploration", package = "MVPapp")`) for a short guide
+on using MVP to perform quick EDA.
 
 ### Run MVP as a regular Shiny App
 
