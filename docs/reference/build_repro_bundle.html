@@ -49,6 +49,7 @@
 <span>  <span class="va">zip_path</span>,</span>
 <span>  <span class="va">input_model_object</span>,</span>
 <span>  <span class="va">event_data</span>,</span>
+<span>  <span class="va">event_data_orig</span>,</span>
 <span>  <span class="va">sampling_times</span>,</span>
 <span>  covariate_db <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1000</span></span>
@@ -72,6 +73,10 @@
 this run (i.e. ev_df or ext_db_ev), already fully
 transformed. This is what allows the generated script
 to skip transform_ev_df() entirely</p></dd>
+
+
+<dt id="arg-event-data-orig">event_data_orig<a class="anchor" aria-label="anchor" href="#arg-event-data-orig"></a></dt>
+<dd><p>Original ev() dosing info, pre-transformed</p></dd>
 
 
 <dt id="arg-sampling-times">sampling_times<a class="anchor" aria-label="anchor" href="#arg-sampling-times"></a></dt>

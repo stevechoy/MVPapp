@@ -19,8 +19,8 @@ safely_mcode(...)
 A list with two elements:
 
 - `result`: The result of
-  [`mrgsolve::mcode`](https://mrgsolve.org/docs/reference/mcode.html),
-  or `NULL` if an error occurred.
+  [`mrgsolve::mcode`](https://rdrr.io/pkg/mrgsolve/man/mcode.html), or
+  `NULL` if an error occurred.
 
 - `error`: The error that occurred, or `NULL` if no error occurred.
 

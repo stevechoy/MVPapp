@@ -2,7 +2,7 @@
 
 Retrieves the API key for a specified LLM service from environment
 variables. Set environment variables with
-[`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html).
+[`usethis::edit_r_environ()`](https://rdrr.io/pkg/usethis/man/edit.html).
 
 ## Usage
 

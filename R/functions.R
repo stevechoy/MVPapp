@@ -1192,6 +1192,8 @@ run_single_sim <- function(input_model_object,
     return(NULL)
   }
   
+  ev_df_orig <- ev_df # Pre-transformed ev() dataframe
+  
   if (nsubj > 1 && !is.null(ext_db)) {
     
     ext_db_ev_prewt <- data.table::merge.data.table(
@@ -1303,6 +1305,7 @@ run_single_sim <- function(input_model_object,
   ## Globally save simulation data for easy export
   #last_input_model_object <<- input_model_object
   last_ev_df              <<- ev_df
+  last_ev_df_orig         <<- ev_df_orig
   #last_sampling_times     <<- sampling_times
   #last_ext_db             <<- ext_db
   #last_seed               <<- seed
@@ -8000,6 +8003,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
 #'                            this run (i.e. ev_df or ext_db_ev), already fully
 #'                            transformed. This is what allows the generated script
 #'                            to skip transform_ev_df() entirely
+#' @param event_data_orig     Original ev() dosing info, pre-transformed
 #' @param sampling_times      A vector of sampling times, passed to tgrid in
 #'                            mrgsolve::mrgsim_df()
 #' @param covariate_db        Default NULL. A data.frame of covariates, keyed by ID,
@@ -8021,6 +8025,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
 build_repro_bundle <- function(zip_path,
                                input_model_object,
                                event_data,
+                               event_data_orig,
                                sampling_times,
                                covariate_db   = NULL,
                                seed           = 1000) {
@@ -8046,7 +8051,8 @@ build_repro_bundle <- function(zip_path,
   sim_settings <- list(
     seed           = seed,
     sampling_times = sampling_times,
-    zero_re        = zero_re
+    zero_re        = zero_re,
+    event_data_orig= event_data_orig # Original pre-transformed ev() df for user's information
   )
   saveRDS(sim_settings, file.path(build_dir, "sim_settings.rds"))
   
@@ -8073,6 +8079,9 @@ build_repro_bundle <- function(zip_path,
     "",
     "sim_settings.rds   A list with seed, sampling_times, and zero_re toggle -- the",
     "                   settings simulation.R needs to reproduce this run.",
+    "",
+    "                   Note: the pre-transformed dosing table, event_data_orig,",
+    "                   is also included for the user's information.",
     "",
     if (!is.null(covariate_db)) {
       c("covariate_db.rds   Covariate table for this run, joined onto the",
@@ -8124,6 +8133,8 @@ build_repro_bundle <- function(zip_path,
     "",
     "# Please check that the dosing info and covariates are correct.",
     "head(as.data.frame(event_data))",
+    "# The pre-transformed dosing info (not used) is included in sim_settings$event_data_orig:",
+    "#head(as.data.frame(sim_settings$event_data_orig))",
     "",
     "## Simulation ------------------------------------------------------------",
     "",

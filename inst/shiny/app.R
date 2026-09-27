@@ -6740,6 +6740,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_1(),
         event_data         = last_ev_df,
+        event_data_orig    = last_ev_df_orig,
         sampling_times     = sampling_options(),
         covariate_db       = if('ID' %in% names(last_ev_df)) database_model_1() else NULL,
         seed               = d_seed_number_model_1()
@@ -6765,6 +6766,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_2(),
         event_data         = last_ev_df,
+        event_data_orig    = last_ev_df_orig,
         sampling_times     = sampling_options(),
         covariate_db       = if('ID' %in% names(last_ev_df)) database_model_2() else NULL,
         seed               = d_seed_number_model_2()

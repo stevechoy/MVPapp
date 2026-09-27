@@ -60,7 +60,7 @@ protocol as OpenAI should also work (by selecting the
 configuring API keys after package installation:
 
 1.  Open up the `.Renviron` file (if you have the `usethis` package, run
-    [`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html)on
+    [`usethis::edit_r_environ()`](https://rdrr.io/pkg/usethis/man/edit.html)on
     the console)  
 2.  Create a new entry for each provider that you would like to use, as
     follows:  
