@@ -8,6 +8,8 @@
   : Function to add a watermark to a ggplot
 - [`binary_cat_dist()`](https://stevechoy.github.io/MVPapp/reference/binary_cat_dist.md)
   : Function to generate a binary categorical covariate
+- [`build_repro_bundle()`](https://stevechoy.github.io/MVPapp/reference/build_repro_bundle.md)
+  : Exports a standalone, reproducible mrgsolve simulation bundle
 - [`calc_summary_stats()`](https://stevechoy.github.io/MVPapp/reference/calc_summary_stats.md)
   : Calculate summary stats with optional rounding
 - [`calc_summary_stats_as_list()`](https://stevechoy.github.io/MVPapp/reference/calc_summary_stats_as_list.md)

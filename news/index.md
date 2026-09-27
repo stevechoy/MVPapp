@@ -1,5 +1,20 @@
 # Changelog
 
+## MVPapp 0.4.5 (2026-09-26)
+
+### Features
+
+- Overhauled the Download Model button to have all relevant information
+  in a standalone .zip bundle, together with a built-in R script to
+  allow full reproducibility
+  ([\#19](https://github.com/stevechoy/MVPapp/issues/19))
+
+### Documentation
+
+- AI Translation feature had its performance evaluated and documented in
+  its vignette with results available on GitHub
+  ([\#20](https://github.com/stevechoy/MVPapp/issues/20))
+
 ## MVPapp 0.4.4 (2026-09-19)
 
 ### Features
