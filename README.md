@@ -56,7 +56,9 @@ internal discussions more efficiently.**
 ## Install pak first if required
 # install.packages("pak")
 
+options(pkg.build_vignettes = TRUE)
 pak::pak("stevechoy/MVPapp")
+# options(pkg.build_vignettes = FALSE)  # reset option if required
 ```
 
 Once installed, launch MVP using the following commands:
