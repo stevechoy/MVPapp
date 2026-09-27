@@ -31,7 +31,8 @@ parameters
 [CDC](https://www.cdc.gov/growthcharts/percentile_data_files.htm)
 virtual patients  
 - Custom covariate distributions to further assess variability  
-- Saving and restoring sessions
+- Saving and restoring sessions, and off-the-shelf **100% reproducible
+code for all simulations** readily available
 
 **The goal of MVP is to support initial model development and facilitate
 internal discussions more efficiently.**
@@ -407,6 +408,13 @@ The current model and settings can be saved as a .rds file to be stored
 locally, and re-loaded at any time for convenience, which includes
 support of any uploaded datasets and filtering options. The buttons are
 located below the main code editor.
+
+#### Reproducible Simulation Code
+
+All relevant model information can be exported as a .zip bundle for
+local execution to fully reproduce the simulations. A built-in R script
+is also provided for ease of transfer into the user’s preferred
+workflow, allowing it to be easily QC’d. 
 
 ![](www/session.png)
 
