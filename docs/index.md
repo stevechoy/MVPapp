@@ -139,8 +139,13 @@ page (e.g. dosing and axis choices).
     load, turning **off** interactive plots may help with speeding
     things up.
 8.  All settings and options (including any uploaded datasets, see
-    below) can be saved and be restored at a later time for convenience.
-    The download button is located below the code editor.
+    below) can be saved and be restored at a later time for convenience,
+    with the “Save Session” button, located below the code editor.
+    - The “Download Model” button nearby can also be used to download
+      the entire model code, dosing info, and demographics (when
+      simulating with variability) together in a .zip bundle, **included
+      with a simulation-ready R script for 100% reproducibility** if
+      required.
 
 ![](www/plotlytoolbar.png)
 

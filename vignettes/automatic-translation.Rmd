@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-_Last updated: 2026-09-04_
+_Last updated: 2026-09-26_
 
 ## Motivation  
 
@@ -68,7 +68,7 @@ When you launch MVP (`run_mvp()`), you may specify defaults associated with your
   - `model_*`: Default model names to use for your preferred provider, e.g. `model_openai` for ChatGPT, or `model_anthropic` for Claude, etc. Please check each provider for the latest list of accepted model names.  
   - `api_chat`: URL path if you are using an OpenAI-Compatible provider, which feeds into the `base_url` argument during `ellmer::chat_openai_compatible()` call  
   - `api_upload`: URL path if you are using a Dify-style provider for the upload location of files  
-  - `temperature`: Temperature setting, ranging from 0 (more deterministic) to 1 (more creativity), defaults to `0`. (Note: From mid-2026, most "thinking" models have stopped supporting the use of temperature. A warning pop-up box will notify users whether temperature is used during translation.) 
+  - `temperature`: Temperature setting, ranging from 0 (more deterministic) to 1 (more creativity), defaults to `1`. (Note: From mid-2026, most "thinking" models have stopped supporting the use of temperature. A warning pop-up box will notify users whether temperature is used during translation.) 
   - `llm_seed`: Seed number if supported by the LLM (however it still does not guarantee reproducibility), defaults to `42`
   - `model_lang`: Default output to `mrgsolve`, `nonmem`, or `rxode2` code in the response (see below).
   - `prompts_path`: Path of the [prompts file](https://github.com/stevechoy/MVPapp/blob/master/inst/shiny/prompts.R){target="_blank"}, by default it is in the installed package directory of `MVPapp` (see below).  
@@ -152,7 +152,7 @@ In summary, successful compilation and correct translation of fixed effects occu
 
 Based on this assessment, **translating from the literature is generally reliable** (at least for the structural model), assuming a parameter table is present and model relationships are well explained in the text. When there happen to be errors, they are usually quite obvious and easy to correct from the user's perspective. Given that this is as worst as it's going to get (as of Sept 2026), future LLMs are expected to score even better than the current state-of-the-art models, which becomes quickly outdated every few months.  
 
-This work is presented in ACoP 2026, with the poster available here (link TBD).
+This work is presented in ACoP 2026, with the poster available [here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/Choy_ACoP_2026.pdf){target="_blank"}.
 
 ## Summary  
 

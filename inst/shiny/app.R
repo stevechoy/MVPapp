@@ -66,7 +66,7 @@ if(standalone_mode) {
   model_apollo            = "claude_4_6_sonnet" # For BI-only
   model_azure             = "gpt-5.2"
   model_aws               = "anthropic.claude-sonnet-5"
-  temperature             = 0
+  temperature             = 1
   llm_seed                = 42
   model_lang              = c("mrgsolve", "nonmem", "rxode2")
   prompts_path            = NA_character_ 
@@ -97,7 +97,7 @@ if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-fl
 if(!exists("model_apollo"))            {model_apollo             <- "claude_4_6_sonnet"}
 if(!exists("model_azure"))             {model_azure              <- "gpt-5.2"}
 if(!exists("model_aws"))               {model_aws                <- "anthropic.claude-sonnet-5"}
-if(!exists("temperature"))             {temperature              <- 0}
+if(!exists("temperature"))             {temperature              <- 1}
 if(!exists("llm_seed"))                {llm_seed                 <- 42}
 if(!exists("model_lang"))              {model_lang               <- c("mrgsolve", "nonmem", "rxode2")}
 if(!exists("prompts_path"))            {prompts_path             <- "https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R"} 
@@ -661,7 +661,7 @@ ui <- shiny::navbarPage(
                                                                                    tags$div(
                                                                                      style = "display: flex; align-items: center; width: 100%; margin-top: -20px; margin-bottom: -20px;",
                                                                                      
-                                                                                     downloadButton('download_cpp_model_1', 'Download Model (.cpp)'),
+                                                                                     downloadButton('download_cpp_model_1', 'Download Model (.zip)', class = "btn-success"),
                                                                                      shinyBS::bsPopover('download_cpp_model_1', 'Download Model', content = bspop_download_cpp_model, placement = "right", trigger = "hover"),
                                                                                      
                                                                                      tags$span(style = "padding: 10px;"),
@@ -750,7 +750,7 @@ ui <- shiny::navbarPage(
                                                                                    tags$div(
                                                                                      style = "display: flex; align-items: center; width: 100%; margin-top: -20px; margin-bottom: -20px;",
                                                                                      
-                                                                                     downloadButton('download_cpp_model_2', 'Download Model (.cpp)'),
+                                                                                     downloadButton('download_cpp_model_2', 'Download Model (.zip)', class = "btn-success"),
                                                                                      shinyBS::bsPopover('download_cpp_model_2', 'Download Model', content = bspop_download_cpp_model, placement = "right", trigger = "hover"),
                                                                                      
                                                                                      tags$span(style = "padding: 10px;"),
@@ -2488,6 +2488,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.5 (2026-09-26) - Download Model button reworked to provide a standalone .zip file bundle allowing full reproducibility of simulations.'),
                                p('v0.4.4 (2026-09-19) - Change from baseline automatic derivation support. All simulation outputs are NONMEM-ready with dosing info included. Minor bug fixes and QoL changes.'),
                                p('v0.4.3 (2026-08-13) - Support for using uploaded datasets to provide covariate distributions when simulating with variability. Minor bug fixes.'),
                                p('v0.4.2 (2026-08-03) - Fixing support for frontier thinking models and updating LLM default models.'),
@@ -6721,23 +6722,55 @@ server <- function(input, output, session) {
     }
   )
   
-  ## Download model code as .cpp ----
+  ## Download model code as .zip file containing standalone code ----
+  observe({
+    if(mrgsolve::is.mrgmod(changed_matrix_model_1())) {
+      shinyjs::enable("download_cpp_model_1")
+    } else {
+      shinyjs::disable("download_cpp_model_1")
+    }
+  })
+  
   output$download_cpp_model_1 <- downloadHandler(
     filename = function() {
-      paste0(today_numeric(), "_model_1.cpp")
+      paste0(today_numeric(), "_model_1.zip")
     },
-    content = function(file) {
-      mrgsolve::mwrite_cpp(changed_reacted_param_model_1(), file = file, update = FALSE)
-    }
+    content  = function(file) {
+      build_repro_bundle(
+        zip_path           = file,
+        input_model_object = changed_matrix_model_1(),
+        event_data         = last_ev_df,
+        sampling_times     = sampling_options(),
+        covariate_db       = if('ID' %in% names(last_ev_df)) database_model_1() else NULL,
+        seed               = d_seed_number_model_1()
+      )
+    },
+    contentType = "application/zip"
   )
+  
+  observe({
+    if(mrgsolve::is.mrgmod(changed_matrix_model_2())) {
+      shinyjs::enable("download_cpp_model_2")
+    } else {
+      shinyjs::disable("download_cpp_model_2")
+    }
+  })
   
   output$download_cpp_model_2 <- downloadHandler(
     filename = function() {
-      paste0(today_numeric(), "_model_2.cpp")
+      paste0(today_numeric(), "_model_2.zip")
     },
-    content = function(file) {
-      mrgsolve::mwrite_cpp(changed_reacted_param_model_2(), file = file, update = FALSE)
-    }
+    content  = function(file) {
+      build_repro_bundle(
+        zip_path           = file,
+        input_model_object = changed_matrix_model_2(),
+        event_data         = last_ev_df,
+        sampling_times     = sampling_options(),
+        covariate_db       = if('ID' %in% names(last_ev_df)) database_model_2() else NULL,
+        seed               = d_seed_number_model_2()
+      )
+    },
+    contentType = "application/zip"
   )
   
   # Page 3 Parameter Sensitivity Analysis ----

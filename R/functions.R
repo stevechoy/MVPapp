@@ -1257,6 +1257,8 @@ run_single_sim <- function(input_model_object,
         solved_output$result, ext_db, by = c("ID"), all.x = TRUE
       )
     
+    ev_df <- ext_db_ev
+    
   } else {
     # Covers nsubj <= 1 AND the nsubj > 1 / ext_db NULL edge case ──
     if (nsubj > 1 && is.null(ext_db)) {
@@ -1298,7 +1300,13 @@ run_single_sim <- function(input_model_object,
     solved_output <- NULL
   }
   
-  #tmp_solved_output  <<- solved_output
+  ## Globally save simulation data for easy export
+  #last_input_model_object <<- input_model_object
+  last_ev_df              <<- ev_df
+  #last_sampling_times     <<- sampling_times
+  #last_ext_db             <<- ext_db
+  #last_seed               <<- seed
+  
   return(solved_output)
 }
 
@@ -7252,7 +7260,7 @@ get_apollo_token_ext <- function() {
 #' @export
 get_session_state <- function(input, rv, uploaded_data) {
   list(
-    version = "0.4.4",  # tag with app version for forward-compat checks
+    version = "0.4.5",  # tag with app version for forward-compat checks
     saved_at = Sys.time(),
     
     # --- Model code & settings ---
@@ -7979,4 +7987,166 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput(session, "do_exp_plotly",               value    = state$variability$do_exp_plotly)
   
   invisible(NULL)
+}
+
+#-------------------------------------------------------------------------------
+#' @name build_repro_bundle
+#'
+#' @title Exports a standalone, reproducible mrgsolve simulation bundle
+#'
+#' @param zip_path            Path to write the output .zip archive to
+#' @param input_model_object  mrgmod object, the compiled model used for the simulation
+#' @param event_data          The exact data.frame passed to mrgsolve::data_set() for
+#'                            this run (i.e. ev_df or ext_db_ev), already fully
+#'                            transformed. This is what allows the generated script
+#'                            to skip transform_ev_df() entirely
+#' @param sampling_times      A vector of sampling times, passed to tgrid in
+#'                            mrgsolve::mrgsim_df()
+#' @param covariate_db        Default NULL. A data.frame of covariates, keyed by ID,
+#'                            joined back onto the simulated output. When NULL,
+#'                            random effects are zeroed before simulating (assumes a
+#'                            single/typical-subject run); when supplied, random
+#'                            effects are left as specified in the model
+#' @param seed                Default 1000. Random seed set before simulation, for
+#'                            reproducibility of any simulated variability
+#'
+#' @returns Invisibly, the path to the written .zip file (zip_path)
+#'
+#' @importFrom mrgsolve mwrite_cpp mread zero_re data_set carry_out mrgsim_df
+#' @importFrom dplyr left_join
+#' @importFrom zip zip
+#' @export
+#-------------------------------------------------------------------------------
+
+build_repro_bundle <- function(zip_path,
+                               input_model_object,
+                               event_data,
+                               sampling_times,
+                               covariate_db   = NULL,
+                               seed           = 1000) {
+  
+  build_dir <- file.path(tempdir(), paste0("repro_", as.integer(Sys.time())))
+  dir.create(build_dir)
+  on.exit(unlink(build_dir, recursive = TRUE), add = TRUE)
+  
+  ## Project root marker -------------------------------------------------------
+  file.create(file.path(build_dir, ".here"))
+  
+  ## Model source --------------------------------------------------------------
+  mrgsolve::mwrite_cpp(input_model_object, file = file.path(build_dir, "model.cpp"), update = FALSE)
+
+  saveRDS(event_data, file.path(build_dir, "event_data.rds"))
+  if (!is.null(covariate_db)) {
+    saveRDS(covariate_db, file.path(build_dir, "covariate_db.rds"))
+    zero_re <- FALSE
+  } else {
+    zero_re <- TRUE
+  }
+  
+  sim_settings <- list(
+    seed           = seed,
+    sampling_times = sampling_times,
+    zero_re        = zero_re
+  )
+  saveRDS(sim_settings, file.path(build_dir, "sim_settings.rds"))
+  
+  ## Environment fingerprint / file guide ---------------------------------------
+  readme <- c(
+    "MVPapp reproducible simulation bundle",
+    "======================================",
+    "",
+    paste("Generated:        ", format(Sys.time(), tz = "UTC", usetz = TRUE)),
+    paste("R version:        ", getRversion()),
+    paste("mrgsolve version: ", as.character(utils::packageVersion("mrgsolve"))),
+    "",
+    "Description of files",
+    "---------------------",
+    "model.cpp          mrgsolve model source, written with mrgsolve::mwrite_cpp().",
+    "                   Rebuilt with mrgsolve::mread('model.cpp') in simulation.R.",
+    "",
+    "event_data.rds     The exact event/dosing data.frame passed to",
+    "                   mrgsolve::data_set() for this run, already fully transformed.",
+    "",
+    "                   Note: it is taken from the most current event table generated",
+    "                   from MVP (stored globally as object 'last_ev_df'). Please check",
+    "                   it is correct if you're switching models from Model 1 -> Model 2.",
+    "",
+    "sim_settings.rds   A list with seed, sampling_times, and zero_re toggle -- the",
+    "                   settings simulation.R needs to reproduce this run.",
+    "",
+    if (!is.null(covariate_db)) {
+      c("covariate_db.rds   Covariate table for this run, joined onto the",
+        "                   simulated output by ID in simulation.R.")
+    } else {
+      "covariate_db.rds   Not included -- no covariate database was used for this run."
+    },
+    "",
+    "simulation.R       Standalone script that sources the files above and",
+    "                   re-runs the simulation. Depends only on mrgsolve and",
+    "                   dplyr -- no dependency on MVPapp or its internal helpers.",
+    ""
+  )
+  writeLines(readme, file.path(build_dir, "README.txt"))
+  
+  ## The runnable script -------------------------------------------------------
+  script <- c(
+    "## Auto-generated reproducible mrgsolve simulation from MVP.",
+    "## Please see README.txt for explanations for each sourced file.",
+    "",
+    "library(mrgsolve)",
+    "library(dplyr)",
+    "",
+    "## Setup -----------------------------------------------------------------",
+    "",
+    "mod            <- mrgsolve::mread('model.cpp')",
+    "sim_settings   <- readRDS('sim_settings.rds')",
+    "covariate_db   <- if (file.exists('covariate_db.rds')) readRDS('covariate_db.rds') else NULL",
+    "",
+    "# The event_data object is taken from the most current event table generated from MVP.",
+    "# Please check it is correct if you're switching models from Model 1 -> Model 2.",
+    "event_data     <- readRDS('event_data.rds')",
+    "",
+    "# Inserting ID column, only applicable for simulations without variability",
+    "if(!('ID' %in% names(event_data))) {",
+    "  event_data@data$ID <- 1 # Only applicable for single simulations",
+    "}",
+    "",
+    "# Comment out the line below if you want to enforce simulating with variability",
+    "if (sim_settings$zero_re) mod <- mrgsolve::zero_re(mod)",
+    "",
+    "## Model info ------------------------------------------------------------",
+    "",
+    "# Please check that the parameter values are correct.",
+    "# Note: If zero_re is set, all omegas and sigmas will be set to 0.",
+    "mod@param",
+    "mod@omega",
+    "mod@sigma",
+    "",
+    "# Please check that the dosing info and covariates are correct.",
+    "head(as.data.frame(event_data))",
+    "",
+    "## Simulation ------------------------------------------------------------",
+    "",
+    "# Note: seed is only relevant when simulating with variability",
+    "set.seed(sim_settings$seed)",
+    "",
+    "solved_output <- mod %>%",
+    "  mrgsolve::data_set(as.data.frame(event_data)) %>%",
+    "  mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%",
+    "  mrgsolve::mrgsim_df(tgrid = sim_settings$sampling_times, tad = TRUE)",
+    "",
+    "# Joining covariates (i.e. external databases) if present",
+    "if (!is.null(covariate_db)) {",
+    "  solved_output <- dplyr::left_join(solved_output, covariate_db, by = 'ID')",
+    "}",
+    "",
+    "## Output ----------------------------------------------------------------",
+    "head(solved_output)"
+  )
+  writeLines(script, file.path(build_dir, "simulation.R"))
+  
+  ## Zip it up -----------------------------------------------------------------
+  zip::zip(zipfile = zip_path, files = list.files(build_dir), root = build_dir)
+  
+  invisible(zip_path)
 }

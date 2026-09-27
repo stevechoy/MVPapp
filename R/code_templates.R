@@ -926,7 +926,7 @@ dxdt_ABS     = -KAVAR*ABS;
 dxdt_CENT    = KAVAR*ABS - K20*CENT - K23*CENT + K32*PERI;
 dxdt_PERI    = K23*CENT - K32*PERI;
 
-// Drive the effect with true central concentration (no residual error)
+// Drive the effect with true central concentration (without residual error)
 double CONC  = CENT/VCCOV;
 double INH   = IMAX * pow(CONC, HILL) / (pow(IC50E, HILL) + pow(CONC, HILL));
 dxdt_RESP    = KIN*(1 - INH) - KOUTE*RESP;

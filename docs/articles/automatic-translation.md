@@ -1,6 +1,6 @@
 # Automatic Model Translation
 
-*Last updated: 2026-09-04*
+*Last updated: 2026-09-26*
 
 ## Motivation
 
@@ -104,7 +104,7 @@ the LLM-specific arguments:
 - `api_upload`: URL path if you are using a Dify-style provider for the
   upload location of files  
 - `temperature`: Temperature setting, ranging from 0 (more
-  deterministic) to 1 (more creativity), defaults to `0`. (Note: From
+  deterministic) to 1 (more creativity), defaults to `1`. (Note: From
   mid-2026, most “thinking” models have stopped supporting the use of
   temperature. A warning pop-up box will notify users whether
   temperature is used during translation.)
@@ -316,8 +316,8 @@ it’s going to get (as of Sept 2026), future LLMs are expected to score
 even better than the current state-of-the-art models, which becomes
 quickly outdated every few months.
 
-This work is presented in ACoP 2026, with the poster available here
-(link TBD).
+This work is presented in ACoP 2026, with the poster available
+[here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/Choy_ACoP_2026.pdf).
 
 ## Summary
 

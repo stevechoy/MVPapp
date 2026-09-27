@@ -1,5 +1,7 @@
 # Supplying Passworded Models
 
+*Last updated: 2026-09-26*
+
 ## Update
 
 From v0.4.0, users now have the option to Save and Load Sessions
@@ -7,6 +9,11 @@ From v0.4.0, users now have the option to Save and Load Sessions
 be more convenient. The original password-unlocked models functionality
 detailed below still remains supported, as it can handle multiple
 models.
+
+Somewhat related but important to note that from v0.4.5, users now can
+use the Download Model button (located on the Main Simulation page,
+below the code editor) to export a standalone .zip file containing all
+necessary information to **fully reproduce the simulations from MVP**.
 
 ## Motivation
 

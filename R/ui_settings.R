@@ -192,7 +192,7 @@ bspop_select_model    <- 'Choose a template model, or select "Blank Template" to
 #' @export
 bspop_param_values    <- 'Once a model has been generated, all fixed effects parameters from the model code (i.e. inside $PARAM) will become available to be adjusted dynamically in real-time (however it does not feedback into the model code text).<br><br>Note: Non-sensible / unphysiological values may result in the app crashing and should be avoided.'
 #' @export
-bspop_download_cpp_model <- 'Save current model as a .cpp file including any real-time changes to the parameter values (fixed effects).<br><br>Note: The model must first be successfully generated before the code can be downloaded!'
+bspop_download_cpp_model <- 'Save current model, dosing, and demographics info to a standalone .zip bundle, with a simulation-ready R script for reproducibility. Any real-time changes to the parameter values will be included.<br><br>Note: The model must first be successfully generated before the code can be downloaded!'
 #' @export
 bspop_model_code      <- 'Refer to the mrgsolve user guide (provided on the first line in the code editor) on the required syntax. After editing, click on the "Generate Model" button.<br><br>Note: If the model fails to compile, check the "Model Info (Console)" box below for more information.'
 #' @export

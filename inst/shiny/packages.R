@@ -31,7 +31,8 @@ required_packages <- list(
   shinyWidgets = "0.8.0",
   stringr = NULL, 
   tibble = NULL,
-  tidyr = NULL
+  tidyr = NULL,
+  zip = NULL
 )
 
 # Find missing or outdated packages

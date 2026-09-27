@@ -82,7 +82,7 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
                     model_apollo            = "claude_4_6_sonnet", # For BI-only
                     model_azure             = "gpt-5.2",
                     model_aws               = "anthropic.claude-sonnet-5",
-                    temperature             = 0,
+                    temperature             = 1,
                     llm_seed                = 42,
                     model_lang              = c("mrgsolve", "nonmem", "rxode2"),
                     prompts_path            = system.file("shiny/prompts.R", package = "MVPapp"),
