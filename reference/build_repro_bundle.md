@@ -9,6 +9,7 @@ build_repro_bundle(
   zip_path,
   input_model_object,
   event_data,
+  event_data_orig,
   sampling_times,
   covariate_db = NULL,
   seed = 1000
@@ -30,6 +31,10 @@ build_repro_bundle(
   The exact data.frame passed to mrgsolve::data_set() for this run (i.e.
   ev_df or ext_db_ev), already fully transformed. This is what allows
   the generated script to skip transform_ev_df() entirely
+
+- event_data_orig:
+
+  Original ev() dosing info, pre-transformed
 
 - sampling_times:
 
