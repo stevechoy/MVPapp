@@ -71,7 +71,7 @@
 - Automatic PK/PD metrics using a user-defined time range<br>
 - Variability assessment using external databases such as the <a href="https://wwwn.cdc.gov/nchs/nhanes/Default.aspx" target="_blank" class="external-link">NHANES</a>, <a href="https://www.who.int/childgrowth/standards/weight_for_age/en/" target="_blank" class="external-link">WHO</a>, and <a href="https://www.cdc.gov/growthcharts/percentile_data_files.htm" target="_blank" class="external-link">CDC</a> virtual patients<br>
 - Custom covariate distributions to further assess variability<br>
-- Saving and restoring sessions</p>
+- Saving and restoring sessions, and off-the-shelf <strong>100% reproducible code for all simulations</strong> readily available</p>
 <p><strong>The goal of MVP is to support initial model development and facilitate internal discussions more efficiently.</strong></p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
@@ -301,6 +301,11 @@
 <h4 id="saving-and-restoring-sessions">Saving and Restoring Sessions<a class="anchor" aria-label="anchor" href="#saving-and-restoring-sessions"></a>
 </h4>
 <p>The current model and settings can be saved as a .rds file to be stored locally, and re-loaded at any time for convenience, which includes support of any uploaded datasets and filtering options. The buttons are located below the main code editor.</p>
+</div>
+<div class="section level4">
+<h4 id="reproducible-simulation-code">Reproducible Simulation Code<a class="anchor" aria-label="anchor" href="#reproducible-simulation-code"></a>
+</h4>
+<p>All relevant model information can be exported as a .zip bundle for local execution to fully reproduce the simulations. A built-in R script is also provided for ease of transfer into the user’s preferred workflow, allowing it to be easily QC’d. </p>
 <p><img src="www/session.png"></p>
 </div>
 </div>
