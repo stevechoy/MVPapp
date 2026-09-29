@@ -3,7 +3,7 @@
 Requests a short-lived OAuth access token from the Axway gateway using
 client credentials. Requires `APOLLO_CLIENT_ID`, `APOLLO_CLIENT_SECRET`,
 and `APOLLO_TOKEN_URL` to be set in `.Renviron`. Use
-[`usethis::edit_r_environ()`](https://rdrr.io/pkg/usethis/man/edit.html)
+[`usethis::edit_r_environ()`](https://usethis.r-lib.org/reference/edit.html)
 to set them. Only relevant for BI.
 
 ## Usage

@@ -19,11 +19,11 @@ safely_qsim(...)
 A list with two elements:
 
 - `result`: The result of
-  [`mrgsolve::qsim`](https://rdrr.io/pkg/mrgsolve/man/qsim.html), or
+  [`mrgsolve::qsim`](https://mrgsolve.org/docs/reference/qsim.html), or
   `NULL` if an error occurred.
 
 - `error`: The error that occurred, or `NULL` if no error occurred.
 
 ## See also
 
-[`mrgsolve::qsim`](https://rdrr.io/pkg/mrgsolve/man/qsim.html)
+[`mrgsolve::qsim`](https://mrgsolve.org/docs/reference/qsim.html)

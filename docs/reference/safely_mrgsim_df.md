@@ -19,11 +19,11 @@ safely_mrgsim_df(...)
 A list with two elements:
 
 - `result`: The result of
-  [`mrgsolve::mrgsim_df`](https://rdrr.io/pkg/mrgsolve/man/mrgsim.html),
+  [`mrgsolve::mrgsim_df`](https://mrgsolve.org/docs/reference/mrgsim.html),
   or `NULL` if an error occurred.
 
 - `error`: The error that occurred, or `NULL` if no error occurred.
 
 ## See also
 
-[`mrgsolve::mrgsim_df`](https://rdrr.io/pkg/mrgsolve/man/mrgsim.html)
+[`mrgsolve::mrgsim_df`](https://mrgsolve.org/docs/reference/mrgsim.html)
