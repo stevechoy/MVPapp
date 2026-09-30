@@ -182,6 +182,15 @@
 - [`refine_model_code()`](https://stevechoy.github.io/MVPapp/reference/refine_model_code.md)
   : Provide a model code string and its compile error message to be
   refined
+- [`repro_df_to_code()`](https://stevechoy.github.io/MVPapp/reference/repro_df_to_code.md)
+  : Internal helper: renders a data.frame as readable R code
+- [`repro_num_txt()`](https://stevechoy.github.io/MVPapp/reference/repro_num_txt.md)
+  : Internal helper: numbers to text, exactly round-trippable
+- [`repro_time_grid()`](https://stevechoy.github.io/MVPapp/reference/repro_time_grid.md)
+  : Internal helper: finds seq() parameters that reproduce a sampling
+  grid
+- [`repro_vec_code()`](https://stevechoy.github.io/MVPapp/reference/repro_vec_code.md)
+  : Internal helper: renders a numeric vector as a literal in R code
 - [`restore_session_state()`](https://stevechoy.github.io/MVPapp/reference/restore_session_state.md)
   : Restore a saved MVP session state
 - [`run_dify_chat()`](https://stevechoy.github.io/MVPapp/reference/run_dify_chat.md)
