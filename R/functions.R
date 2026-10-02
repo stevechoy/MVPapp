@@ -8427,7 +8427,7 @@ build_repro_bundle <- function(zip_path,
     "# Example plot - note that only simulated observations (EVID == 0) are shown."
     "if (requireNamespace('ggplot2', quietly = TRUE) && !is.na(yvar)) {",
     "  plot_output <- ggplot2::ggplot(solved_output, ggplot2::aes(x = time, y = .data[[yvar]], group = ID)) +",
-    "    ggplot2::geom_vline(xintercept = dose_times, linetype = 'dashed', colour = 'grey50') + # remove if there are too many doses",
+    "    ggplot2::geom_vline(xintercept = dose_times, linetype = 'dashed', colour = 'red') + # remove if there are too many doses",
     "    ggplot2::geom_line(alpha = 0.3) +",
     "    ggplot2::geom_point(alpha = 0.5) +",
     "    #ggplot2::scale_y_log10() +",
