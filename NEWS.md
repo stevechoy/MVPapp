@@ -1,3 +1,14 @@
+# MVPapp 0.4.6 (2026-10-01)
+
+## Features
+
+* Supports server-side dataset upload to be compatible in a validated environment (#22)
+* QoL additions to the standalone .zip bundle (#23)
+
+## Bugfixes
+
+* Correcting a behavior where doses with infusion rates would fail to display properly in individual plots (#21)
+
 # MVPapp 0.4.5 (2026-09-26)
 
 ## Features

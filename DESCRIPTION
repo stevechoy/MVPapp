@@ -1,6 +1,6 @@
 Package: MVPapp
 Title: Model Visualization Platform
-Version: 0.4.5
+Version: 0.4.6
 Authors@R: c(
     person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre", "cph")),
     person("Jin Gyu", "Kim", role = "aut"),
@@ -37,6 +37,7 @@ Imports: bslib (>= 0.5.1),
          shinyBS (>= 0.61.1),
          shinycssloaders,
          shinydashboard (>= 0.7.2),
+         shinyFiles,
          shinyjs (>= 1.0),
          shinythemes,
          shinyWidgets (>= 0.8.0),

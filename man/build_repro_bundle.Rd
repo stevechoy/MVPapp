@@ -40,6 +40,8 @@ simulation.R as an editable data.frame. It must not
 contain an ID column: it is the per-subject template,
 which is replicated across covariate_db by simulation.R}
 
+\item{event_data_post}{The post-transformed ev() used by MVP}
+
 \item{sampling_times}{A vector of sampling times, passed to tgrid in
 mrgsolve::mrgsim_df()}
 
@@ -85,8 +87,6 @@ effects are left as specified in the model}
 
 \item{seed}{Default 1000. Random seed set before simulation, for
 reproducibility of any simulated variability}
-
-\item{even_data_post}{The post-transformed ev() used by MVP}
 }
 \value{
 Invisibly, the path to the written .zip file (zip_path)

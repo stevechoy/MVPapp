@@ -26,6 +26,7 @@ required_packages <- list(
   shinyBS = "0.61.1", 
   shinycssloaders = NULL,
   shinydashboard = "0.7.2",
+  shinyFiles = NULL,
   shinyjs = "1.0", 
   shinythemes = NULL,
   shinyWidgets = "0.8.0",

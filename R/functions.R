@@ -4199,7 +4199,7 @@ search_time_col <- function(orig_df,
 #'
 #' @description
 #' Expands ADDL and II dosing rows. If there are no ADDL and II columns, return
-#' original dataframe unchanged
+#' original dataframe unchanged. Missing ADDL values are treated as 0 (single dose).
 #'
 #' @param data The dataframe used for expansion
 #' @param x_axis The x_axis variable, usually TIME or TAFD etc
@@ -4207,31 +4207,36 @@ search_time_col <- function(orig_df,
 #' @param debug Show debugging messages
 #'
 #' @returns a dataframe
-#' @importFrom dplyr filter mutate arrange rename rowwise ungroup
+#' @importFrom dplyr filter mutate arrange rename rowwise ungroup select bind_rows sym
 #' @importFrom tidyr unnest
 #' @export
 #-------------------------------------------------------------------------------
 
 expand_addl_ii <- function(data, x_axis, dose_col, debug = FALSE) {
-
+  
   data$DOSETIME <- as.numeric(as.character(data[[x_axis]])) # Still create DOSETIME if no ADDL II is found
-
+  
   # Check if necessary columns are present
-  if(all(c("ADDL", "II", "EVID", x_axis, dose_col) %in% colnames(data))) {
-
+  if (all(c("ADDL", "II", "EVID", x_axis, dose_col) %in% colnames(data))) {
+    
     data$ADDL <- as.integer(data$ADDL) # number of additional doses must be whole numbers
     data$II   <- as.numeric(data$II)
-
+    
+    # Treat missing ADDL as a single dose so these rows are never dropped by the split below
+    data$ADDL[is.na(data$ADDL)] <- 0L
+    
     # Split data into rows with ADDL > 0 and others
-    addl_rows <- data %>% dplyr::filter(ADDL > 0 & !is.na(II))
-    non_addl_rows <- data %>%
-      dplyr::filter(!(ADDL > 0 & !is.na(II)))
-
-    # message(paste0("nrow(addl_rows): ", nrow(addl_rows)))
-    # message(paste0("nrow(non_addl_rows): ", nrow(non_addl_rows)))
-
+    # (ADDL has no NAs at this point, so the two filters are exact complements)
+    addl_rows     <- dplyr::filter(data, ADDL > 0 & !is.na(II))
+    non_addl_rows <- dplyr::filter(data, !(ADDL > 0 & !is.na(II)))
+    
+    if (debug) {
+      message("nrow(addl_rows): ", nrow(addl_rows))
+      message("nrow(non_addl_rows): ", nrow(non_addl_rows))
+    }
+    
     # Process addl_rows to expand
-    if(nrow(addl_rows) > 0) { # Edge case where entire dataset has ADDL == 0
+    if (nrow(addl_rows) > 0) { # Edge case where entire dataset has ADDL == 0
       expanded_addl <- addl_rows %>%
         dplyr::rowwise() %>%
         dplyr::mutate(
@@ -4243,7 +4248,7 @@ expand_addl_ii <- function(data, x_axis, dose_col, debug = FALSE) {
     } else {
       expanded_addl <- NULL
     }
-
+    
     # Combine with non_addl_rows and arrange by ID and TIME
     df <- dplyr::bind_rows(expanded_addl, non_addl_rows) %>%
       dplyr::mutate(ADDL = NA, II = NA) %>% # Clean up for clarity
@@ -4251,18 +4256,18 @@ expand_addl_ii <- function(data, x_axis, dose_col, debug = FALSE) {
   } else {
     df <- data
   }
-
-  if("RATE" %in% colnames(df)) { # NAMT, SAMT, min_yvar is previously calculated
-
-    df$RATE <- as.numeric(as.character(data$RATE))
-
-    df <- df %>%
-      select(ID, facet_label, DOSETIME, !!dplyr::sym(x_axis), !!dplyr::sym(dose_col), NAMT, SAMT, min_yvar, RATE)
-  } else {
-    df <- df %>%
-      select(ID, facet_label, DOSETIME, !!dplyr::sym(x_axis), !!dplyr::sym(dose_col), NAMT, SAMT, min_yvar)
+  
+  # NAMT, SAMT, min_yvar are previously calculated
+  keep_cols <- c("ID", "facet_label", "DOSETIME", x_axis, dose_col, "NAMT", "SAMT", "min_yvar")
+  
+  if ("RATE" %in% colnames(df)) {
+    # Use df (the expanded data), not data (the original), so lengths and row order match
+    df$RATE   <- as.numeric(as.character(df$RATE))
+    keep_cols <- c(keep_cols, "RATE")
   }
-
+  
+  df <- dplyr::select(df, dplyr::all_of(unique(keep_cols)))
+  
   return(df)
 }
 
@@ -8016,7 +8021,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
 #'                            simulation.R as an editable data.frame. It must not
 #'                            contain an ID column: it is the per-subject template,
 #'                            which is replicated across covariate_db by simulation.R
-#' @param even_data_post      The post-transformed ev() used by MVP                           
+#' @param event_data_post     The post-transformed ev() used by MVP                           
 #' @param sampling_times      A vector of sampling times, passed to tgrid in
 #'                            mrgsolve::mrgsim_df()
 #' @param custom_sampling_time Default FALSE. Whether sampling_times came from the
@@ -8082,7 +8087,7 @@ build_repro_bundle <- function(zip_path,
   on.exit(unlink(build_dir, recursive = TRUE), add = TRUE)
   
   ## Project root marker -------------------------------------------------------
-  file.create(file.path(build_dir, ".here"))
+  #file.create(file.path(build_dir, ".here"))
   
   ## Model source --------------------------------------------------------------
   mrgsolve::mwrite_cpp(input_model_object, file = file.path(build_dir, "model.cpp"), update = FALSE)
@@ -8150,7 +8155,7 @@ build_repro_bundle <- function(zip_path,
     paste("mw_checkbox     <-", deparse(mw_checkbox)),
     paste("mw_value        <-", deparse(mw_value)),
     paste("mw_multi_factor <-", deparse(mw_multi_factor)), #repro_num_txt(mw_conversion)),
-    paste("mw_conversion   <-  1/mw_value * mw_multi_factor # Only relevant when mw_checkbox = TRUE"),
+    paste("mw_conversion   <- 1/mw_value * mw_multi_factor # Only relevant when mw_checkbox = TRUE"),
     paste("wt_based_dosing <-", deparse(wt_based_dosing)),
     paste("wt_name         <-", deparse(wt_name), " # Only relevant when wt_based_dosing = TRUE and wt_name exists as a parameter"),
     paste("model_dur       <-", deparse(model_dur), " # Detected automatically - manual override possible"),
@@ -8204,9 +8209,9 @@ build_repro_bundle <- function(zip_path,
     "                     'dosing',          the pre-transformed dosing table from MVP",
     "                     'event_data_post'  the actual events table used by MVP",
     "",
-    "                   simulation.R does *NOT* need this file. Every setting is written",
+    "                   Note: This file is *NOT* required. Every setting is written",
     "                   into simulation.R itself, so edit the values there; this file",
-    "                   is only there so you can always see, compare with, or restore",
+    "                   is only there so you can always compare with, or restore",
     "                   the original values, e.g. readRDS('orig_settings.rds')$dosing",
     "",
     if (!is.null(covariate_db)) {
@@ -8217,29 +8222,39 @@ build_repro_bundle <- function(zip_path,
       "covariate_db.rds   Not included -- no covariate database was used for this run."
     },
     "",
-    "simulation.R       Standalone script that re-runs the simulation. Depends only on",
-    "                   mrgsolve and dplyr, and only needs model.cpp (and covariate_db.rds, if",
-    "                   included) in the working directory. All relevant settings are",
-    "                   written into it.",
+    "simulation.R       Standalone script that reproduces the simulation. Depends only on",
+    "                   mrgsolve and dplyr packages. Sources in model.cpp (and covariate_db.rds,",
+    "                   if included) in the working directory. All relevant settings are ",
+    "                   written into it, and easily editable.",
     "",
-    "                   The dosing is NOT stored as a pre-built event table. Instead, the",
-    "                   'Dosing' section of simulation.R contains the original dosing",
+    "                   The 'Dosing' section of simulation.R contains the original dosing",
     "                   table (as generated by MVP before any transformation, with amt",
-    "                   BEFORE MW conversion) plus the switches MVP applies to it (MW",
+    "                   BEFORE MW / WT conversion). The switches MVP applies to it (MW",
     "                   conversion, weight-based dosing, modelled duration/rate, PRED",
-    "                   model), and rebuilds the event data from those. Edit that",
+    "                   model) will rebuild the event data from those. Edit this",
     "                   section to change the dosing.",
+    "",
+    "                   The 'Event data' section will merge in covariate information ",
+    "                   (e.g. from external databases, such as NHANES) and perform weight-based ",
+    "                   dose transformations (if required). This creates an 'event_data'",
+    "                   object which supplies the dataset used for simulations.",
+    "",
+    "                   Note: The final output object is called 'solved_output'.",
+    "                   Example code is included for convenience so the user can",
+    "                   export the object for use in their own workflows, if desired.",
     ""
   )
   writeLines(readme, file.path(build_dir, "README.txt"))
   
   ## The runnable script -------------------------------------------------------
   script <- c(
+    "## =======================================================================",
     "## Auto-generated reproducible mrgsolve simulation from MVP.",
     "## Please see README.txt for explanations for each file.",
     "## Requires model.cpp (and covariate_db.rds, if present) in the working directory.",
-    "## All settings below are the values MVP used; edit them freely. The originals are",
-    "## also kept for reference in orig_settings.rds (not required by this script).",
+    "## All settings below are the values MVP used; edit them freely. The original sims",
+    "## settings are also kept for reference in orig_settings.rds (not required by this script).",
+    "## =======================================================================",
     "",
     "library(mrgsolve)",
     "library(dplyr)",
@@ -8248,7 +8263,7 @@ build_repro_bundle <- function(zip_path,
     "",
     "mod            <- mrgsolve::mread('model.cpp')",
     "covariate_db   <- if (file.exists('covariate_db.rds')) readRDS('covariate_db.rds') else NULL",
-    "orig_settings  <- readRDS('orig_settings.rds') # Provided for reference only - not required",
+    "orig_settings  <- if (file.exists('orig_settings.rds')) readRDS('orig_settings.rds') else NULL # Reference only - not required",
     "",
     "## Simulation settings ---------------------------------------------------",
     "",
@@ -8335,6 +8350,7 @@ build_repro_bundle <- function(zip_path,
     "}",
     "# Uncomment below to use MVP's stored post-transformed event data:",
     "#event_data <- orig_settings$event_data_post",
+    "#if (!'ID' %in% names(event_data)) event_data$ID <- 1",
     "",
     "## Model info ------------------------------------------------------------",
     "",
@@ -8363,7 +8379,48 @@ build_repro_bundle <- function(zip_path,
     "}",
     "",
     "## Output ----------------------------------------------------------------",
-    "head(solved_output)"
+    "",
+    "# time vs. the first variable captured by the model.",
+    "# Set yvar yourself (e.g. yvar <- 'CP') to plot something else, and customise freely.",
+    "",
+    "out_vars <- mrgsolve::outvars(mod)",
+    "yvar     <- intersect(c(out_vars$capture, out_vars$cmt), names(solved_output))[1]",
+    "",
+    "# Dashed vertical lines mark the doses given in event_data: each dosing record plus its",
+    "# additional doses (addl, one every ii), within the simulated time range.",
+    "",
+    "get_col    <- function(df, nm, default) if (nm %in% names(df)) replace(df[[nm]], is.na(df[[nm]]), default) else rep(default, nrow(df))",
+    "is_dose    <- get_col(event_data, 'evid', 1) %in% c(1, 4) & get_col(event_data, 'amt', 0) > 0",
+    "dose_time  <- get_col(event_data, 'time', 0)[is_dose]",
+    "dose_ii    <- get_col(event_data, 'ii', 0)[is_dose]",
+    "dose_addl  <- get_col(event_data, 'addl', 0)[is_dose]",
+    "dose_times <- unique(unlist(Map(function(t, ii, n) t + ii * (seq_len(n) - 1), dose_time, dose_ii, dose_addl + 1)))",
+    "",
+    "if (requireNamespace('ggplot2', quietly = TRUE) && !is.na(yvar)) {",
+    "  plot_output <- ggplot2::ggplot(solved_output, ggplot2::aes(x = time, y = .data[[yvar]], group = ID)) +",
+    "    ggplot2::geom_vline(xintercept = dose_times, linetype = 'dashed', colour = 'grey50') + # remove if there are too many doses",
+    "    ggplot2::geom_line(alpha = 0.3) +",
+    "    ggplot2::geom_point(alpha = 0.5) +",
+    "    #ggplot2::scale_y_log10() +",
+    "    ggplot2::labs(x = 'Time', y = yvar, caption = if (length(dose_times) > 0) 'Dashed vertical lines: dosing times') +",
+    "    ggplot2::theme_bw()",
+    "  print(plot_output)",
+    "} else {",
+    "  message('Plot skipped: needs the ggplot2 package and a captured variable or compartment to plot.')",
+    "}",
+    "",
+    "## Save results ----------------------------------------------------------",
+    "",
+    "# Uncomment to store solved_output for use in your own workflows.",
+    "# Files are saved to the working directory (see getwd()).",
+    "",
+    "# .csv: (numbers are written to ~15 significant digits)",
+    "#write.csv(solved_output, 'solved_output.csv', row.names = FALSE)",
+    "#solved_output <- read.csv('solved_output.csv')   # to read it back in R",
+    "",
+    "# .rds: R-only, but keeps everything exactly as it is in memory (full precision, column types)",
+    "#saveRDS(solved_output, 'solved_output.rds')",
+    "#solved_output <- readRDS('solved_output.rds')    # to read it back in R"
   )
   writeLines(unlist(script), file.path(build_dir, "simulation.R"))
   

@@ -20,5 +20,5 @@ a dataframe
 }
 \description{
 Expands ADDL and II dosing rows. If there are no ADDL and II columns, return
-original dataframe unchanged
+original dataframe unchanged. Missing ADDL values are treated as 0 (single dose).
 }

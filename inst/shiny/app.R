@@ -55,12 +55,12 @@ if(standalone_mode) {
   llm_choices             = c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Azure OpenAI", "AWS Bedrock")
   api_upload              = NA_character_  
   api_chat                = NA_character_ 
-  user_id                 = "MVP_user" # 
+  user_id                 = "MVP_user"
   reuse_context           = FALSE # Re-use same conversation to keep original context for better re-iteration answers
   model_gemini            = "gemini-3.8-flash"
-  model_openai            = "gpt-6-sol" # "gpt-5-mini"
-  model_anthropic         = "claude-sonnet-5-5" # "claude-haiku-4-5-20251001" 
-  model_openrouter        = "openrouter/free"  # "openrouter/free"
+  model_openai            = "gpt-6.1-sol" 
+  model_anthropic         = "claude-sonnet-5-5"  
+  model_openrouter        = "openrouter/free"  
   model_openai_compatible = "gpt-5-mini"
   model_deepseek          = "deepseek-flash"
   model_apollo            = "claude_4_6_sonnet" # For BI-only
@@ -89,7 +89,7 @@ if(!exists("user_id"))                 {user_id                  <- "MVP_user"}
 if(!exists("user_id_retry"))           {user_id_retry            <- "MVP_user"}
 if(!exists("reuse_context"))           {reuse_context            <- FALSE}
 if(!exists("model_gemini"))            {model_gemini             <- "gemini-3.8-flash"}
-if(!exists("model_openai"))            {model_openai             <- "gpt-6-sol"}
+if(!exists("model_openai"))            {model_openai             <- "gpt-6.1-sol"}
 if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-5-5"}
 if(!exists("model_openrouter"))        {model_openrouter         <- "arcee-ai/trinity-large-preview:free"}
 if(!exists("model_openai_compatible")) {model_openai_compatible  <- "gpt-5-mini"}
@@ -157,9 +157,31 @@ ui <- shiny::navbarPage(
                             shinydashboard::box(width = 12,
                                                 title = tags$span(htmltools::HTML("Upload Dataset&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_upload_dataset")),
                                                 status = 'primary', solidHeader = TRUE, collapsible = TRUE,
-                                                fileInput("upload", label = NULL,  accept = c("text/csv",
-                                                                                              "text/comma-separated-values,text/plain",
-                                                                                              ".csv"), placeholder = 'Upload a NONMEM-formatted Dataset (.csv) or tab-delimited text (.txt)')
+                                                
+                                                radioButtons("data_source", "Data Source:",
+                                                             choices = c("Local (my computer)" = "local", "Server" = "server"),
+                                                             selected = "server", inline = TRUE),
+                                                
+                                                conditionalPanel(
+                                                  condition = "input.data_source == 'local'",
+                                                  tags$div(
+                                                    style = "color: #a94442; background-color: #f2dede; border: 1px solid #ebccd1; padding: 10px; font-weight: bold; margin-bottom: 10px;",
+                                                    "WARNING: real data probably should not exist locally but only within a validated environment!"
+                                                  ),
+                                                  fileInput("upload", label = NULL,
+                                                            accept = c("text/csv",
+                                                                       "text/comma-separated-values,text/plain",
+                                                                       ".csv"),
+                                                            placeholder = 'Upload a NONMEM-formatted Dataset (.csv) or tab-delimited text (.txt)')
+                                                ),
+                                                
+                                                conditionalPanel(
+                                                  condition = "input.data_source == 'server'",
+                                                  shinyFiles::shinyFilesButton("upload_cloud", "Browse server files",
+                                                                               "Select a NONMEM-formatted Dataset (.csv) or tab-delimited text (.txt)",
+                                                                               multiple = FALSE),
+                                                  verbatimTextOutput("upload_cloud_path", placeholder = TRUE)
+                                                )
                             ),
                             shinyBS::bsPopover("bspop_dataset_cleaning", title = "Built-in Dataset Cleaning Options", content = bspop_dataset_cleaning, placement = "right", trigger = "hover"),
                             shinydashboard::box(width = 12,
@@ -2488,6 +2510,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.6 (2026-10-01) - Supports server-side data upload. Improved standalone .zip file documentation and minor bug fixes.'),
                                p('v0.4.5 (2026-09-26) - Download Model button reworked to provide a standalone .zip file bundle allowing full reproducibility of simulations.'),
                                p('v0.4.4 (2026-09-19) - Change from baseline automatic derivation support. All simulation outputs are NONMEM-ready with dosing info included. Minor bug fixes and QoL changes.'),
                                p('v0.4.3 (2026-08-13) - Support for using uploaded datasets to provide covariate distributions when simulating with variability. Minor bug fixes.'),
@@ -2772,15 +2795,37 @@ server <- function(input, output, session) {
   d_highlight_var_values <- debounce(reactive({ input$highlight_var_values }), debounce_timer_slow)
   
   ## uploaded_data() ----
-  # Disable the checkboxes
-  shinyjs::disable("change_all_to_upper") # Always required and not changeable by the user
-  shinyjs::disable("remove_pound_sign")   # Always required and not changeable by the user
-  shinyjs::disable("create_cmt_col")   # Always required and not changeable by the user
+  # Server locations the user is allowed to browse
+  roots <- c(Home = path.expand("~"))
+  
+  shinyFiles::shinyFileChoose(input, "upload_cloud", roots = roots, session = session,
+                              filetypes = c("csv", "txt", "CSV", "TXT"))
+  
+  # Returns path + name for whichever source is selected
+  file_info <- reactive({
+    if (identical(input$data_source, "local")) {
+      shiny::req(input$upload)
+      list(path = input$upload$datapath, name = input$upload$name)
+    } else {
+      shiny::req(is.list(input$upload_cloud))   # shinyFiles returns 0 until a file is chosen
+      p <- shinyFiles::parseFilePaths(roots, input$upload_cloud)$datapath
+      shiny::req(length(p) == 1)
+      list(path = as.character(p), name = basename(as.character(p)))
+    }
+  }, label = 'file_info')
+  
+  output$upload_cloud_path <- renderText({
+    if (!is.list(input$upload_cloud)) return("No file selected")
+    p <- shinyFiles::parseFilePaths(roots, input$upload_cloud)$datapath
+    if (length(p) != 1) return("No file selected")
+    as.character(p)
+  })
   
   uploaded_data_override <- reactiveVal(NULL)
   
+  # A new file from either source lets the normal reactive take over again
   observeEvent(input$upload, {
-    uploaded_data_override(NULL)  # let the normal reactive take over again
+    uploaded_data_override(NULL)
   })
   
   uploaded_data <- reactive({
@@ -2788,16 +2833,20 @@ server <- function(input, output, session) {
     if (!is.null(uploaded_data_override())) {
       return(uploaded_data_override())
     }
-    shiny::req(input$upload)
-    ext <- tools::file_ext(input$upload$name)
+    fi <- file_info()
+    ext <- tolower(tools::file_ext(fi$name))
     switch(
       ext,
-      #csv = read.csv(input$upload$datapath, sep = ","),
-      csv = data.table::fread(input$upload$datapath, sep = ","),
-      txt = data.table::fread(input$upload$datapath, sep = "\t"), # assumes tab-delimited
-      shiny::validate("Invalid file; Please upload a .csv or .txt (tab-delimited) file")
+      csv = data.table::fread(fi$path, sep = ","),
+      txt = data.table::fread(fi$path, sep = "\t"),  # assumes tab-delimited
+      shiny::validate("Invalid file; Please select a .csv or .txt (tab-delimited) file")
     )
   }, label = 'uploaded_nm_data')
+  
+  # Disable the checkboxes
+  shinyjs::disable("change_all_to_upper") # Always required and not changeable by the user
+  shinyjs::disable("remove_pound_sign")   # Always required and not changeable by the user
+  shinyjs::disable("create_cmt_col")   # Always required and not changeable by the user
   
   # Data after checkBoxed:
   ## built_in_filtered_data() ----
