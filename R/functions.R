@@ -8434,7 +8434,7 @@ build_repro_bundle <- function(zip_path,
     "dose_addl  <- get_col(event_data, 'addl', 0)[is_dose]",
     "dose_times <- unique(unlist(Map(function(t, ii, n) t + ii * (seq_len(n) - 1), dose_time, dose_ii, dose_addl + 1)))",
     "",
-    "# Example plot - note that only simulated observations (EVID == 0) are shown."
+    "# Example plot - note that only simulated observations (EVID == 0) are shown.",
     "if (requireNamespace('ggplot2', quietly = TRUE) && !is.na(yvar)) {",
     "  plot_output <- ggplot2::ggplot(solved_output, ggplot2::aes(x = time, y = .data[[yvar]], group = ID)) +",
     "    ggplot2::geom_vline(xintercept = dose_times, linetype = 'dashed', colour = 'red') + # remove if there are too many doses",
