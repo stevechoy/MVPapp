@@ -55,6 +55,10 @@ build_repro_bundle(
   column: it is the per-subject template, which is replicated across
   covariate_db by simulation.R
 
+- event_data_post:
+
+  The post-transformed ev() used by MVP
+
 - sampling_times:
 
   A vector of sampling times, passed to tgrid in mrgsolve::mrgsim_df()
@@ -126,10 +130,6 @@ build_repro_bundle(
 
   Default 1000. Random seed set before simulation, for reproducibility
   of any simulated variability
-
-- even_data_post:
-
-  The post-transformed ev() used by MVP
 
 ## Value
 

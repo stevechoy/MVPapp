@@ -19,7 +19,7 @@ also saved to orig_settings.rds as a record; simulation.R does not need it."></h
 
     <a class="navbar-brand me-2" href="../index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.5</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -109,6 +109,10 @@ contain an ID column: it is the per-subject template,
 which is replicated across covariate_db by simulation.R</p></dd>
 
 
+<dt id="arg-event-data-post">event_data_post<a class="anchor" aria-label="anchor" href="#arg-event-data-post"></a></dt>
+<dd><p>The post-transformed ev() used by MVP</p></dd>
+
+
 <dt id="arg-sampling-times">sampling_times<a class="anchor" aria-label="anchor" href="#arg-sampling-times"></a></dt>
 <dd><p>A vector of sampling times, passed to tgrid in
 mrgsolve::mrgsim_df()</p></dd>
@@ -183,10 +187,6 @@ effects are left as specified in the model</p></dd>
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
 <dd><p>Default 1000. Random seed set before simulation, for
 reproducibility of any simulated variability</p></dd>
-
-
-<dt id="arg-even-data-post">even_data_post<a class="anchor" aria-label="anchor" href="#arg-even-data-post"></a></dt>
-<dd><p>The post-transformed ev() used by MVP</p></dd>
 
 </dl></div>
     <div class="section level2">

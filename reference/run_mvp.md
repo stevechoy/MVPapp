@@ -24,7 +24,7 @@ run_mvp(
   user_id = "MVP_user",
   reuse_context = FALSE,
   model_gemini = "gemini-3.8-flash",
-  model_openai = "gpt-6-sol",
+  model_openai = "gpt-6.1-sol",
   model_anthropic = "claude-sonnet-5-5",
   model_openrouter = "arcee-ai/trinity-large-preview:free",
   model_openai_compatible = "gpt-5.2",
@@ -103,7 +103,7 @@ run_mvp(
 
 - model_openai:
 
-  Character. Default gpt-6-sol. Model for OpenAI / ChatGPT.
+  Character. Default gpt-6.1-sol. Model for OpenAI / ChatGPT.
 
 - model_anthropic:
 
