@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-`MVPapp` is an R package that bundles the [Model Visualization Platform (MVP)](https://mvp.boehringer-ingelheim.com/){target="_blank"} Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:\
+`MVPapp` is an R package that bundles the [Model Visualization Platform (MVP)](https://lagom.shinyapps.io/MVPapp/){target="_blank"} Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:\
 - Live code editing using [mrgsolve](https://github.com/metrumresearchgroup/mrgsolve){target="_blank"}\
 - Automatic model translation into mrgsolve, [rxode2](https://github.com/nlmixr2/rxode2/){target="_blank"}, or [NONMEM](https://www.iconplc.com/solutions/technologies/nonmem){target="_blank"} code using generative AI\
 - Flexible dosing regimens, supporting up to 5 independent dosing schedules per model\
@@ -242,8 +242,12 @@ Please see the article on [Effective Exploratory Data Analysis (EDA)](https://st
 
 ### Run MVP as a regular Shiny App
 
-To run MVP without calling `run_mvp()`, navigate to the path of the installed `MVPapp` package (path can be obtained by running `system.file(package = 'MVPapp')`), open `shiny/app.R`, and set `standalone_mode <- TRUE`. Then you would be able to run the App as-is. Change back to `standalone_mode <- FALSE` to allow passing of options via `run_mvp()` again.
-
+To run MVP without calling `run_mvp()`, navigate to the path of the installed `MVPapp` package (path can be obtained by running `system.file(package = 'MVPapp')`), open `shiny/app.R`, and set `standalone_mode <- TRUE`. Then you would be able to run the App as-is. Change back to `standalone_mode <- FALSE` to allow passing of options via `run_mvp()` again. This is especially useful if you wish to deploy MVP, in which case you may also want to have a copy of the following files to be sourced locally, in the same directory:  
+    -   External database files: `nhanes.filtered.rda`, `who.expand.rda`, `cdc.expand.rda`  
+    -   MVPapp internal files: `ui_settings.R`, `code_templates.R`, `functions.R`, `prompts.R`  
+    
+Some example code (commented out by default) inside the standalone mode code block (near the top of the script) is provided to help you get started.  
+    
 ### Sources for patient databases
 
 The raw data and code used for deriving the populations used in MVP for the NHANES, CDC, and WHO databases are available inside the `data-raw` folder on Github (note: not included as part of the R-package).

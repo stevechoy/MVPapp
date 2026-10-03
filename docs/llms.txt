@@ -5,12 +5,12 @@
 versions of MVPapp (\<= v0.3.3).**
 
 `MVPapp` is an R package that bundles the [Model Visualization Platform
-(MVP)](https://mvp.boehringer-ingelheim.com/) Shiny application for
-local use and/or deployment. MVP is an interactive pharmacometrics
-environment requiring minimal setup from the users, and is developed
-with user-friendliness as a top priority so even non-modelers may be
-able to explore different aspects of the models without too much hassle,
-whilst balancing complexity for advanced users. Some features include:  
+(MVP)](https://lagom.shinyapps.io/MVPapp/) Shiny application for local
+use and/or deployment. MVP is an interactive pharmacometrics environment
+requiring minimal setup from the users, and is developed with
+user-friendliness as a top priority so even non-modelers may be able to
+explore different aspects of the models without too much hassle, whilst
+balancing complexity for advanced users. Some features include:  
 - Live code editing using
 [mrgsolve](https://github.com/metrumresearchgroup/mrgsolve)  
 - Automatic model translation into mrgsolve,
@@ -457,7 +457,17 @@ obtained by running `system.file(package = 'MVPapp')`), open
 to run the App as-is. Change back to `standalone_mode <- FALSE` to allow
 passing of options via
 [`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)
-again.
+again. This is especially useful if you wish to deploy MVP, in which
+case you may also want to have a copy of the following files to be
+sourced locally, in the same directory:  
+- External database files: `nhanes.filtered.rda`, `who.expand.rda`,
+`cdc.expand.rda`  
+- MVPapp internal files: `ui_settings.R`, `code_templates.R`,
+`functions.R`, `prompts.R`
+
+Some example code (commented out by default) inside the standalone mode
+code block (near the top of the script) is provided to help you get
+started.
 
 ### Sources for patient databases
 
@@ -580,6 +590,8 @@ which you may use for citation purposes.
   : Geometric mean CV %
 - [`handle_blanks()`](https://stevechoy.github.io/MVPapp/reference/handle_blanks.md)
   : Function that turns blank values into ".(blanks)" group
+- [`help_popover()`](https://stevechoy.github.io/MVPapp/reference/help_popover.md)
+  : Help icon with a Bootstrap 3 popover
 - [`iterate_batch_runs()`](https://stevechoy.github.io/MVPapp/reference/iterate_batch_runs.md)
   : Perform multiple simulations from a dataframe containing parameters
 - [`lm_eqn()`](https://stevechoy.github.io/MVPapp/reference/lm_eqn.md) :

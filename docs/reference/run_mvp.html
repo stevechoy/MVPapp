@@ -17,7 +17,7 @@ to it's state prior to calling run_mvp."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -63,6 +63,7 @@ to it's state prior to calling <code>run_mvp</code>.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">run_mvp</span><span class="op">(</span></span>
 <span>  appDir <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"shiny"</span>, package <span class="op">=</span> <span class="st">"MVPapp"</span><span class="op">)</span>,</span>
 <span>  insert_watermark <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  max_dataset_size <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  authentication_code <span class="op">=</span> <span class="cn">NA_character_</span>,</span>
 <span>  internal_version <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  use_bi_styling <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -101,6 +102,10 @@ to it's state prior to calling <code>run_mvp</code>.</p>
 
 <dt id="arg-insert-watermark">insert_watermark<a class="anchor" aria-label="anchor" href="#arg-insert-watermark"></a></dt>
 <dd><p>Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.</p></dd>
+
+
+<dt id="arg-max-dataset-size">max_dataset_size<a class="anchor" aria-label="anchor" href="#arg-max-dataset-size"></a></dt>
+<dd><p>Numeric. Default 200. Maximum upload dataset size in MB.</p></dd>
 
 
 <dt id="arg-authentication-code">authentication_code<a class="anchor" aria-label="anchor" href="#arg-authentication-code"></a></dt>

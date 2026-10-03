@@ -1,3 +1,13 @@
+# MVPapp 0.4.7 (2026-10-03)
+
+## Features
+
+* Maximum upload dataset size (in MB) can now be set by the `max_dataset_size` argument, with a default value of 200 (#25)
+
+## Bugfixes
+
+* Correcting some tooltips not being displayed properly (#24)
+
 # MVPapp 0.4.6 (2026-10-01)
 
 ## Features

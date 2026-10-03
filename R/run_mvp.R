@@ -13,6 +13,7 @@
 #'
 #' @param appDir the directory of the application to run.
 #' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.
+#' @param max_dataset_size Numeric. Default 200. Maximum upload dataset size in MB.
 #' @param authentication_code Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.
 #' @param internal_version Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.
 #' @param use_bi_styling Logical. Default FALSE. Set to TRUE to insert BI logo (deprecated - currently inactive).
@@ -64,6 +65,7 @@
 #' @export
 run_mvp <- function(appDir                  = system.file("shiny", package = "MVPapp"),
                     insert_watermark        = TRUE,
+                    max_dataset_size        = 200,
                     authentication_code     = NA_character_,
                     internal_version        = TRUE,
                     use_bi_styling          = FALSE,
@@ -92,6 +94,7 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
 # Create a list of the parameters
   params <- list(
     insert_watermark        = insert_watermark,
+    max_dataset_size        = max_dataset_size,
     authentication_code     = authentication_code,
     internal_version        = internal_version,
     use_bi_styling          = use_bi_styling,
@@ -163,7 +166,7 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
   default_options <- options()
   options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
   options(DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = T)) # dataTable options
-  options(shiny.maxRequestSize = 200*1024^2) # Maximum file upload size
+  options(shiny.maxRequestSize = max_dataset_size*1024^2) # Maximum file upload size
 
   runApp_args$appDir <- appDir
   do.call(shiny::runApp, runApp_args)

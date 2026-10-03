@@ -107,6 +107,8 @@
   : Geometric mean CV %
 - [`handle_blanks()`](https://stevechoy.github.io/MVPapp/reference/handle_blanks.md)
   : Function that turns blank values into ".(blanks)" group
+- [`help_popover()`](https://stevechoy.github.io/MVPapp/reference/help_popover.md)
+  : Help icon with a Bootstrap 3 popover
 - [`iterate_batch_runs()`](https://stevechoy.github.io/MVPapp/reference/iterate_batch_runs.md)
   : Perform multiple simulations from a dataframe containing parameters
 - [`lm_eqn()`](https://stevechoy.github.io/MVPapp/reference/lm_eqn.md) :

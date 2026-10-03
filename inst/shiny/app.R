@@ -14,7 +14,7 @@ standalone_mode <- FALSE
 
 #######################
 if(standalone_mode) {
-
+  
   library(magrittr)
   library(rlang)
   library(ggplot2)
@@ -22,12 +22,11 @@ if(standalone_mode) {
   library(shinyBS) # >= 0.61.1 # this needs to be reloaded to make popovers work
   library(dplyr) # >= 1.1.3 # required for data code editor
   library(mrgsolve) # >= 1.5.2 # required for sim code editor
-
+  
   default_options <- options()
   options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
   options(DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = T)) # dataTable options
-  options(shiny.maxRequestSize = 200*1024^2) # Maximum file upload size
-
+  
   # Download and load locally the external patient databases ('cdc.expand', 'who.expand', 'nhanes.filtered')
   # The raw data used to create .rda is available on Github inside 'data-raw' folder
   download.file("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/data/nhanes.filtered.rda", destfile = file.path(tempdir(), "nhanes.filtered.rda"))
@@ -45,9 +44,11 @@ if(standalone_mode) {
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
   #source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R") # Prompts file for automatic model translation
-
+  #source("C:/MYREPOS/MVPapp/R/prompts.R") # example for local edit
+  
   ## Start-up options for the App when not running through run_mvp()
   insert_watermark        = TRUE
+  max_dataset_size        = 200
   authentication_code     = NA_character_
   internal_version        = TRUE
   pw_models_path          = NA_character_  # "passworded_models_example.R"
@@ -78,6 +79,7 @@ if(standalone_mode) {
 ## shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 
 if(!exists("insert_watermark"))        {insert_watermark         <- TRUE}
+if(!exists("max_dataset_size"))        {max_dataset_size         <- 200}
 if(!exists("authentication_code"))     {authentication_code      <- NA_character_}
 if(!exists("internal_version"))        {internal_version         <- TRUE}
 if(!exists("pw_models_path"))          {pw_models_path           <- NA_character_}
@@ -117,7 +119,7 @@ if(!exists("bi_logo")) { # Check whether one of the objects in the app exists
   
   r_files <- list.files("../../R", full.names = TRUE, pattern = "\\.R$")
   sapply(r_files, source)
-
+  
   rda_files <- list.files("../../data", full.names = TRUE, pattern = "\\.rda$")
   for (file in rda_files) {load(file, envir = .GlobalEnv)}
 }
@@ -141,6 +143,8 @@ llm_packages_available <- all(
   requireNamespace("pdftools", quietly = TRUE)
 )
 
+options(shiny.maxRequestSize = max_dataset_size*1024^2) # Maximum file upload size
+
 # UI ----
 ui <- shiny::navbarPage(
   title = htmltools::div(page_title),
@@ -148,14 +152,37 @@ ui <- shiny::navbarPage(
   theme = shinythemes::shinytheme('flatly'),
   shinyjs::useShinyjs(),
   navbar_bg_color,
+  tags$head(tags$script(HTML("
+  $(function() {
+    // hover: everything except icons marked click
+    $('body').popover({selector: '[data-toggle=\"popover\"]:not([data-trigger=\"click\"])',
+                       container: 'body', html: true, trigger: 'hover'});
+
+    // click: on a different element so it gets its own instance
+    $(document).popover({selector: '[data-toggle=\"popover\"][data-trigger=\"click\"]',
+                         container: 'body', html: true, trigger: 'click'});
+
+    // close click-popovers when clicking elsewhere
+    $('body').on('click', function(e) {
+      $('[data-toggle=\"popover\"][data-trigger=\"click\"]').each(function() {
+        if (!$(this).is(e.target) && $(this).has(e.target).length === 0 &&
+            $('.popover').has(e.target).length === 0) {
+          $(this).popover('hide');
+        }
+      });
+    });
+  });
+"))),
   ## Page 1 Data Input ----
   tabPanel('Data Input', icon = icon('file'),
            sidebarLayout(
              sidebarPanel(width = sidebar_width,
                           fluidRow(
-                            shinyBS::bsPopover("bspop_upload_dataset", title = "Upload Dataset", content = bspop_upload_dataset, placement = "right", trigger = "hover"),
                             shinydashboard::box(width = 12,
-                                                title = tags$span(htmltools::HTML("Upload Dataset&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_upload_dataset")),
+                                                title = tags$span("Upload Dataset", help_popover("Upload Dataset",
+                                                                                                 #' @export
+                                                                                                 paste0('Supplying a NONMEM-formatted dataset is completely optional.<br><br>Once it is uploaded (and filtered), you may visualize it in other Tabs by ticking the "Overlay Dataset" checkbox.<br><br>Note: Maximum file size is currently limited to ', max_dataset_size, ' MB.'),
+                                                                                                 placement = "right")),
                                                 status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                 
                                                 radioButtons("data_source", "Data Source:",
@@ -183,9 +210,8 @@ ui <- shiny::navbarPage(
                                                   verbatimTextOutput("upload_cloud_path", placeholder = TRUE)
                                                 )
                             ),
-                            shinyBS::bsPopover("bspop_dataset_cleaning", title = "Built-in Dataset Cleaning Options", content = bspop_dataset_cleaning, placement = "right", trigger = "hover"),
                             shinydashboard::box(width = 12,
-                                                title = tags$span(htmltools::HTML("Built-in Dataset Cleaning Options&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_dataset_cleaning")),
+                                                title = tags$span("Built-in Dataset Cleaning Options", help_popover("Built-in Dataset Cleaning Options", bspop_dataset_cleaning, placement = "right")),
                                                 status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                                 checkboxInput('change_all_to_upper', 'Enforce all column names to upper case', width = '100%', TRUE),
                                                 checkboxInput('remove_pound_sign', 'Remove "#" or "@" from column names', width = '100%', TRUE),
@@ -199,16 +225,15 @@ ui <- shiny::navbarPage(
                                                 checkboxInput('turn_all_numeric', 'Coerce Dataset to Numeric (all characters becomes "NA")', width = '100%', FALSE)
                                                 
                             ),
-                            shinyBS::bsPopover("bspop_deselect", title = "De-select Columns to Display", content = bspop_deselect, placement = "right", trigger = "hover"),
                             shinydashboard::box(width = 12,
-                                                title = tags$span(htmltools::HTML("De-select Columns to Display&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_deselect")),
+                                                title = tags$span("De-select Columns to Display", help_popover("De-select Columns to Display", bspop_deselect, placement = "right")),
                                                 status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                 selectizeInput(inputId = 'column', label = NULL, character(0), multiple = TRUE),
                                                 shinyBS::bsPopover('column', title = 'De-Select columns', content = bspop_select_columns, trigger = 'focus', placement = 'right'),
                                                 update_resistant_popover('column', title = 'De-Select columns', content = bspop_select_columns, trigger = 'click', placement = 'right')
                             ),
                             shinydashboard::box(width = 12,
-                                                title = tags$span(htmltools::HTML("Additional Dataset Cleaning or Filtering&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_dataset_code")),
+                                                title = tags$span("Additional Dataset Cleaning or Filtering", help_popover("Additional Dataset Cleaning or Filtering", bspop_dataset_code, placement = "right")),
                                                 status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                 shinyAce::aceEditor('codes', mode = 'r', value = code_editor_init, height = '200px',
                                                                     autoComplete = 'live',
@@ -222,7 +247,6 @@ ui <- shiny::navbarPage(
                                                        shinyBS::bsButton('eval_button', 'Apply', class = 'pull-right', style = 'default'),
                                                        shinyBS::bsPopover('eval_button', 'Apply' , content = bspop_apply, placement = "right", trigger = "hover"))
                             ),
-                            shinyBS::bsPopover("bspop_dataset_code", title = "Additional Dataset Cleaning or Filtering", content = bspop_dataset_code, placement = "right", trigger = "hover"),
                             shinydashboard::box(width = 12,
                                                 title = 'Console Error Messages (if any)',
                                                 status = 'primary',
@@ -258,7 +282,7 @@ ui <- shiny::navbarPage(
                                   p(tags$span('All results are provided for exploratory purposes only and is not a substitute for a GxP-compliant NCA!', style = "color: red; font-weight: bold;")),
                                   fluidRow(
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Define Options for NCA&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_nca_tooltip")),
+                                                        title = tags$span("Define Options for NCA", help_popover("Define Options for NCA", bspop_nca_tooltip, placement = "right")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         fluidRow(
                                                           column(width = 3,
@@ -277,8 +301,6 @@ ui <- shiny::navbarPage(
                                                                  textInput('desc_conc_unit', "Conc Unit", "nmol/L")),
                                                           column(width = 3,
                                                                  selectizeInput('dose_colname', "Dose Column Name", "DOSE", multiple = FALSE)),
-                                                          #numericInput('dose_value', "Dose Amount", 0, min = 0),
-                                                          #shinyBS::bsPopover('dose_value', title = 'Dose Amount', content = bspop_dose_value, trigger = 'hover', placement = 'bottom')),
                                                           column(width = 3,
                                                                  textInput('desc_dose_unit', "Dose Unit", "mg"))
                                                         ),
@@ -305,8 +327,7 @@ ui <- shiny::navbarPage(
                                                                               class = 'pull-right'),
                                                                  shinyBS::bsPopover('calc_nca', 'Calculate NCA' , content = bspop_calc_nca, placement = "left", trigger = "hover"))
                                                         )
-                                    ), # end of box
-                                    shinyBS::bsPopover("bspop_nca_tooltip", title = "Define Options for NCA", content = bspop_nca_tooltip, placement = "right", trigger = "hover")
+                                    )#, # end of box
                                   ), # end of fluidRow
                                   uiOutput("descriptive_stats_summary") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
                                   downloadButton("download_descriptive_stats", "Download Individual Results"),
@@ -320,9 +341,8 @@ ui <- shiny::navbarPage(
                                                         downloadButton("download_data_plot", "Download Non-Interactive Plot"),
                                                         shinyBS::bsPopover('download_data_plot', 'Download Non-Interactive Plot' , content = bspop_download_plot, placement = "left", trigger = "hover")
                                     ),
-                                    shinyBS::bsPopover("bspop_data_plot_options", title = "Plotting Options", content = bspop_data_plot_options, placement = "right", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Plotting Options&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_data_plot_options")),
+                                                        title = tags$span("Plotting Options", help_popover("Plotting Options", bspop_data_plot_options, placement = "right")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         fluidRow(
                                                           column(width = 2,
@@ -413,9 +433,8 @@ ui <- shiny::navbarPage(
                                                         downloadButton("download_data_ind_plot_all", "Generate All Individuals (.pdf)", icon = icon("cog", class = "fa-spin")),
                                                         shinyBS::bsPopover('download_data_ind_plot_all', 'Generate All Individuals (.pdf)' , content = bspop_download_plot_all, placement = "left", trigger = "hover")
                                     ),
-                                    shinyBS::bsPopover("bspop_ind_plot_options", title = "Plotting Options", content = bspop_ind_plot_options, placement = "right", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Plotting Options&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_ind_plot_options")),
+                                                        title = tags$span("Plotting Options", help_popover("Plotting Options", bspop_ind_plot_options, placement = "right")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         fluidRow(
                                                           column(width = 2,
@@ -639,9 +658,8 @@ ui <- shiny::navbarPage(
                           bslib::navset_pill(
                             bslib::nav_panel(title = 'Model 1',
                                              fluidRow(title = 'Model Input',
-                                                      shinyBS::bsPopover("bspop_select_model_model_1", title = "Select Model", content = bspop_select_model, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
-                                                                          title = tags$span(htmltools::HTML("Select Model 1&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_model_model_1")),
+                                                                          title = tags$span("Select Model 1", help_popover("Select Model", bspop_select_model, placement = "right")),
                                                                           status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "select_model_panel_model_1",
                                                                           tabPanel(title = "Model 1",
@@ -658,9 +676,8 @@ ui <- shiny::navbarPage(
                                                                                    )
                                                                           )
                                                       ),  # end of Box
-                                                      shinyBS::bsPopover("bspop_param_values_model_1", title = "Parameter Values (Fixed Effects)", content = bspop_param_values, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
-                                                                          title = tags$span(htmltools::HTML("Parameter Values&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_param_values_model_1")),
+                                                                          title = tags$span("Parameter Values", help_popover("Parameter Values (Fixed Effects)", bspop_param_values, placement = "right")),
                                                                           status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "parameter_values_panel",
                                                                           tabPanel(title = "Model 1",
@@ -668,9 +685,8 @@ ui <- shiny::navbarPage(
                                                                                      shinycssloaders::withSpinner(type = 8, color = bi_blue, size = 0.5, proxy.height = '50px')
                                                                           )
                                                       ),
-                                                      shinyBS::bsPopover("bspop_model_code_1", title = "Model Code", content = bspop_model_code, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
-                                                                          title = tags$span(htmltools::HTML("Model 1 Code&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_model_code_1")),
+                                                                          title = tags$span("Model 1 Code", help_popover("Model Code", bspop_model_code, placement = "right")),
                                                                           status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "model_code_panel",
                                                                           tabPanel(title = "Model 1",
@@ -699,6 +715,10 @@ ui <- shiny::navbarPage(
                                                                                      tags$div(
                                                                                        id    = "upload_session_wrapper",
                                                                                        style = "margin-top: 20px; margin-bottom: -12px; display: inline-block",
+                                                                                       `data-toggle`    = "popover",
+                                                                                       `data-placement` = "right",
+                                                                                       title            = "Load Session",
+                                                                                       `data-content`   = bspop_upload_session,
                                                                                        fileInput(
                                                                                          "upload_session",
                                                                                          label       = NULL,
@@ -706,15 +726,13 @@ ui <- shiny::navbarPage(
                                                                                          placeholder = "Upload .rds session file",
                                                                                          buttonLabel = "Load Session"
                                                                                        )
-                                                                                     ),
-                                                                                     shinyBS::bsPopover('upload_session_wrapper', 'Load Session', content = bspop_upload_session, placement = "right", trigger = "hover")
+                                                                                     )
                                                                                    )
                                                                           ) # end tabPanel
                                                       ),
-                                                      shinyBS::bsPopover("bspop_model_1_info_console", title = "Model 1 Info (Console)", content = bspop_model_info_console, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
                                                                           id    = "model_1_info_console",
-                                                                          title = tags$span(htmltools::HTML("Model 1 Info (Console)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_model_1_info_console")),
+                                                                          title = tags$span("Model 1 Info (Console)", help_popover("Model 1 Info (Console)", bspop_model_info_console, placement = "right")),
                                                                           status = 'primary',
                                                                           solidHeader = TRUE,
                                                                           collapsible = TRUE,
@@ -727,9 +745,8 @@ ui <- shiny::navbarPage(
                             ),                                 # end of tabPanel_1
                             bslib::nav_panel(title = 'Model 2',
                                              fluidRow(title = 'Model Input',
-                                                      shinyBS::bsPopover("bspop_select_model_model_2", title = "Select Model", content = bspop_select_model, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
-                                                                          title = tags$span(htmltools::HTML("Select Model 2&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_model_model_2")),
+                                                                          title = tags$span("Select Model 2", help_popover("Select Model", bspop_select_model, placement = "right")),
                                                                           status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "select_model_panel_model_2",
                                                                           tabPanel(title = "Model 2",
@@ -747,9 +764,8 @@ ui <- shiny::navbarPage(
                                                                                    )
                                                                           )
                                                       ),  # end of Box
-                                                      shinyBS::bsPopover("bspop_param_values_model_2", title = "Parameter Values (Fixed Effects)", content = bspop_param_values, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
-                                                                          title = tags$span(htmltools::HTML("Parameter Values&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_param_values_model_2")),
+                                                                          title = tags$span("Parameter Values", help_popover("Parameter Values (Fixed Effects)", bspop_param_values, placement = "right")),
                                                                           status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "parameter_values_panel_2",
                                                                           tabPanel(title = "Model 2",
@@ -757,9 +773,8 @@ ui <- shiny::navbarPage(
                                                                                      shinycssloaders::withSpinner(type = 8, color = bi_blue, size = 0.5, proxy.height = '50px')
                                                                           )
                                                       ),
-                                                      shinyBS::bsPopover("bspop_model_code_2", title = "Model Code", content = bspop_model_code, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
-                                                                          title = tags$span(htmltools::HTML("Model 2 Code&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_model_code_2")),
+                                                                          title = tags$span("Model 2 Code", help_popover("Model Code", bspop_model_code, placement = "right")),
                                                                           status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "model_code_panel_2",
                                                                           tabPanel(title = "Model 2",
@@ -788,6 +803,10 @@ ui <- shiny::navbarPage(
                                                                                      tags$div(
                                                                                        id    = "upload_session_wrapper_model_2",
                                                                                        style = "margin-top: 20px; margin-bottom: -12px; display: inline-block",
+                                                                                       `data-toggle`    = "popover",
+                                                                                       `data-placement` = "right",
+                                                                                       title            = "Load Session",
+                                                                                       `data-content`   = bspop_upload_session,
                                                                                        fileInput(
                                                                                          "upload_session_model_2",
                                                                                          label       = NULL,
@@ -795,15 +814,13 @@ ui <- shiny::navbarPage(
                                                                                          placeholder = "Upload .rds session file",
                                                                                          buttonLabel = "Load Session"
                                                                                        )
-                                                                                     ),
-                                                                                     shinyBS::bsPopover('upload_session_wrapper_model_2', 'Load Session', content = bspop_upload_session, placement = "right", trigger = "hover")
+                                                                                     )
                                                                                    )
                                                                           )
                                                       ),
-                                                      shinyBS::bsPopover("bspop_model_2_info_console", title = "Model 2 Info (Console)", content = bspop_model_info_console, placement = "right", trigger = "hover"),
                                                       shinydashboard::box(width = 12,
                                                                           id    = "model_2_info_console",
-                                                                          title = tags$span(htmltools::HTML("Model 2 Info (Console)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_model_2_info_console")),
+                                                                          title = tags$span("Model 2 Info (Console)", help_popover("Model 2 Info (Console)", bspop_model_info_console, placement = "right")),
                                                                           status = 'primary',
                                                                           solidHeader = TRUE,
                                                                           collapsible = TRUE,
@@ -860,9 +877,8 @@ ui <- shiny::navbarPage(
              ),                    # end of sidebarPanel
              mainPanel(width = mainbar_width,
                        fluidRow(
-                         shinyBS::bsPopover("bspop_dosing_options_model_1", title = "Dosing Options", content = bspop_dosing_options, placement = "right", trigger = "hover"),
                          shinydashboard::box(width = 12,
-                                             title = tags$span(htmltools::HTML("Dosing Options (Model 1)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_dosing_options_model_1")),
+                                             title = tags$span("Dosing Options (Model 1)", help_popover("Dosing Options", bspop_dosing_options, placement = "right")),
                                              status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                              tabsetPanel(
                                                id = 'dosing_tabset_panel',
@@ -1017,9 +1033,8 @@ ui <- shiny::navbarPage(
                                                ) # end of tabPanel
                                              ) # end of tabsetPanel
                          ), # end of box
-                         shinyBS::bsPopover("bspop_dosing_options_model_2", title = "Dosing Options", content = bspop_dosing_options, placement = "right", trigger = "hover"),
                          shinydashboard::box(width = 12,
-                                             title = tags$span(htmltools::HTML("Dosing Options (Model 2)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_dosing_options_model_2")),
+                                             title = tags$span("Dosing Options (Model 2)", help_popover("Dosing Options", bspop_dosing_options, placement = "right")),
                                              status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                              tabsetPanel(
                                                id = 'dosing_tabset_panel2',
@@ -1306,16 +1321,14 @@ ui <- shiny::navbarPage(
                       sidebarLayout(
                         sidebarPanel(width = sidebar_width,
                                      fluidRow(
-                                       shinyBS::bsPopover("bspop_select_psa_model_1", title = "Select Parameter for Sensitivity Analysis", content = bspop_select_psa, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Select Parameter for Sensitivity Analysis&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_psa_model_1")),
+                                                           title = tags$span("Select Parameter for Sensitivity Analysis", help_popover("Select Parameter for Sensitivity Analysis", bspop_select_psa, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            column(width = 12,
                                                                   selectInput('param_selector_model_1', label = NULL, choices = character(0)))
                                        ),
-                                       shinyBS::bsPopover("adjust_param_popover_model_1", title = "Adjust Parameter Values", content = bspop_adjust_param, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Adjust Parameter Values&nbsp;"), tags$i(class="fa fa-circle-question", id = "adjust_param_popover_model_1")),
+                                                           title = tags$span("Adjust Parameter Values", help_popover("Adjust Parameter Values", bspop_adjust_param, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            column(width = 4,
                                                                   uiOutput('param_widget_output_min_model_1')),
@@ -1324,9 +1337,8 @@ ui <- shiny::navbarPage(
                                                            column(width = 4,
                                                                   uiOutput('param_widget_output_max_model_1'))
                                        ),
-                                       shinyBS::bsPopover("metrics_by_param_range_model_1", title = "Metrics by Parameter Range (Original Time Scale)", content = bspop_metrics_by_param_range, placement = "right", trigger = "click"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Metrics by Parameter Range (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "metrics_by_param_range_model_1")),
+                                                           title = tags$span("Metrics by Parameter Range (Original Time Scale)", help_popover("Metrics by Parameter Range (Original Time Scale)", bspop_metrics_by_param_range, placement = "right", trigger = "click")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            tabsetPanel(
                                                              id = 'psa_tabset_panel_model_1',
@@ -1391,9 +1403,8 @@ ui <- shiny::navbarPage(
                                                         downloadButton("download_psa_plot_model_1", "Download Non-Interactive Plot"),
                                                         shinyBS::bsPopover('download_psa_plot_model_1', 'Download Non-Interactive Plot' , content = bspop_download_plot, placement = "left", trigger = "hover")
                                     ),
-                                    shinyBS::bsPopover("bspop_select_time_interval", title = "Select Time Interval", content = bspop_select_time_interval, placement = "top", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Select Time Interval for Deriving Metrics (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_time_interval")),
+                                                        title = tags$span("Select Time Interval for Deriving Metrics (Original Time Scale)", help_popover("Select Time Interval", bspop_select_time_interval, placement = "top")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         column(width = 6,
                                                                shinyWidgets::pickerInput('min_nca_obs_time_model_1', label = 'Start Time', choices = character(0), width = '300px', options = list(`live-search` = TRUE))),
@@ -1456,16 +1467,15 @@ ui <- shiny::navbarPage(
                       sidebarLayout(
                         sidebarPanel(width = sidebar_width,
                                      fluidRow(
-                                       shinyBS::bsPopover("bspop_select_psa_model_2", title = "Select Parameter for Sensitivity Analysis", content = bspop_select_psa, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Select Parameter for Sensitivity Analysis&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_psa_model_2")),
+                                                           title = tags$span("Select Parameter for Sensitivity Analysis", help_popover("Select Parameter for Sensitivity Analysis", bspop_select_psa, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            column(width = 12,
                                                                   selectInput('param_selector_model_2', label = NULL, choices = character(0)))
                                        ),
-                                       shinyBS::bsPopover("adjust_param_popover_model_2", title = "Adjust Parameter Values", content = bspop_adjust_param, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Adjust Parameter Values&nbsp;"), tags$i(class="fa fa-circle-question", id = "adjust_param_popover_model_2")),
+                                                           #title = tags$span(htmltools::HTML("Adjust Parameter Values&nbsp;"), tags$i(class="fa fa-circle-question", id = "adjust_param_popover_model_2")),
+                                                           title = tags$span("Adjust Parameter Values", help_popover("Adjust Parameter Values", bspop_adjust_param, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            column(width = 4,
                                                                   uiOutput('param_widget_output_min_model_2')),
@@ -1474,9 +1484,9 @@ ui <- shiny::navbarPage(
                                                            column(width = 4,
                                                                   uiOutput('param_widget_output_max_model_2'))
                                        ),
-                                       shinyBS::bsPopover("metrics_by_param_range_model_2", title = "Metrics by Parameter Range (Original Time Scale)", content = bspop_metrics_by_param_range, placement = "right", trigger = "click"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Metrics by Parameter Range (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "metrics_by_param_range_model_2")),
+                                                           #title = tags$span(htmltools::HTML("Metrics by Parameter Range (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "metrics_by_param_range_model_2")),
+                                                           title = tags$span("Metrics by Parameter Range (Original Time Scale)", help_popover("Metrics by Parameter Range (Original Time Scale)", bspop_metrics_by_param_range, placement = "right", trigger = "click")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            tabsetPanel(
                                                              id = 'psa_tabset_panel_model_2',
@@ -1541,9 +1551,8 @@ ui <- shiny::navbarPage(
                                                         downloadButton("download_psa_plot_model_2", "Download Non-Interactive Plot"),
                                                         shinyBS::bsPopover('download_psa_plot_model_2', 'Download Non-Interactive Plot' , content = bspop_download_plot, placement = "left", trigger = "hover")
                                     ),
-                                    shinyBS::bsPopover("bspop_select_time_interval_model_2", title = "Select Time Interval", content = bspop_select_time_interval, placement = "top", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Select Time Interval for Deriving Metrics (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_time_interval_model_2")),
+                                                        title = tags$span("Select Time Interval for Deriving Metrics (Original Time Scale)", help_popover("Select Time Interval", bspop_select_time_interval, placement = "top")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         column(width = 6,
                                                                shinyWidgets::pickerInput('min_nca_obs_time_model_2', label = 'Start Time', choices = character(0), width = '300px', options = list(`live-search` = TRUE))),
@@ -1607,11 +1616,10 @@ ui <- shiny::navbarPage(
                       sidebarLayout(
                         sidebarPanel(width = sidebar_width,
                                      fluidRow(
-                                       shinyBS::bsPopover("bspop_batch_runs_model_1", title = "Batch Runs", content = bspop_batch_runs, placement = "right", trigger = "hover"),
                                        shinyBS::bsPopover("tor_lower_model_1", title = "Upper/Lower Bound Multiplier", content = bspop_bounds, placement = "right", trigger = "hover"),
                                        shinyBS::bsPopover("tor_upper_model_1", title = "Upper/Lower Bound Multiplier", content = bspop_bounds, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Simulation Settings&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_batch_runs_model_1")),
+                                                           title = tags$span("Simulation Settings", help_popover("Batch Runs", bspop_batch_runs, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
                                                            column(width = 4,
                                                                   numericInput('tor_lower_model_1',
@@ -1642,8 +1650,7 @@ ui <- shiny::navbarPage(
                                                                     style = "display: flex; justify-content: flex-end; gap: 20px;", # Align to the right and add spacing
                                                                     shinyBS::bsButton('reset_reference_model_1', 'Reset', style = 'default', icon = icon("arrow-rotate-right")),
                                                                     actionButton('generate_batch_model_1', label = htmltools::HTML('<i class="fa fa-beat fa-circle-play" style="--fa-animation-duration: 1s;"></i>&nbsp;&nbsp;Batch Run'),
-                                                                                 class = 'pull-right')#,
-                                                                    #shinyBS::bsButton('generate_batch_model_1', 'Batch Run', style = 'default', icon = icon("circle-play"))
+                                                                                 class = 'pull-right')
                                                                   ),
                                                                   shinyBS::bsPopover('reset_reference_model_1', 'Reset Reference', content = bspop_reset_reference, placement = "bottom", trigger = "hover"),
                                                                   shinyBS::bsPopover('generate_batch_model_1', 'Batch Run', content = bspop_generate_batch, placement = "bottom", trigger = "hover")
@@ -1695,9 +1702,8 @@ ui <- shiny::navbarPage(
                                                           )
                                                         )
                                     ), # end of box
-                                    shinyBS::bsPopover("bspop_select_time_interval_tor_plot_model_1", title = "Select Time Interval", content = bspop_select_time_interval_exp, placement = "top", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Select Time Interval for Deriving Metrics (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_time_interval_tor_plot_model_1")),
+                                                        title = tags$span("Select Time Interval for Deriving Metrics (Original Time Scale)", help_popover("Select Time Interval", bspop_select_time_interval_exp, placement = "top")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         column(width = 6,
                                                                shinyWidgets::pickerInput('min_tor_obs_time_model_1', label = 'Start Time', choices = character(0), width = '300px', options = list(`live-search` = TRUE))),
@@ -1782,11 +1788,10 @@ ui <- shiny::navbarPage(
                       sidebarLayout(
                         sidebarPanel(width = sidebar_width,
                                      fluidRow(
-                                       shinyBS::bsPopover("bspop_batch_runs_model_2", title = "Batch Runs", content = bspop_batch_runs, placement = "right", trigger = "hover"),
                                        shinyBS::bsPopover("tor_lower_model_2", title = "Upper/Lower Bound Multiplier", content = bspop_bounds, placement = "right", trigger = "hover"),
                                        shinyBS::bsPopover("tor_upper_model_2", title = "Upper/Lower Bound Multiplier", content = bspop_bounds, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Simulation Settings&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_batch_runs_model_2")),
+                                                           title = tags$span("Simulation Settings", help_popover("Batch Runs", bspop_batch_runs, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = FALSE, collapsed = FALSE,
                                                            column(width = 4,
                                                                   numericInput('tor_lower_model_2',
@@ -1817,8 +1822,7 @@ ui <- shiny::navbarPage(
                                                                     style = "display: flex; justify-content: flex-end; gap: 20px;", # Align to the right and add spacing
                                                                     shinyBS::bsButton('reset_reference_model_2', 'Reset', style = 'default', icon = icon("arrow-rotate-right")),
                                                                     actionButton('generate_batch_model_2', label = htmltools::HTML('<i class="fa fa-beat fa-circle-play" style="--fa-animation-duration: 1s;"></i>&nbsp;&nbsp;Batch Run'),
-                                                                                 class = 'pull-right')#,
-                                                                    #shinyBS::bsButton('generate_batch_model_1', 'Batch Run', style = 'default', icon = icon("circle-play"))
+                                                                                 class = 'pull-right')
                                                                   ),
                                                                   shinyBS::bsPopover('reset_reference_model_2', 'Reset Reference', content = bspop_reset_reference, placement = "bottom", trigger = "hover"),
                                                                   shinyBS::bsPopover('generate_batch_model_2', 'Batch Run', content = bspop_generate_batch, placement = "bottom", trigger = "hover")
@@ -1870,9 +1874,8 @@ ui <- shiny::navbarPage(
                                                           )
                                                         )
                                     ), # end of box
-                                    shinyBS::bsPopover("bspop_select_time_interval_tor_plot_model_2", title = "Select Time Interval", content = bspop_select_time_interval_exp, placement = "top", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Select Time Interval for Deriving Metrics (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_time_interval_tor_plot_model_2")),
+                                                        title = tags$span("Select Time Interval for Deriving Metrics (Original Time Scale)", help_popover("Select Time Interval", bspop_select_time_interval_exp, placement = "top")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         column(width = 6,
                                                                shinyWidgets::pickerInput('min_tor_obs_time_model_2', label = 'Start Time', choices = character(0), width = '300px', options = list(`live-search` = TRUE))),
@@ -1976,9 +1979,8 @@ ui <- shiny::navbarPage(
                           bslib::navset_pill(
                             tabPanel(id = 'iiv_model_1', title = 'Model 1',
                                      fluidRow(
-                                       shinyBS::bsPopover("varsim_popover_model_1", title = "Simulation Options", content = bspop_varsim, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Simulation Options&nbsp;"), tags$i(class="fa fa-circle-question", id = "varsim_popover_model_1")),
+                                                           title = tags$span("Simulation Options", help_popover("Simulation Options", bspop_varsim, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            tabsetPanel(
                                                              id = 'sim_subj_panel_model_1',
@@ -2094,9 +2096,8 @@ ui <- shiny::navbarPage(
                                                              )
                                                            ) # end of tabsetPanel
                                        ), # end of box
-                                       shinyBS::bsPopover("bspop_varmat_model_1", title = "Variability Matrix", content = bspop_varmat, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Variability Matrix&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_varmat_model_1")),
+                                                           title = tags$span("Variability Matrix", help_popover("Variability Matrix", bspop_varmat, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            column(width = 7,
                                                                   tags$div(h5('OMEGA (Between-Subject Variability):', style = "font-weight: bold;"))
@@ -2121,9 +2122,8 @@ ui <- shiny::navbarPage(
                             ),       #end of tabPanel
                             tabPanel(id = 'iiv_model_2', title = 'Model 2',
                                      fluidRow(
-                                       shinyBS::bsPopover("varsim_popover_model_2", title = "Simulation Options", content = bspop_varsim, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Simulation Options&nbsp;"), tags$i(class="fa fa-circle-question", id = "varsim_popover_model_2")),
+                                                           title = tags$span("Simulation Options", help_popover("Simulation Options", bspop_varsim, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            tabsetPanel(
                                                              id = 'sim_subj_panel_model_2',
@@ -2243,9 +2243,8 @@ ui <- shiny::navbarPage(
                                                              )
                                                            ) # end of tabsetPanel
                                        ), # end of box
-                                       shinyBS::bsPopover("bspop_varmat_model_2", title = "Variability Matrix", content = bspop_varmat, placement = "right", trigger = "hover"),
                                        shinydashboard::box(width = 12,
-                                                           title = tags$span(htmltools::HTML("Variability Matrix&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_varmat_model_2")),
+                                                           title = tags$span("Variability Matrix", help_popover("Variability Matrix", bspop_varmat, placement = "right")),
                                                            status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                            column(width = 7,
                                                                   tags$div(h5('OMEGA (Between-Subject Variability):', style = "font-weight: bold;"))
@@ -2374,9 +2373,8 @@ ui <- shiny::navbarPage(
                                                           )
                                                         ) # end of fluidRow
                                     ), # end of box
-                                    shinyBS::bsPopover("bspop_select_time_interval_exp_plot", title = "Select Time Interval", content = bspop_select_time_interval_exp, placement = "top", trigger = "hover"),
                                     shinydashboard::box(width = 12,
-                                                        title = tags$span(htmltools::HTML("Select Time Interval for Deriving Metrics (Original Time Scale)&nbsp;"), tags$i(class="fa fa-circle-question", id = "bspop_select_time_interval_exp_plot")),
+                                                        title = tags$span("Select Time Interval for Deriving Metrics (Original Time Scale)", help_popover("Select Time Interval", bspop_select_time_interval_exp, placement = "top")),
                                                         status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                         column(width = 6,
                                                                shinyWidgets::pickerInput('min_exp_obs_time_model', label = 'Start Time', choices = character(0), width = '300px', options = list(`live-search` = TRUE))),
@@ -2486,8 +2484,7 @@ ui <- shiny::navbarPage(
                                    tags$li("Model will crash if model code contains 'R_' pattern which does not refer to modelling rate."),
                                    tags$li("When 'Model Duration' is checked and then a dose is inserted into a compartment where the appropriate syntax (e.g. 'D_[CMT]') is not present, the app will crash. Workaround with providing a miniscule amount to D_[CMT] (e.g. D_GUT = 0.0001)"),
                                    tags$li("Graphical issues when using the Show AUC option with the Log Y axis option."),
-                                   tags$li("Maximum upload dataset size is currently limited to 100 MB."),
-                                   tags$li("Recommended minimum resolution is 1920 * 1080 pixels in full screen mode at 100% size.")
+                                   tags$li("Recommended minimum resolution: >= 1920 * 1080 pixels at 100% size.")
                                  )
                                )
            ),
@@ -2510,6 +2507,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v0.4.7 (2026-10-03) - Correcting tooltips in boxes not being shown in some versions of bslib.'),
                                p('v0.4.6 (2026-10-01) - Supports server-side data upload. Improved standalone .zip file documentation and minor bug fixes.'),
                                p('v0.4.5 (2026-09-26) - Download Model button reworked to provide a standalone .zip file bundle allowing full reproducibility of simulations.'),
                                p('v0.4.4 (2026-09-19) - Change from baseline automatic derivation support. All simulation outputs are NONMEM-ready with dosing info included. Minor bug fixes and QoL changes.'),
@@ -2571,6 +2569,15 @@ ui <- shiny::navbarPage(
 
 # server ----
 server <- function(input, output, session) {
+  
+  ## Popup workarounds
+  session$onFlushed(function() {
+    shinyBS::addPopover(session, "bspop_select_model_1",
+                        title = "Select Model",
+                        content = "TEST",
+                        placement = "right", trigger = "hover",
+                        options = list(container = "body"))
+  }, once = TRUE)
   
   ### Interactive plotly plots incompatibility check
   observe({
@@ -3049,7 +3056,7 @@ server <- function(input, output, session) {
           
           nonmem_dataset$DV_CFB    <- ifelse(obs, dv - bl, NA_real_)
           nonmem_dataset$DV_CFBPCT <- ifelse(obs & !is.na(bl) & bl != 0,
-                                  100 * (dv - bl) / bl, NA_real_)
+                                             100 * (dv - bl) / bl, NA_real_)
           
           # Move DV_CFB and DV_CFBPCT directly after DV
           new_cols <- c("DV_CFB", "DV_CFBPCT")
@@ -4045,6 +4052,13 @@ server <- function(input, output, session) {
   )  
   
   # Page 2 Simulation ----
+  observe({
+    shinyBS::addPopover(session, "bspop_select_model_model_1",
+                        title = "Select Model",
+                        content = bspop_select_model,
+                        placement = "right", trigger = "hover")
+  })
+  
   d_x_axis_label   <- debounce(reactive({ input$x_axis_label }), debounce_timer_slow)
   d_y_axis_label   <- debounce(reactive({ input$y_axis_label }), debounce_timer_slow)
   d_plot_title_sim <- debounce(reactive({ input$plot_title_sim }), debounce_timer_slow)
@@ -8681,13 +8695,13 @@ server <- function(input, output, session) {
       if (n_unique_subj == n_target) {
         # Exact match -> use each subject's covariate row once, no replacement
         shiny::showNotification(paste0("Number of unique subjects in dataset matches the number of subjects to be simulated (", n_target,
-                                      "), sampling without replacement will be used."), type = "message", duration = 10)
+                                       "), sampling without replacement will be used."), type = "message", duration = 10)
         sample_idx <- sample(seq_len(n_unique_subj), size = n_target, replace = FALSE)
       } else {
         # Mismatch -> sample covariate rows with replacement to hit n_target
         shiny::showNotification(paste0("Number of unique subjects in dataset (", n_unique_subj,
-        ") does not match the number of subjects to be simulated (", n_target,
-        "), sampling with replacement will be used."), type = "warning", duration = 10)
+                                       ") does not match the number of subjects to be simulated (", n_target,
+                                       "), sampling with replacement will be used."), type = "warning", duration = 10)
         sample_idx <- sample(seq_len(n_unique_subj), size = n_target, replace = TRUE)
       }
       

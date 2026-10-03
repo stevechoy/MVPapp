@@ -8600,3 +8600,33 @@ repro_time_grid <- function(x, tend = NULL, tdelta = NULL) {
   }
   NULL
 }
+
+#-------------------------------------------------------------------------------
+#' @name help_popover
+#' 
+#' @title Help icon with a Bootstrap 3 popover
+#'
+#' @description 
+#' Returns a question-mark icon that shows a popover on hover or click. Use it
+#' where `shinyBS::bsPopover()` fails (e.g. `shinydashboard::box()` titles).
+#'
+#' Requires the delegated popover init script to be included once in the UI
+#' (e.g. in `dashboardBody(tags$head(...))`). Without it, nothing is shown.
+#'
+#' @param title Popover heading.
+#' @param content Popover body. HTML is rendered.
+#' @param placement `"top"`, `"bottom"`, `"left"` or `"right"` (default).
+#' @param trigger `"hover"` (default) or `"click"`.
+#'
+#' @return An `<i>` [htmltools::tag].
+#'
+#' @export
+#-------------------------------------------------------------------------------
+help_popover <- function(title, content, placement = "right", trigger = "hover") {
+  htmltools::tags$i(
+    class = "fa fa-circle-question", style = "margin-left: 4px;",
+    `data-toggle` = "popover", `data-placement` = placement,
+    `data-trigger` = trigger,
+    title = title, `data-content` = content
+  )
+}

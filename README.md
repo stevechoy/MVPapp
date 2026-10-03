@@ -12,7 +12,7 @@ earlier versions of MVPapp (\<= v0.3.3).</strong></span>
 <!-- badges: end -->
 
 `MVPapp` is an R package that bundles the
-<a href="https://mvp.boehringer-ingelheim.com/" target="_blank">Model
+<a href="https://lagom.shinyapps.io/MVPapp/" target="_blank">Model
 Visualization Platform (MVP)</a> Shiny application for local use and/or
 deployment. MVP is an interactive pharmacometrics environment requiring
 minimal setup from the users, and is developed with user-friendliness as
@@ -463,7 +463,17 @@ installed `MVPapp` package (path can be obtained by running
 `system.file(package = 'MVPapp')`), open `shiny/app.R`, and set
 `standalone_mode <- TRUE`. Then you would be able to run the App as-is.
 Change back to `standalone_mode <- FALSE` to allow passing of options
-via `run_mvp()` again.
+via `run_mvp()` again. This is especially useful if you wish to deploy
+MVP, in which case you may also want to have a copy of the following
+files to be sourced locally, in the same directory:  
+- External database files: `nhanes.filtered.rda`, `who.expand.rda`,
+`cdc.expand.rda`  
+- MVPapp internal files: `ui_settings.R`, `code_templates.R`,
+`functions.R`, `prompts.R`
+
+Some example code (commented out by default) inside the standalone mode
+code block (near the top of the script) is provided to help you get
+started.
 
 ### Sources for patient databases
 

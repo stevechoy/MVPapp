@@ -7,6 +7,7 @@
 run_mvp(
   appDir = system.file("shiny", package = "MVPapp"),
   insert_watermark = TRUE,
+  max_dataset_size = 200,
   authentication_code = NA_character_,
   internal_version = TRUE,
   use_bi_styling = FALSE,
@@ -38,6 +39,8 @@ run_mvp(
 \item{appDir}{the directory of the application to run.}
 
 \item{insert_watermark}{Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.}
+
+\item{max_dataset_size}{Numeric. Default 200. Maximum upload dataset size in MB.}
 
 \item{authentication_code}{Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.}
 

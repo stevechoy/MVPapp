@@ -36,8 +36,6 @@ model_2_color         <- "#7570B3" # Shade of blue
 
 #### Page 1 Data Input
 #' @export
-bspop_upload_dataset  <- 'Supplying a NONMEM-formatted dataset is completely optional.<br><br>Once it is uploaded (and filtered), you may visualize it in other Tabs by ticking the "Overlay Dataset" checkbox.<br><br>Note: Maximum file size is currently limited to 100 MB.'
-#' @export
 bspop_dataset_cleaning<- 'The uploaded dataset is automatically "cleaned" by the options included here.<br><br>Note: some options are always enabled to ensure compatibility in plotting.'
 #' @export
 bspop_deselect        <- '(Optional) choose any number of columns to remove from the dataset prior to passing onto the editor below to help simplify the dataset.'
