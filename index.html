@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">MVPapp</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.7</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,7 @@
 <p><span style="color:red;"><strong>Note: Please check <a href="https://github.com/Boehringer-Ingelheim/MVPapp" class="external-link">here</a> for earlier versions of MVPapp (&lt;= v0.3.3).</strong></span></p>
 <!-- badges: start -->
 <!-- badges: end -->
-<p><code>MVPapp</code> is an R package that bundles the <a href="https://mvp.boehringer-ingelheim.com/" target="_blank" class="external-link">Model Visualization Platform (MVP)</a> Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:<br>
+<p><code>MVPapp</code> is an R package that bundles the <a href="https://lagom.shinyapps.io/MVPapp/" target="_blank" class="external-link">Model Visualization Platform (MVP)</a> Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:<br>
 - Live code editing using <a href="https://github.com/metrumresearchgroup/mrgsolve" target="_blank" class="external-link">mrgsolve</a><br>
 - Automatic model translation into mrgsolve, <a href="https://github.com/nlmixr2/rxode2/" target="_blank" class="external-link">rxode2</a>, or <a href="https://www.iconplc.com/solutions/technologies/nonmem" target="_blank" class="external-link">NONMEM</a> code using generative AI<br>
 - Flexible dosing regimens, supporting up to 5 independent dosing schedules per model<br>
@@ -333,7 +333,10 @@
 <div class="section level3">
 <h3 id="run-mvp-as-a-regular-shiny-app">Run MVP as a regular Shiny App<a class="anchor" aria-label="anchor" href="#run-mvp-as-a-regular-shiny-app"></a>
 </h3>
-<p>To run MVP without calling <code><a href="reference/run_mvp.html">run_mvp()</a></code>, navigate to the path of the installed <code>MVPapp</code> package (path can be obtained by running <code>system.file(package = 'MVPapp')</code>), open <code>shiny/app.R</code>, and set <code>standalone_mode &lt;- TRUE</code>. Then you would be able to run the App as-is. Change back to <code>standalone_mode &lt;- FALSE</code> to allow passing of options via <code><a href="reference/run_mvp.html">run_mvp()</a></code> again.</p>
+<p>To run MVP without calling <code><a href="reference/run_mvp.html">run_mvp()</a></code>, navigate to the path of the installed <code>MVPapp</code> package (path can be obtained by running <code>system.file(package = 'MVPapp')</code>), open <code>shiny/app.R</code>, and set <code>standalone_mode &lt;- TRUE</code>. Then you would be able to run the App as-is. Change back to <code>standalone_mode &lt;- FALSE</code> to allow passing of options via <code><a href="reference/run_mvp.html">run_mvp()</a></code> again. This is especially useful if you wish to deploy MVP, in which case you may also want to have a copy of the following files to be sourced locally, in the same directory:<br>
+- External database files: <code>nhanes.filtered.rda</code>, <code>who.expand.rda</code>, <code>cdc.expand.rda</code><br>
+- MVPapp internal files: <code>ui_settings.R</code>, <code>code_templates.R</code>, <code>functions.R</code>, <code>prompts.R</code></p>
+<p>Some example code (commented out by default) inside the standalone mode code block (near the top of the script) is provided to help you get started.</p>
 </div>
 <div class="section level3">
 <h3 id="sources-for-patient-databases">Sources for patient databases<a class="anchor" aria-label="anchor" href="#sources-for-patient-databases"></a>

@@ -13,6 +13,7 @@ the value will be reset to it's state prior to calling `run_mvp`.
 run_mvp(
   appDir = system.file("shiny", package = "MVPapp"),
   insert_watermark = TRUE,
+  max_dataset_size = 200,
   authentication_code = NA_character_,
   internal_version = TRUE,
   use_bi_styling = FALSE,
@@ -51,6 +52,10 @@ run_mvp(
 
   Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only"
   text in simulated plots.
+
+- max_dataset_size:
+
+  Numeric. Default 200. Maximum upload dataset size in MB.
 
 - authentication_code:
 
