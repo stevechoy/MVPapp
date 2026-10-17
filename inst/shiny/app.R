@@ -4565,8 +4565,7 @@ server <- function(input, output, session) {
     shiny::req(!is.null(ready_path))
     if(show_debugging_msg) message("ready_path: ", ready_path)
     
-    print(paste0("api_key_model_1: ", api_key))
-    print(paste0("llm_service_model_1: ", llm_service))
+    if(show_debugging_msg) message("llm_service_model_1: ", llm_service)
     
     # ── Helper: update the ACE editor ─────────────────────────────────────────
     update_editor <- function(code) {
@@ -4905,7 +4904,7 @@ server <- function(input, output, session) {
       }
       
       # Determine accepted file types based on llm choice
-      accept_types <- if (llm_settings_model_1$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
+      accept_types <- if (llm_settings_model_2$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
         accept_single  # Dify supports text too
       } else {
         accept_multi  # default for other providers (PDF or text-equivalent)
@@ -5336,8 +5335,7 @@ server <- function(input, output, session) {
     shiny::req(!is.null(ready_path))
     if(show_debugging_msg) message("ready_path: ", ready_path)
     
-    print(paste0("api_key_model_2: ", api_key))
-    print(paste0("llm_service_model_2: ", llm_service))
+    if(show_debugging_msg) message("llm_service_model_2: ", llm_service)
     
     # ── Helper: update the ACE editor ─────────────────────────────────────────
     update_editor <- function(code) {
@@ -5382,7 +5380,7 @@ server <- function(input, output, session) {
         .$V1 %>% paste(collapse = "\n")
       current_code$answer          <- translated_code
       
-      message(current_code$answer)
+      if (show_debugging_msg) message(current_code$answer)
       current_code$conversation_id <- NULL
       current_code$chat_obj        <- NULL
       

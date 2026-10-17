@@ -654,8 +654,10 @@ clean_llm_response <- function(final_answer) {
   
   # 2. Perform all escapes in one pass using a named vector
   # Uses fixed() for maximum performance on large strings
-  replaces <- c("\\\\" = "\\\\",  
-                "\"" = "\\\"", 
+  # The answer is placed inside a double-quoted R string in the code editor, so
+  # backslashes must be escaped first, then quotes
+  replaces <- c("\\" = "\\\\",
+                "\"" = "\\\"",
                 "'" = "\\'")
   
   final_answer <- stringr::str_replace_all(final_answer, stringr::fixed(replaces))
@@ -1122,7 +1124,7 @@ prepare_uploaded_files <- function(files,
   # ── Single file ───────────────────────────────────────────────────────────────
   if (nrow(files) == 1) {
     
-    if (!exts %in% single_file_types) {
+    if (!exts %in% accept_types) {
       safely_showNotification(
         paste0("Unsupported file type: '", exts, "'. ",
                "Supported types are: ",
@@ -1137,10 +1139,18 @@ prepare_uploaded_files <- function(files,
     if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) &&
         exts %in% c(".ctl", ".mod", ".lst")) {
       
+      # nonmem2rx looks for companion files (e.g. .ext, .phi) next to the
+      # control stream by name, so copy the upload under its original name
+      work_dir <- tempfile("nonmem2rx_")
+      dir.create(work_dir)
+      primary_path <- file.path(work_dir, files$name[1])
+      file.copy(files$datapath[1], primary_path)
       return(list(
-        path = files$datapath[1],
-        ext  = exts,
-        name = files$name[1]
+        primary_path = primary_path,
+        dir          = work_dir,
+        path         = files$datapath[1],
+        ext          = exts,
+        name         = files$name[1]
       ))
     }
     
