@@ -2458,6 +2458,7 @@ ui <- shiny::navbarPage(
                                title = 'Changelog', status = 'primary', solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
                                p('Please visit the ', a(href = "https://github.com/stevechoy/MVPapp/releases", "Github release page", target = "_blank"), ' for more information.'),
                                htmltools::br(),
+                               p('v1.0.0 (2026-10-17) - CRAN release with simpler launching, minor bug fixes and fewer package dependencies.'),
                                p('v0.4.7 (2026-10-03) - Correcting tooltips in boxes not being shown in some versions of bslib.'),
                                p('v0.4.6 (2026-10-01) - Supports server-side data upload. Improved standalone .zip file documentation and minor bug fixes.'),
                                p('v0.4.5 (2026-09-26) - Download Model button reworked to provide a standalone .zip file bundle allowing full reproducibility of simulations.'),
