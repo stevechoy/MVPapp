@@ -19,6 +19,11 @@ test_that("value boxes pick the exact metric column (CFBPCT vs MEANCFBPCT)", {
   }
   expect_equal(box_value("CFBPCT_ranged"), 10)
   expect_equal(box_value("MEANCFBPCT_ranged"), 36)
+  # AUC is stored without a prefix ("AUC_ranged")
+  df <- data.frame(AUC_ranged = 250, DV_CMAX_ranged = 12)
+  expect_equal(box_value("AUC_ranged"), 250)
+  expect_equal(box_value("CMAX_ranged"), 12)
+  expect_true(grepl("NA", as.character(MVPapp:::create_value_box(df, "TMIN_ranged", "x", color = "olive"))))
 })
 
 test_that("sample_age_wt() errors clearly instead of duplicating subjects", {

@@ -309,11 +309,11 @@ create_value_box <- function(input_dataset,
   metric_value <- if (is.null(input_dataset)) {
     NA_real_
   } else {
-    input_dataset %>%
-      # "_<METRIC>_ranged" so that e.g. CFBPCT does not also match MEANCFBPCT
-      dplyr::select(dplyr::ends_with(paste0("_", name_ends_with))) %>%
-      dplyr::pull(1) %>%   # extracts the single column as a vector
-      unique()
+    # Exact name (e.g. "AUC_ranged") or "<prefix>_<METRIC>_ranged", so that
+    # CFBPCT does not also match MEANCFBPCT
+    cols <- names(input_dataset)
+    hit  <- cols[cols == name_ends_with | endsWith(cols, paste0("_", name_ends_with))]
+    if (length(hit) == 0) NA_real_ else unique(input_dataset[[hit[1]]])
   }
   
   # Direct function calls — no pipe overhead on scalar operations
