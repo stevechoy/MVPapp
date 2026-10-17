@@ -3,7 +3,7 @@
 #-------------------------------------------------------------------------------
 #' @name safely_qsim
 #'
-#' @title purrr:safely wrappers for various functions
+#' @title Error-capturing (safely) wrappers for various functions
 #' @param ... args to be passed
 #'
 #' @returns A list with two elements:
@@ -14,12 +14,12 @@
 #' @noRd
 #-------------------------------------------------------------------------------
 
-safely_qsim <- purrr::safely(mrgsolve::qsim)
+safely_qsim <- mvp_safely(mrgsolve::qsim)
 
 #-------------------------------------------------------------------------------
 #' @name safely_mrgsim_df
 #'
-#' @title purrr:safely wrappers for various functions
+#' @title Error-capturing (safely) wrappers for various functions
 #' @param ... args to be passed
 #'
 #' @returns A list with two elements:
@@ -30,12 +30,12 @@ safely_qsim <- purrr::safely(mrgsolve::qsim)
 #' @noRd
 #-------------------------------------------------------------------------------
 
-safely_mrgsim_df <- purrr::safely(mrgsolve::mrgsim_df)
+safely_mrgsim_df <- mvp_safely(mrgsolve::mrgsim_df)
 
 #-------------------------------------------------------------------------------
 #' @name safely_mcode
 #'
-#' @title purrr:safely wrappers for various functions
+#' @title Error-capturing (safely) wrappers for various functions
 #' @param ... args to be passed
 #'
 #' @returns A list with two elements:
@@ -46,7 +46,7 @@ safely_mrgsim_df <- purrr::safely(mrgsolve::mrgsim_df)
 #' @noRd
 #-------------------------------------------------------------------------------
 
-safely_mcode <- purrr::safely(mrgsolve::mcode)
+safely_mcode <- mvp_safely(mrgsolve::mcode)
 
 #-------------------------------------------------------------------------------
 #' @name run_single_sim

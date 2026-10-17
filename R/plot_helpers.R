@@ -384,7 +384,6 @@ convert_to_plotly_watermark <- function(ggplot_object,
 #' @param align "left" | "right" | "center" | "centre" | "top" | "bottom",
 #' can also be given as vector of length 2, first horizontal, then vertical
 #' @import grid
-#' @importFrom gridExtra arrangeGrob grid.arrange marrangeGrob
 #' @noRd
 #------------------------------------------------------------------------------
 add_watermark <- function(watermark_toggle = TRUE,

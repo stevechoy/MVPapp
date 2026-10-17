@@ -16,6 +16,7 @@ First release prepared for CRAN.
 * `run_mvp()` no longer modifies the global environment or search path, and restores any global options it changes when the app closes. Extra arguments in `...` now reach the app.
 * Objects previously written to the global environment for debugging (e.g. `llm_result`, `llm_refine`, `last_ev_df`) are now kept in `MVPapp:::.mvp_state`; see "Objects kept for debugging" in `?run_mvp`. AI translation responses are only kept when `show_debugging_msg = TRUE`.
 * Helper functions are split from `functions.R` into topic files.
+* Fewer dependencies: 'forcats', 'gridExtra', 'purrr' and 'tibble' are no longer needed, and 'GGally' (used only for the correlation plot in Data Exploration) is now optional (Suggests).
 
 ## Bugfixes
 

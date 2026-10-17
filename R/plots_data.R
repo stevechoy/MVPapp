@@ -41,7 +41,7 @@
 #' @importFrom scales hue_pal
 #' @importFrom stats setNames time
 #' @importFrom dplyr filter distinct sym group_by summarise across all_of count ungroup mutate
-#' @importFrom tibble glimpse
+#' @importFrom dplyr glimpse
 #' @noRd
 #-------------------------------------------------------------------------------
 
@@ -379,9 +379,7 @@ do_data_page_plot <- function(nmd,
 #' @importFrom ggplot2 scale_color_manual geom_rect coord_cartesian scale_fill_manual element_text element_blank
 #' @importFrom scales hue_pal oob_squish_infinite
 #' @importFrom dplyr filter distinct sym syms group_by summarise across all_of count ungroup mutate any_of case_when rowwise
-#' @importFrom tibble glimpse
-#' @importFrom forcats fct_inorder
-#' @importFrom purrr map_chr
+#' @importFrom dplyr glimpse
 #' @noRd
 #-------------------------------------------------------------------------------
 
@@ -827,7 +825,6 @@ lowerFn <- function(data, mapping, method = "lm", ...) { ## Plots linear regress
 #'
 #' @returns a ggplot object
 #' @importFrom dplyr distinct select all_of
-#' @importFrom GGally ggpairs wrap
 #' @importFrom ggplot2 theme_bw
 #' @noRd
 #-------------------------------------------------------------------------------
@@ -837,6 +834,10 @@ draw_correlation_plot <- function(input_df,
                                   color_sep = "",
                                   catcov_threshold = 10,
                                   debug = FALSE) {
+  if (!requireNamespace("GGally", quietly = TRUE)) {
+    stop("The correlation plot requires the 'GGally' package. ",
+         "Install it with install.packages(\"GGally\").", call. = FALSE)
+  }
   if(debug) {
     message("Creating correlation plot")
   }
@@ -969,7 +970,7 @@ print_demog_plots <- function(data) {
   #   ggplot2::theme_bw(base_size = 14) +
   #   ggplot2::scale_x_continuous(lim=c(0,150),breaks=c(0,15,30,60,90,120,150))
 
-  return(combined_plot) # requires gridExtra package, deprecated
+  return(combined_plot)
 
 } # End of print_demog_plots function
 
@@ -1265,7 +1266,6 @@ plot_data_with_nm <- function(
 #'
 #' @returns a ggplot object
 #' @importFrom dplyr mutate filter bind_rows
-#' @importFrom forcats fct_inorder
 #' @importFrom ggplot2 theme
 #' @noRd
 #-------------------------------------------------------------------------------
@@ -1316,7 +1316,7 @@ plot_three_data_with_nm <- function(
   df_max <- label_dataset(input_dataset_max, "Max", param_max_value)
   
   combined_input <- dplyr::bind_rows(df_min, df_mid, df_max)
-  combined_input[[param_name]] <- forcats::fct_inorder(
+  combined_input[[param_name]] <- fct_inorder(
     as.factor(combined_input[[param_name]])
   )
   
@@ -1674,7 +1674,6 @@ binary_cat_dist <- function(n = 20, percent = 50, catvalue1 = 1, catvalue2 = 0) 
 #' @returns a ggplot object
 #' @importFrom dplyr select mutate all_of summarise
 #' @importFrom ggplot2 theme_bw geom_boxplot scale_fill_manual geom_text
-#' @importFrom forcats fct_inorder
 #' @noRd
 #-------------------------------------------------------------------------------
 
@@ -1691,8 +1690,7 @@ plot_iiv_exp_data <- function(input_dataset,
 
   input_dataset$MODEL <- gsub("Model 1", model_1_name, input_dataset$MODEL)
   input_dataset$MODEL <- gsub("Model 2", model_2_name, input_dataset$MODEL)
-  input_dataset$MODEL <- as.factor(input_dataset$MODEL) %>%
-    forcats::fct_inorder()
+  input_dataset$MODEL <- fct_inorder(input_dataset$MODEL)
 
   # Define the colors for the models
   model_colors <- c()
@@ -1766,9 +1764,7 @@ plot_iiv_exp_data <- function(input_dataset,
 #' @param quantiles_df    Name of dataframe containing the quantiles limits
 #' @param xvar            Name of x-axis variable to split by
 #'
-#' @importFrom purrr map2
 #' @importFrom dplyr case_when filter mutate sym syms summarise
-#' @importFrom forcats fct_relevel
 #' @returns a character string containing the quantile limits
 #' @noRd
 #-------------------------------------------------------------------------------
@@ -1800,10 +1796,10 @@ categorize_xvar <- function(df, quantiles_df, xvar) {
   # print("after rename quantiles_df:")
   # print(knitr::kable(quantiles_df))
 
-  conditions <- purrr::map2(
+  conditions <- Map(
+    function(x, y) rlang::expr(!!dplyr::sym(xvar) <= !!x ~ !!y),
     quantiles_df,
-    names(quantiles_df),
-    ~rlang::expr(!!dplyr::sym(xvar) <= !!.x ~ !!.y)
+    names(quantiles_df)
   )
 
   conditions <- c(rlang::expr(is.na(!!dplyr::sym(xvar)) ~ "NA"), conditions)
@@ -1817,7 +1813,7 @@ categorize_xvar <- function(df, quantiles_df, xvar) {
 
   # Reorder factor levels to place "NA" first
   df <- df %>%
-    dplyr::mutate(Quantile = forcats::fct_relevel(Quantile, "NA", names(quantiles_df)))
+    dplyr::mutate(Quantile = fct_relevel(Quantile, "NA", names(quantiles_df)))
 
   return(df)
 }

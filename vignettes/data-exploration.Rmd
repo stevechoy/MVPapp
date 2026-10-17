@@ -112,7 +112,7 @@ Most options in the "Ind. Plot" tab are carried over from the "General Plot" tab
 
 ## Correlation Plots
 
-Correlation between variables can be quickly assessed in this tab, using the `GGally::ggpairs` function. It is recommended to keep the number of variables <7 as the plot may become too bunched up.  
+Correlation between variables can be quickly assessed in this tab, using the `GGally::ggpairs` function (this requires the optional 'GGally' package: `install.packages("GGally")`). It is recommended to keep the number of variables <7 as the plot may become too bunched up.  
 
 `r "\U0001F4A1"` Any variables with more than <=10 unique values are assumed to be categorical and converted into a factor for plotting.
 

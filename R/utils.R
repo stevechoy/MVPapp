@@ -105,3 +105,61 @@ mvp_user_env <- function() {
 #' @importFrom shinythemes shinytheme
 #' @noRd
 NULL
+
+#-------------------------------------------------------------------------------
+#' @name mvp_safely
+#'
+#' @title Wrap a function so that it captures errors instead of throwing them
+#'
+#' @description Minimal replacement for `purrr::safely()`.
+#'
+#' @param .f A function.
+#'
+#' @returns A function returning a list with `result` (the value of `.f`, or
+#'   `NULL` on error) and `error` (the error condition, or `NULL`).
+#' @noRd
+#-------------------------------------------------------------------------------
+mvp_safely <- function(.f) {
+  force(.f)
+  function(...) {
+    tryCatch(list(result = .f(...), error = NULL),
+             error = function(e) list(result = NULL, error = e))
+  }
+}
+
+#-------------------------------------------------------------------------------
+#' @name fct_inorder
+#'
+#' @title Factor with levels in order of first appearance
+#'
+#' @description Minimal replacement for `forcats::fct_inorder()`.
+#'
+#' @param x A vector or factor.
+#'
+#' @returns A factor.
+#' @noRd
+#-------------------------------------------------------------------------------
+fct_inorder <- function(x) {
+  factor(x, levels = unique(as.character(x[!is.na(x)])))
+}
+
+#-------------------------------------------------------------------------------
+#' @name fct_relevel
+#'
+#' @title Move factor levels to the front
+#'
+#' @description Minimal replacement for `forcats::fct_relevel()`: converts `x`
+#'   to a factor and moves the levels given in `...` (those present) to the
+#'   front, in that order.
+#'
+#' @param x A vector or factor.
+#' @param ... Character vectors of levels to move to the front.
+#'
+#' @returns A factor.
+#' @noRd
+#-------------------------------------------------------------------------------
+fct_relevel <- function(x, ...) {
+  x     <- as.factor(x)
+  front <- intersect(unique(c(...)), levels(x))
+  factor(x, levels = c(front, setdiff(levels(x), front)))
+}

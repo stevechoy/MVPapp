@@ -20,7 +20,6 @@
 #' @importFrom dplyr mutate mutate_all distinct select sym summarise across
 #' @importFrom tidyr everything pivot_longer pivot_wider
 #' @importFrom stats median quantile sd
-#' @importFrom purrr modify_if
 #' @importFrom data.table as.data.table setDT setcolorder
 #' @noRd
 #=============================================================================

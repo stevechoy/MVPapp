@@ -17,7 +17,7 @@ today_numeric  <- function() {
 #-------------------------------------------------------------------------------
 #' @name safely_eval
 #'
-#' @title purrr:safely wrappers for various functions
+#' @title Error-capturing (safely) wrappers for various functions
 #' @param ... args to be passed
 #'
 #' @returns A list with two elements:
@@ -28,12 +28,12 @@ today_numeric  <- function() {
 #' @noRd
 #-------------------------------------------------------------------------------
 
-safely_eval  <- purrr::safely(eval)
+safely_eval  <- mvp_safely(eval)
 
 #-------------------------------------------------------------------------------
 #' @name safely_parse
 #'
-#' @title purrr:safely wrappers for various functions
+#' @title Error-capturing (safely) wrappers for various functions
 #' @param ... args to be passed
 #'
 #' @returns A list with two elements:
@@ -44,7 +44,7 @@ safely_eval  <- purrr::safely(eval)
 #' @noRd
 #-------------------------------------------------------------------------------
 
-safely_parse <- purrr::safely(parse)
+safely_parse <- mvp_safely(parse)
 
 #-------------------------------------------------------------------------------
 #' @name eval_parse

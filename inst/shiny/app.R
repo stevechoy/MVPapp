@@ -3082,7 +3082,7 @@ server <- function(input, output, session) {
     if('ID' %in% names(nonmem_dataset)) {
       nonmem_dataset <- nonmem_dataset %>% dplyr::mutate(ID   = as.character(ID))
       nonmem_dataset$ID <- as.factor(nonmem_dataset$ID)
-      nonmem_dataset$ID <- forcats::fct_inorder(nonmem_dataset$ID) # factor levels in order by which they appear
+      nonmem_dataset$ID <- fct_inorder(nonmem_dataset$ID) # factor levels in order by which they appear
       id_is_in_dataset(TRUE)
     } else {
       id_is_in_dataset(FALSE)
@@ -3720,6 +3720,8 @@ server <- function(input, output, session) {
   
   ## UI: output$dataset_page_plot_corr ----
   correlation_plot <- reactive({
+    shiny::validate(shiny::need(requireNamespace("GGally", quietly = TRUE),
+                                "The correlation plot requires the 'GGally' package: install.packages(\"GGally\")"))
     if (shiny::req(input$color_corr) %in% names(nmdataset_for_plot()) &
         shiny::req(input$var_corr[1]) %in% names(nmdataset_for_plot())) {
       
@@ -5792,11 +5794,11 @@ server <- function(input, output, session) {
     model_1_checkpoint$updated_values_model_1 <- modifyList(existing, updated)
     
     # Build final dataframe in one shot — no loop, no rbind
-    final_dataframe <- tibble::tibble(name = param_names, value = input_values)
+    final_dataframe <- dplyr::tibble(name = param_names, value = input_values)
     
     if (show_debugging_msg) {
       message('created_param_input')
-      GGally::print_if_interactive(final_dataframe)
+      print(final_dataframe)
     }
     model_1_checkpoint$param_input_generated_model_1 <- TRUE
     param_input_model_1(final_dataframe)
@@ -6174,11 +6176,11 @@ server <- function(input, output, session) {
     model_2_checkpoint$updated_values_model_2 <- modifyList(existing2, updated2)
     
     # Build final dataframe in one shot — no loop, no rbind
-    final_dataframe2 <- tibble::tibble(name = param_names2, value = input_values2)
+    final_dataframe2 <- dplyr::tibble(name = param_names2, value = input_values2)
     
     if (show_debugging_msg) {
       message('created_param_input')
-      GGally::print_if_interactive(final_dataframe2)
+      print(final_dataframe2)
     }
     model_2_checkpoint$param_input_generated_model_2 <- TRUE
     param_input_model_2(final_dataframe2)

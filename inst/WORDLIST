@@ -30,7 +30,10 @@ Dify
 EBEs
 EDA
 EVID
+forcats
+GGally
 Github
+gridExtra
 K2
 Kimi
 LLM
@@ -59,6 +62,7 @@ Plotly
 PopPK
 Pre
 psp4
+purrr
 QC'd
 QS
 QSP
@@ -67,6 +71,7 @@ Renviron
 RxODE2
 SIGMAs
 ShinyDemo
+tibble
 TMDD
 Tmax
 Tmin

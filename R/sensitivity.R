@@ -22,7 +22,6 @@
 #'
 #' @importFrom dplyr mutate select arrange slice_tail case_when if_else rename sym
 #' @importFrom tidyr pivot_longer
-#' @importFrom forcats fct_inorder
 #' @importFrom ggplot2 ggplot geom_rect theme_bw geom_hline scale_x_continuous scale_fill_manual coord_flip
 #' @importFrom ggplot2 scale_y_continuous aes labs ggtitle
 #' @importFrom scales percent pretty_breaks
@@ -70,7 +69,7 @@ tornado_plot <- function(df,
   }
 
   df2 <- df2 %>%
-    dplyr::mutate(Parameter = forcats::fct_inorder(Parameter))
+    dplyr::mutate(Parameter = fct_inorder(Parameter))
 
   if(display_as == "Ratio") {
     df2 <- df2 %>%
@@ -258,7 +257,6 @@ split_reference_value <- function(reference_value, lower_bound, upper_bound) {
 #'
 #' @importFrom dplyr mutate select arrange slice_tail case_when if_else rename sym
 #' @importFrom tidyr pivot_longer
-#' @importFrom forcats fct_inorder
 #' @importFrom ggplot2 ggplot geom_rect theme_bw geom_hline scale_x_continuous scale_fill_manual coord_flip
 #' @importFrom ggplot2 scale_y_continuous aes labs ggtitle
 #' @importFrom scales percent pretty_breaks
@@ -295,7 +293,7 @@ spider_plot <-  function(df,
     dplyr::ungroup()
   
   df2 <- df2 %>%
-    dplyr::mutate(Parameter = forcats::fct_inorder(Parameter))
+    dplyr::mutate(Parameter = fct_inorder(Parameter))
   
   param_levels <- levels(df2$Parameter)
   

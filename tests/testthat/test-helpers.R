@@ -31,3 +31,28 @@ test_that("code typed in the app is evaluated without attaching packages", {
   expect_equal(res$result$X, c(10, 18))
   expect_identical(search(), s0)
 })
+
+test_that("fct_inorder() orders levels by first appearance", {
+  f <- MVPapp:::fct_inorder(c("b", "a", NA, "b", "c"))
+  expect_s3_class(f, "factor")
+  expect_identical(levels(f), c("b", "a", "c"))
+  expect_true(is.na(f[3]))
+  expect_identical(levels(MVPapp:::fct_inorder(factor(c("z", "y"), levels = c("y", "z")))), c("z", "y"))
+})
+
+test_that("fct_relevel() moves the given levels to the front", {
+  f <- MVPapp:::fct_relevel(c("Q2", "NA", "Q1", "Q2"), "NA", c("Q1", "Q2", "Q3"))
+  expect_identical(levels(f), c("NA", "Q1", "Q2"))
+  expect_identical(as.character(f), c("Q2", "NA", "Q1", "Q2"))
+})
+
+test_that("mvp_safely() returns result or error instead of throwing", {
+  safe_log <- MVPapp:::mvp_safely(log)
+  ok <- safe_log(1)
+  expect_identical(ok$result, 0)
+  expect_null(ok$error)
+  bad <- safe_log("a")
+  expect_null(bad$result)
+  expect_s3_class(bad$error, "error")
+  expect_identical(MVPapp:::safely_parse(text = "1 +")$result, NULL)
+})
