@@ -9624,9 +9624,8 @@ server <- function(input, output, session) {
       dbm2_cov <- dbm2
     }
     
-    # ID offset
-    dbm2_cov <- dbm2_cov %>%
-      mutate(ID = ID + n_subj_model_1_clean())
+    # No ID offset here: run_single_sim() already offsets Model 2 IDs via
+    # nsubj_offset, and build_repro_bundle() expects covariate IDs 1..N
     
     return(dbm2_cov)
   })
