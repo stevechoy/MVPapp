@@ -2,8 +2,39 @@
 % Please edit documentation in R/run_mvp.R
 \name{run_mvp}
 \alias{run_mvp}
+\alias{mvp_app}
 \title{Launch Model Visualization Platform App}
 \usage{
+mvp_app(
+  appDir = system.file("shiny", package = "MVPapp"),
+  insert_watermark = TRUE,
+  max_dataset_size = 200,
+  authentication_code = NA_character_,
+  internal_version = TRUE,
+  pw_models_path = NA_character_,
+  llm_choices = c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible",
+    "DeepSeek", "Azure OpenAI", "AWS Bedrock"),
+  api_upload = NA_character_,
+  api_chat = NA_character_,
+  user_id = "MVP_user",
+  reuse_context = FALSE,
+  model_gemini = "gemini-3.8-flash",
+  model_openai = "gpt-6.1-sol",
+  model_anthropic = "claude-sonnet-5-5",
+  model_openrouter = "arcee-ai/trinity-large-preview:free",
+  model_openai_compatible = "gpt-5.2",
+  model_deepseek = "deepseek-flash",
+  model_apollo = "claude_4_6_sonnet",
+  model_azure = "gpt-5.2",
+  model_aws = "anthropic.claude-sonnet-5",
+  temperature = 1,
+  llm_seed = 42,
+  model_lang = c("mrgsolve", "nonmem", "rxode2"),
+  prompts_path = system.file("shiny/prompts.R", package = "MVPapp"),
+  show_debugging_msg = FALSE,
+  ...
+)
+
 run_mvp(
   appDir = system.file("shiny", package = "MVPapp"),
   insert_watermark = TRUE,
@@ -85,25 +116,29 @@ run_mvp(
 
 \item{show_debugging_msg}{Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.}
 
-\item{...}{\code{\link[shiny:runApp]{shiny::runApp()}} parameters, \code{\link[shiny:shinyApp]{shiny::shinyApp()}} parameters,
-or parameters to pass to the Shiny app.}
+\item{...}{For \code{run_mvp()}, \code{\link[shiny:runApp]{shiny::runApp()}} arguments (e.g. \code{launch.browser},
+\code{port}). Any other named arguments are passed to the app.}
 }
 \value{
-Called for its side effect of launching the Shiny app. Returns the
-value returned by \code{\link[shiny:runApp]{shiny::runApp()}} invisibly, after the app is closed.
+\code{run_mvp()} is called for its side effect of launching the app and
+returns the value of \code{\link[shiny:runApp]{shiny::runApp()}} invisibly once the app is closed.
+\code{mvp_app()} returns a Shiny app object (class \code{shiny.appobj}).
 }
 \description{
-This function will launch MVP app and pass along arbitrary parameters through
-the \code{...} parameter to the application. The app is evaluated in its own
-environment (whose parent gives access to MVPapp and its key dependencies),
-so neither the global environment nor the search path is modified. Global
-options changed for the app are restored when it closes.
+\code{run_mvp()} launches the MVP app. \code{mvp_app()} returns the app as a Shiny app
+object without running it, e.g. for deployment on Posit Connect or
+shinyapps.io (an \code{app.R} containing \code{MVPapp::mvp_app()} is sufficient).
+
+The app is evaluated in its own environment (whose parent gives access to
+MVPapp and its key dependencies), so neither the global environment nor the
+search path is modified. Global options changed by the app are set when it
+starts and restored when it stops.
 }
 \details{
-If the user wishes to run the App outside of the function (e.g. preparing for
-deployment on Posit Connect), this can be done by accessing shiny/app.R,
-which is located inside the folder of where the package was installed, and modify
-standalone_mode = TRUE (and setting these options there as required).
+Without installing MVPapp (e.g. where package installation is restricted),
+the app can also be launched from a tagged release on GitHub, provided its
+dependencies are installed:
+\code{shiny::runGitHub("MVPapp", "stevechoy", ref = "v1.0.0", subdir = "inst/shiny")}.
 }
 \note{
 Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
@@ -121,6 +156,9 @@ if (interactive()) {
   # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6",
   #         temperature = 0) # Uses Claude only with reproducible results
 }
+
+# App object, e.g. as the only line of an app.R file for deployment:
+app <- mvp_app(insert_watermark = FALSE)
 }
 \seealso{
 \url{https://stevechoy.github.io/MVPapp/articles/supply-passwords.html}

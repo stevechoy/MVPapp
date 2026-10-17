@@ -69,15 +69,22 @@ run_mvp()
 
 ## Alternatively, launch the app without watermarks
 ## see ?run_mvp for more options
-# run_mvp(insert_watermarks = FALSE)
+# run_mvp(insert_watermark = FALSE)
 ```
 
-Alternatively, you may run `MVPapp` directly *without* installation
-(note: may require additional packages):
+Alternatively, if installing packages is restricted, you may run a
+specific release of `MVPapp` directly from GitHub *without* installing
+it. Its dependencies (see the `Imports` field of the
+[DESCRIPTION](https://github.com/stevechoy/MVPapp/blob/master/DESCRIPTION)
+file) must already be installed; the app checks this on launch and lists
+anything missing:
 
 ``` r
-shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
+shiny::runGitHub("MVPapp", username = "stevechoy", ref = "v1.0.0", subdir = "inst/shiny", launch.browser = TRUE)
 ```
+
+Pinning `ref` to a release tag ensures everyone runs the same,
+reviewable version of MVP.
 
 ## Getting Started
 
@@ -456,25 +463,18 @@ or access the vignette on this topic in R
 (`vignette("data-exploration", package = "MVPapp")`) for a short guide
 on using MVP to perform quick EDA.
 
-### Run MVP as a regular Shiny App
+### Deploy MVP (e.g. Posit Connect, shinyapps.io)
 
-To run MVP without calling `run_mvp()`, navigate to the path of the
-installed `MVPapp` package (path can be obtained by running
-`system.file(package = 'MVPapp')`), open `shiny/app.R`, and set
-`standalone_mode <- TRUE`. Then you would be able to run the App as-is.
-Change back to `standalone_mode <- FALSE` to allow passing of options
-via `run_mvp()` again. This is especially useful if you wish to deploy
-MVP, in which case you may also want to have a copy of the following
-files to be sourced locally, in the same directory:  
-- External database files: `nhanes.filtered.rda`, `who.expand.rda`,
-`cdc.expand.rda`  
-- MVPapp internal files: `ui_settings.R`, `code_templates.R`,
-`utils.R`, the helper function files in `R/` (e.g. `simulation.R`,
-`plots_data.R`, `nca.R`, `llm.R`), `prompts.R`
+`mvp_app()` takes the same arguments as `run_mvp()` but returns the app
+instead of launching it. To deploy MVP, install `MVPapp` and use an
+`app.R` file containing a single line, for example:
 
-Some example code (commented out by default) inside the standalone mode
-code block (near the top of the script) is provided to help you get
-started.
+``` r
+MVPapp::mvp_app(authentication_code = "some_password")
+```
+
+The deployment then records the installed `MVPapp` version like any
+other package dependency.
 
 ### Sources for patient databases
 

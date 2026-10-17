@@ -23,11 +23,12 @@ utils::globalVariables(c("Upper", "Lower", "delta_upper", "delta_lower", "del", 
 #' @noRd
 mvp_visible_pkgs <- c("magrittr", "rlang", "ggplot2", "shiny", "shinyBS", "dplyr", "mrgsolve")
 
-#' Top-level environment of MVPapp (the package namespace when installed, or
-#' the global environment when the R files are sourced directly).
+#' Home environment of MVPapp: the package namespace when installed, or the
+#' environment the R files were sourced into (app launched from the source,
+#' e.g. via shiny::runGitHub()).
 #' @noRd
 mvp_home_env <- function() {
-  topenv(environment(mvp_home_env))
+  environment(mvp_home_env)
 }
 
 #' Build (once) an environment exposing the exports of `mvp_visible_pkgs` and
@@ -68,8 +69,7 @@ mvp_deps_env <- function() {
 #'
 #' Package functions cannot see lazy-loaded data unless the package is
 #' attached, so look it up explicitly. When the R files are sourced directly
-#' (runGitHub / standalone mode) the datasets are loaded into the global
-#' environment instead.
+#' (app launched from the source) the datasets are loaded next to them.
 #' @noRd
 mvp_dataset <- function(name) {
   home <- mvp_home_env()
@@ -79,7 +79,7 @@ mvp_dataset <- function(name) {
       return(get(name, envir = lazydata, inherits = FALSE))
     }
   }
-  get(name, envir = globalenv())
+  get(name, envir = home)
 }
 
 #' Fresh environment for evaluating code typed into the app (data filtering

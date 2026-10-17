@@ -11,8 +11,9 @@ First release prepared for CRAN.
 
 ## Improvements
 
+* Simplified launching (#31): new exported `mvp_app()` returns the app object for deployment (an `app.R` containing `MVPapp::mvp_app()`), replacing `standalone_mode` in `inst/shiny/app.R`, which downloaded code from GitHub at every start. Launching without installation via `shiny::runGitHub()` now loads MVPapp into the app's own environment instead of the global environment, checks dependencies against DESCRIPTION, and can be pinned to a release with `ref`. `inst/shiny/packages.R` was removed.
+* Global options used by the app (`scipen`, `DT.options`, `shiny.maxRequestSize`) are set when the app starts and restored when it stops.
 * `run_mvp()` no longer modifies the global environment or search path, and restores any global options it changes when the app closes. Extra arguments in `...` now reach the app.
-* `inst/shiny/packages.R` no longer installs packages; it stops with an `install.packages()` command instead.
 * Helper functions are split from `functions.R` into topic files.
 
 ## Bugfixes

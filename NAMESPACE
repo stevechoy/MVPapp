@@ -2,6 +2,7 @@
 
 S3method(drawDetails,watermark)
 export("%>%")
+export(mvp_app)
 export(run_mvp)
 import(grid)
 import(mrgsolve, except = c(req))

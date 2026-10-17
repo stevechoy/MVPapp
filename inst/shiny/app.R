@@ -6,124 +6,74 @@
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-# Standalone mode:
-# Set standalone_mode = TRUE to run app.R as standalone app without loading MVPapp
-# (i.e. not using run_mvp())
+# How this file is used
+#
+# 1. Installed package: MVPapp::run_mvp() / MVPapp::mvp_app() evaluate this
+#    file in an environment that already contains all app settings, MVPapp's
+#    (internal) functions and datasets, and its key dependencies.
+#    For deployment (Posit Connect, shinyapps.io), use an app.R containing:
+#      MVPapp::mvp_app()
+#
+# 2. Without installing MVPapp (dependencies must be installed), e.g.:
+#      shiny::runGitHub("MVPapp", "stevechoy", ref = "v1.0.0", subdir = "inst/shiny")
+#    MVPapp's functions and datasets are then loaded from the downloaded
+#    source into this app's environment, after checking the dependencies
+#    listed in DESCRIPTION. Settings take the defaults of mvp_app().
 #-------------------------------------------------------------------------------
-standalone_mode <- FALSE
 
-#######################
-if(standalone_mode) {
-  
-  library(magrittr)
-  library(rlang)
-  library(ggplot2)
-  library(shiny) # >= 1.7.5.1
-  library(shinyBS) # >= 0.61.1 # this needs to be reloaded to make popovers work
-  library(dplyr) # >= 1.1.3 # required for data code editor
-  library(mrgsolve) # >= 1.5.2 # required for sim code editor
-  
-  default_options <- options()
-  options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
-  options(DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = T)) # dataTable options
-  
-  # Download and load locally the external patient databases ('cdc.expand', 'who.expand', 'nhanes.filtered')
-  # The raw data used to create .rda is available on Github inside 'data-raw' folder
-  download.file("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/data/nhanes.filtered.rda", destfile = file.path(tempdir(), "nhanes.filtered.rda"))
-  download.file("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/data/who.expand.rda", destfile = file.path(tempdir(), "who.expand.rda"))
-  download.file("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/data/cdc.expand.rda", destfile = file.path(tempdir(), "cdc.expand.rda"))
-  
-  load(file.path(tempdir(), "nhanes.filtered.rda"), envir = .GlobalEnv) # Cloud-host compatibility to make it available globally
-  load(file.path(tempdir(), "who.expand.rda"),      envir = .GlobalEnv)
-  load(file.path(tempdir(), "cdc.expand.rda"),      envir = .GlobalEnv)
-  
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/ui_settings.R")      # List of UI settings e.g. labels and descriptions
-  #source("C:/MYREPOS/MVPapp/R/ui_settings.R") # example for local edit
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
-  #source("C:/MYREPOS/MVPapp/R/code_templates.R") # example for local edit
-  for (r_file in c("utils.R", "shiny_helpers.R", "plot_helpers.R", "data_utils.R", "plots_data.R", "simulation.R",
-                    "variability.R", "nca.R", "sensitivity.R", "llm.R", "session_state.R", "repro_bundle.R")) { # Helper functions required for the app
-    source(paste0("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/", r_file))
-    #source(file.path("C:/MYREPOS/MVPapp/R", r_file)) # example for local edit
+if (!exists("run_single_sim", mode = "function")) {
+
+  pkg_root <- normalizePath(file.path("..", ".."), mustWork = FALSE)
+  if (!file.exists(file.path(pkg_root, "DESCRIPTION"))) {
+    stop("MVPapp functions not found. Launch with MVPapp::run_mvp(), or run this app ",
+         "from the full MVPapp source (e.g. shiny::runGitHub(..., subdir = \"inst/shiny\")).",
+         call. = FALSE)
   }
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R") # Prompts file for automatic model translation
-  #source("C:/MYREPOS/MVPapp/R/prompts.R") # example for local edit
-  
-  ## Start-up options for the App when not running through run_mvp()
-  insert_watermark        = TRUE
-  max_dataset_size        = 200
-  authentication_code     = NA_character_
-  internal_version        = TRUE
-  pw_models_path          = NA_character_  # "passworded_models_example.R"
-  llm_choices             = c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Azure OpenAI", "AWS Bedrock")
-  api_upload              = NA_character_  
-  api_chat                = NA_character_ 
-  user_id                 = "MVP_user"
-  reuse_context           = FALSE # Re-use same conversation to keep original context for better re-iteration answers
-  model_gemini            = "gemini-3.8-flash"
-  model_openai            = "gpt-6.1-sol" 
-  model_anthropic         = "claude-sonnet-5-5"  
-  model_openrouter        = "openrouter/free"  
-  model_openai_compatible = "gpt-5-mini"
-  model_deepseek          = "deepseek-flash"
-  model_apollo            = "claude_4_6_sonnet" # For BI-only
-  model_azure             = "gpt-5.2"
-  model_aws               = "anthropic.claude-sonnet-5"
-  temperature             = 1
-  llm_seed                = 42
-  model_lang              = c("mrgsolve", "nonmem", "rxode2")
-  prompts_path            = NA_character_ 
-  show_debugging_msg      = TRUE
-}
-#######################
 
-## The following parameter settings are needed if the user is directly downloading and launching MVPapp, i.e.:
-## shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
+  # Check the dependencies declared in DESCRIPTION (Imports) are installed
+  local({
+    deps <- read.dcf(file.path(pkg_root, "DESCRIPTION"), fields = "Imports")[1, 1]
+    deps <- trimws(strsplit(gsub("\\s+", " ", deps), ",")[[1]])
+    pkg  <- trimws(sub("\\(.*", "", deps))
+    ver  <- ifelse(grepl(">=", deps), trimws(sub(".*>=\\s*([^)]+)\\).*", "\\1", deps)), NA)
+    base_pkgs <- rownames(utils::installed.packages(priority = "base"))
+    needed <- character()
+    for (k in seq_along(pkg)) {
+      if (pkg[k] %in% base_pkgs) next
+      if (!requireNamespace(pkg[k], quietly = TRUE) ||
+          (!is.na(ver[k]) && utils::packageVersion(pkg[k]) < ver[k])) {
+        needed <- c(needed, pkg[k])
+      }
+    }
+    if (length(needed) > 0) {
+      stop("The following packages are missing or outdated: ", paste(needed, collapse = ", "),
+           "\nPlease install/update them before launching MVP, e.g.:\ninstall.packages(c(",
+           paste0('"', needed, '"', collapse = ", "), "))", call. = FALSE)
+    }
+  })
 
-if(!exists("insert_watermark"))        {insert_watermark         <- TRUE}
-if(!exists("max_dataset_size"))        {max_dataset_size         <- 200}
-if(!exists("authentication_code"))     {authentication_code      <- NA_character_}
-if(!exists("internal_version"))        {internal_version         <- TRUE}
-if(!exists("pw_models_path"))          {pw_models_path           <- NA_character_}
-if(!exists("llm_choices"))             {llm_choices              <- c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Azure OpenAI", "AWS Bedrock")}
-if(!exists("api_upload"))              {api_upload               <- NA_character_}
-if(!exists("api_chat"))                {api_chat                 <- NA_character_}
-if(!exists("user_id"))                 {user_id                  <- "MVP_user"}
-if(!exists("user_id_retry"))           {user_id_retry            <- "MVP_user"}
-if(!exists("reuse_context"))           {reuse_context            <- FALSE}
-if(!exists("model_gemini"))            {model_gemini             <- "gemini-3.8-flash"}
-if(!exists("model_openai"))            {model_openai             <- "gpt-6.1-sol"}
-if(!exists("model_anthropic"))         {model_anthropic          <- "claude-sonnet-5-5"}
-if(!exists("model_openrouter"))        {model_openrouter         <- "arcee-ai/trinity-large-preview:free"}
-if(!exists("model_openai_compatible")) {model_openai_compatible  <- "gpt-5-mini"}
-if(!exists("model_deepseek"))          {model_deepseek           <- "deepseek-flash"}
-if(!exists("model_apollo"))            {model_apollo             <- "claude_4_6_sonnet"}
-if(!exists("model_azure"))             {model_azure              <- "gpt-5.2"}
-if(!exists("model_aws"))               {model_aws                <- "anthropic.claude-sonnet-5"}
-if(!exists("temperature"))             {temperature              <- 1}
-if(!exists("llm_seed"))                {llm_seed                 <- 42}
-if(!exists("model_lang"))              {model_lang               <- c("mrgsolve", "nonmem", "rxode2")}
-if(!exists("prompts_path"))            {prompts_path             <- "https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R"} 
-if(!exists("show_debugging_msg"))      {show_debugging_msg       <- TRUE}
-
-if(!exists("run_single_sim", mode = "function")) { # MVPapp helpers not loaded, i.e. not launched via run_mvp(): source them from the repo
-  
-  source("packages.R") # Check required packages and update if required
-  
-  # Loads some required packages when manually launching app with runGithub
+  # The UI and server code below use these packages without the pkg:: prefix
   library(shiny)
   library(magrittr)
   library(rlang)
   library(ggplot2)
-  library(shinyBS) # >= 0.61.1 # this needs to be reloaded to make popovers work
-  library(dplyr) # >= 1.1.3 # required for data code editor
-  library(mrgsolve) # >= 1.5.2 # required for sim code editor
-  
-  r_files <- list.files("../../R", full.names = TRUE, pattern = "\\.R$")
-  sapply(r_files, source)
-  
-  rda_files <- list.files("../../data", full.names = TRUE, pattern = "\\.rda$")
-  for (file in rda_files) {load(file, envir = .GlobalEnv)}
+  library(shinyBS) # also registers the JS/CSS needed for popovers
+  library(dplyr)
+  library(mrgsolve)
+
+  # Load MVPapp's functions and datasets into this app's environment
+  for (r_file in list.files(file.path(pkg_root, "R"), pattern = "\\.R$", full.names = TRUE)) {
+    sys.source(r_file, envir = environment())
+  }
+  for (rda_file in list.files(file.path(pkg_root, "data"), pattern = "\\.rda$", full.names = TRUE)) {
+    load(rda_file, envir = environment())
+  }
+
+  # App settings: defaults of mvp_app(); prompts.R sits next to this file
+  for (arg in setdiff(names(formals(mvp_app)), c("appDir", "..."))) {
+    if (!exists(arg)) assign(arg, eval(formals(mvp_app)[[arg]]))
+  }
+  if (!nzchar(prompts_path)) prompts_path <- "prompts.R"
 }
 
 if(!is.na(pw_models_path)) {
@@ -145,7 +95,6 @@ llm_packages_available <- all(
   requireNamespace("pdftools", quietly = TRUE)
 )
 
-options(shiny.maxRequestSize = max_dataset_size*1024^2) # Maximum file upload size
 
 # UI ----
 ui <- shiny::navbarPage(
@@ -10379,4 +10328,12 @@ server <- function(input, output, session) {
   )
 } # end of server
 
-shinyApp(ui, server)
+# Global options are set when the app starts and restored when it stops
+shinyApp(ui, server, onStart = function() {
+  old_options <- options(
+    scipen = 3, # avoid scientific notation, good up until 3e-07 / 1e+08
+    DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = TRUE), # dataTable options
+    shiny.maxRequestSize = max_dataset_size * 1024^2 # Maximum file upload size
+  )
+  shiny::onStop(function() options(old_options))
+})

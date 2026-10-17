@@ -4,11 +4,14 @@
 #' Launch Model Visualization Platform App
 #'
 #' @description
-#' This function will launch MVP app and pass along arbitrary parameters through
-#' the \code{...} parameter to the application. The app is evaluated in its own
-#' environment (whose parent gives access to MVPapp and its key dependencies),
-#' so neither the global environment nor the search path is modified. Global
-#' options changed for the app are restored when it closes.
+#' `run_mvp()` launches the MVP app. `mvp_app()` returns the app as a Shiny app
+#' object without running it, e.g. for deployment on Posit Connect or
+#' shinyapps.io (an `app.R` containing `MVPapp::mvp_app()` is sufficient).
+#'
+#' The app is evaluated in its own environment (whose parent gives access to
+#' MVPapp and its key dependencies), so neither the global environment nor the
+#' search path is modified. Global options changed by the app are set when it
+#' starts and restored when it stops.
 #'
 #' @param appDir the directory of the application to run.
 #' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.
@@ -35,17 +38,18 @@
 #' @param model_lang Character. Default mrgsolve. Changes model translation language to "mrgsolve", "nonmem" (for testing only), "rxode2" (for testing only)
 #' @param prompts_path Prompts file. See vignette ("automatic-translation") for more information.
 #' @param show_debugging_msg Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
-#' @param ... [shiny::runApp()] parameters, [shiny::shinyApp()] parameters,
-#'        or parameters to pass to the Shiny app.
+#' @param ... For `run_mvp()`, [shiny::runApp()] arguments (e.g. `launch.browser`,
+#'        `port`). Any other named arguments are passed to the app.
 #'
 #' @details
-#' If the user wishes to run the App outside of the function (e.g. preparing for
-#' deployment on Posit Connect), this can be done by accessing shiny/app.R,
-#' which is located inside the folder of where the package was installed, and modify
-#' standalone_mode = TRUE (and setting these options there as required).
+#' Without installing MVPapp (e.g. where package installation is restricted),
+#' the app can also be launched from a tagged release on GitHub, provided its
+#' dependencies are installed:
+#' `shiny::runGitHub("MVPapp", "stevechoy", ref = "v1.0.0", subdir = "inst/shiny")`.
 #'
-#' @returns Called for its side effect of launching the Shiny app. Returns the
-#'   value returned by [shiny::runApp()] invisibly, after the app is closed.
+#' @returns `run_mvp()` is called for its side effect of launching the app and
+#'   returns the value of [shiny::runApp()] invisibly once the app is closed.
+#'   `mvp_app()` returns a Shiny app object (class `shiny.appobj`).
 #'
 #' @examples
 #' if (interactive()) {
@@ -60,6 +64,9 @@
 #'   # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6",
 #'   #         temperature = 0) # Uses Claude only with reproducible results
 #' }
+#'
+#' # App object, e.g. as the only line of an app.R file for deployment:
+#' app <- mvp_app(insert_watermark = FALSE)
 #' @note
 #' Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
 #' @seealso
@@ -67,7 +74,7 @@
 #' \url{https://stevechoy.github.io/MVPapp/articles/automatic-translation.html}
 #' \code{\link[ellmer]{chat}} for LLM chat interface.
 #' @export
-run_mvp <- function(appDir                  = system.file("shiny", package = "MVPapp"),
+mvp_app <- function(appDir                  = system.file("shiny", package = "MVPapp"),
                     insert_watermark        = TRUE,
                     max_dataset_size        = 200,
                     authentication_code     = NA_character_,
@@ -93,43 +100,13 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
                     prompts_path            = system.file("shiny/prompts.R", package = "MVPapp"),
                     show_debugging_msg      = FALSE,
                     ...) {
-  
-# Create a list of the parameters
-  params <- list(
-    insert_watermark        = insert_watermark,
-    max_dataset_size        = max_dataset_size,
-    authentication_code     = authentication_code,
-    internal_version        = internal_version,
-    pw_models_path          = pw_models_path,
-    llm_choices             = llm_choices,
-    api_upload              = api_upload,             
-    api_chat                = api_chat,
-    user_id                 = user_id,
-    reuse_context           = reuse_context,
-    model_gemini            = model_gemini,
-    model_openai            = model_openai,
-    model_anthropic         = model_anthropic,
-    model_openrouter        = model_openrouter,
-    model_openai_compatible = model_openai_compatible,
-    model_deepseek          = model_deepseek,
-    model_apollo            = model_apollo,
-    model_azure             = model_azure,
-    model_aws               = model_aws,
-    temperature             = temperature,
-    llm_seed                = llm_seed,
-    model_lang              = model_lang,
-    prompts_path            = prompts_path,
-    show_debugging_msg      = show_debugging_msg
-  )
 
-  # Handle additional parameters passed via ...
-  additional_params <- list(...)
-  runApp_params     <- names(formals(shiny::runApp))
-  shinyApp_params   <- names(formals(shiny::shinyApp))
-
-  runApp_args <- additional_params[names(additional_params) %in% runApp_params]
-  extra_app_args <- additional_params[!names(additional_params) %in% c(runApp_params, shinyApp_params)]
-  params <- c(params, extra_app_args[!names(extra_app_args) %in% names(params)])
+  # Collect the app settings (all named arguments except appDir) plus any extra
+  # named arguments passed via ...
+  params <- mget(setdiff(names(formals(mvp_app)), c("appDir", "...")), envir = environment())
+  extra  <- list(...)
+  extra  <- extra[nzchar(names(extra) %||% character(length(extra)))]
+  params <- c(params, extra[!names(extra) %in% names(params)])
 
   # Evaluate the app in its own environment instead of the global environment.
   # Its parent exposes MVPapp (including internal helpers), the package
@@ -146,19 +123,23 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
   # explicitly so popovers work without calling library(shinyBS)
   shiny::addResourcePath("sbs", system.file("www", package = "shinyBS"))
 
-  old_options <- options(
-    scipen = 3, # avoid scientific notation, good up until 3e-07 / 1e+08
-    DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = TRUE), # dataTable options
-    shiny.maxRequestSize = max_dataset_size * 1024^2 # Maximum file upload size
-  )
-  on.exit(options(old_options), add = TRUE)
-
   app_file <- file.path(appDir, "app.R")
   if (!file.exists(app_file)) {
     stop("Could not find app.R in appDir: ", appDir, call. = FALSE)
   }
-  app <- eval(parse(file = app_file, keep.source = FALSE, encoding = "UTF-8"), envir = app_env)
-
-  runApp_args$appDir <- app
-  invisible(do.call(shiny::runApp, runApp_args))
+  eval(parse(file = app_file, keep.source = FALSE, encoding = "UTF-8"), envir = app_env)
 }
+
+#' @rdname run_mvp
+#' @export
+run_mvp <- function() {
+  # Same arguments as mvp_app() (formals copied below); split ... into
+  # shiny::runApp() arguments and app settings
+  args <- mget(setdiff(names(formals(mvp_app)), "..."), envir = environment())
+  dots <- list(...)
+  dot_names   <- names(dots) %||% character(length(dots))
+  is_run_arg  <- dot_names %in% names(formals(shiny::runApp))
+  app <- do.call(mvp_app, c(args, dots[!is_run_arg]))
+  invisible(do.call(shiny::runApp, c(list(appDir = app), dots[is_run_arg])))
+}
+formals(run_mvp) <- formals(mvp_app)
