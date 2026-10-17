@@ -2606,15 +2606,13 @@ server <- function(input, output, session) {
   pending_session_restore <- reactiveVal(FALSE)
   stored_session_state    <- reactiveVal(NULL)
   
-  observeEvent(c(input$upload_session, input$upload_session_model_2), {
-    shiny::req(!is.null(input$upload_session) | !is.null(input$upload_session_model_2))
-    
-    if(!is.null(input$upload_session)) {
-      state <- readRDS(input$upload_session$datapath)
-      shinyjs::reset("upload_session_model_2")  # clear the unused one
-    } else{
-      state <- readRDS(input$upload_session_model_2$datapath) 
-      shinyjs::reset("upload_session")  # clear the unused one
+  # Each "Load Session" button reads only its own file (previously the Model 1
+  # button's file was re-read whenever it had ever been used)
+  load_session_file <- function(path) {
+    state <- tryCatch(readRDS(path), error = function(e) NULL)
+    if (!is.list(state) || is.null(state$model)) {
+      showNotification("This file is not a valid MVP session file.", type = "error", duration = 10)
+      return(invisible(NULL))
     }
     
     stored_session_state(state)
@@ -2628,7 +2626,9 @@ server <- function(input, output, session) {
       shinyjs::click("generate_model")
       shinyjs::click("generate_model2")
     })
-  })
+  }
+  observeEvent(input$upload_session,         load_session_file(input$upload_session$datapath))
+  observeEvent(input$upload_session_model_2, load_session_file(input$upload_session_model_2$datapath))
   
   # Fires once model_1_checkpoint$sim_generated_model_1 flips to TRUE, and set to low priority
   observeEvent(c(model_1_checkpoint$sim_generated_model_1, model_2_checkpoint$sim_generated_model_2), {
@@ -2637,7 +2637,10 @@ server <- function(input, output, session) {
     
     restore_session_state(stored_session_state(), input, session, rv, uploaded_data_override, 
                           show_note = FALSE,
-                          selectize_choices  = names(nmdata_cmt_filtered()) %>% sort())
+                          # no dataset loaded -> no choices (req() would otherwise stop this
+                          # observer and leave the restore pending)
+                          selectize_choices  = tryCatch(names(nmdata_cmt_filtered()) %>% sort(),
+                                                        error = function(e) NULL))
     
     shinyjs::delay(750, {
       pending_session_restore(FALSE)
@@ -4035,8 +4038,9 @@ server <- function(input, output, session) {
   
   ## Outline ----
   ### Update model selectizeInput ----
-  observeEvent(input$password, {
-    update_model_choices(input_password = input$password, session = session)
+  password_debounced <- shiny::debounce(reactive(input$password), 500) # wait until typing pauses
+  observeEvent(password_debounced(), {
+    update_model_choices(input_password = password_debounced(), session = session)
   }, label = 'update_model_choices_default_values')
   
   observeEvent(input$model_select, {
@@ -8216,14 +8220,14 @@ server <- function(input, output, session) {
   d_wt_db_model_1       <- debounce(reactive({ input$wt_db_model_1 }), debounce_timer_slow)
   d_males_db_model_1    <- debounce(reactive({ input$males_db_model_1 }), debounce_timer_slow)
   d_bmi_db_model_1      <- debounce(reactive({ input$bmi_db_model_1 }), debounce_timer_slow)
-  d_seed_number_model_1 <- debounce(reactive({ input$seed_number_model_1 }), debounce_timer_slow)
+  d_seed_number_model_1 <- debounce(reactive({ safe_seed(input$seed_number_model_1) }), debounce_timer_slow)
   
   d_n_subj_model_2      <- debounce(reactive({ input$n_subj_model_2 }), debounce_timer_fast)
   d_age_db_model_2      <- debounce(reactive({ input$age_db_model_2 }), debounce_timer_slow)
   d_wt_db_model_2       <- debounce(reactive({ input$wt_db_model_2 }), debounce_timer_slow)
   d_males_db_model_2    <- debounce(reactive({ input$males_db_model_2 }), debounce_timer_slow)
   d_bmi_db_model_2      <- debounce(reactive({ input$bmi_db_model_2 }), debounce_timer_slow)
-  d_seed_number_model_2 <- debounce(reactive({ input$seed_number_model_2 }), debounce_timer_slow)
+  d_seed_number_model_2 <- debounce(reactive({ safe_seed(input$seed_number_model_2) }), debounce_timer_slow)
   
   d_exp_yaxis_label     <- debounce(reactive({ input$exp_yaxis_label }), debounce_timer_slow)
   d_exp_model_1_name    <- debounce(reactive({ input$exp_model_1_name }), debounce_timer_slow)
@@ -8336,7 +8340,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_1_dist_model_1 == "Normal") {
         shiny::req(input$custom_cov_1_mean_model_1)
         shiny::req(input$custom_cov_1_sd_model_1)
-        set.seed(input$seed_number_model_1 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_1_df <- rnorm(n = n_subj_model_1_clean(),
                                   mean = input$custom_cov_1_mean_model_1,
                                   sd = input$custom_cov_1_sd_model_1) %>% round(digits = 2)
@@ -8344,7 +8348,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_1_dist_model_1 == "Log-Normal") {
         shiny::req(input$custom_cov_1_meanlog_model_1)
         shiny::req(input$custom_cov_1_sdlog_model_1)
-        set.seed(input$seed_number_model_1 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_1_df <- rlnorm(n = n_subj_model_1_clean(),
                                    meanlog = log(input$custom_cov_1_meanlog_model_1),
                                    sdlog = log(input$custom_cov_1_sdlog_model_1)) %>% round(digits = 2)
@@ -8352,7 +8356,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_1_dist_model_1 == "Uniform") { # without rounding does something silly
         shiny::req(input$custom_cov_1_min_model_1)
         shiny::req(input$custom_cov_1_max_model_1)
-        set.seed(input$seed_number_model_1 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_1_df <- runif(n  = n_subj_model_1_clean(),
                                   min = input$custom_cov_1_min_model_1,
                                   max = input$custom_cov_1_max_model_1) %>% round(digits = 2)
@@ -8361,7 +8365,7 @@ server <- function(input, output, session) {
         shiny::req(input$custom_cov_1_catprop_model_1)
         shiny::req(input$custom_cov_1_catvalue1_model_1)
         shiny::req(input$custom_cov_1_catvalue2_model_1)
-        set.seed(input$seed_number_model_1 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_1_df <- binary_cat_dist(
           n = n_subj_model_1_clean(),
           percent = input$custom_cov_1_catprop_model_1,
@@ -8451,7 +8455,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_2_dist_model_1 == "Normal") {
         shiny::req(input$custom_cov_2_mean_model_1)
         shiny::req(input$custom_cov_2_sd_model_1)
-        set.seed(input$seed_number_model_1 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_1_df <- rnorm(n = n_subj_model_1_clean(),
                                   mean = input$custom_cov_2_mean_model_1,
                                   sd = input$custom_cov_2_sd_model_1) %>% round(digits = 2)
@@ -8459,7 +8463,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_2_dist_model_1 == "Log-Normal") {
         shiny::req(input$custom_cov_2_meanlog_model_1)
         shiny::req(input$custom_cov_2_sdlog_model_1)
-        set.seed(input$seed_number_model_1 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_1_df <- rlnorm(n = n_subj_model_1_clean(),
                                    meanlog = log(input$custom_cov_2_meanlog_model_1),
                                    sdlog = log(input$custom_cov_2_sdlog_model_1)) %>% round(digits = 2)
@@ -8467,7 +8471,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_2_dist_model_1 == "Uniform") { # without rounding does something silly
         shiny::req(input$custom_cov_2_min_model_1)
         shiny::req(input$custom_cov_2_max_model_1)
-        set.seed(input$seed_number_model_1 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_1_df <- runif(n  = n_subj_model_1_clean(),
                                   min = input$custom_cov_2_min_model_1,
                                   max = input$custom_cov_2_max_model_1) %>% round(digits = 2)
@@ -8476,7 +8480,7 @@ server <- function(input, output, session) {
         shiny::req(input$custom_cov_2_catprop_model_1)
         shiny::req(input$custom_cov_2_catvalue1_model_1)
         shiny::req(input$custom_cov_2_catvalue2_model_1)
-        set.seed(input$seed_number_model_1 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_1_df <- binary_cat_dist(
           n = n_subj_model_1_clean(),
           percent = input$custom_cov_2_catprop_model_1,
@@ -8566,7 +8570,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_3_dist_model_1 == "Normal") {
         shiny::req(input$custom_cov_3_mean_model_1)
         shiny::req(input$custom_cov_3_sd_model_1)
-        set.seed(input$seed_number_model_1 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_1_df <- rnorm(n = n_subj_model_1_clean(),
                                   mean = input$custom_cov_3_mean_model_1,
                                   sd = input$custom_cov_3_sd_model_1) %>% round(digits = 2)
@@ -8574,7 +8578,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_3_dist_model_1 == "Log-Normal") {
         shiny::req(input$custom_cov_3_meanlog_model_1)
         shiny::req(input$custom_cov_3_sdlog_model_1)
-        set.seed(input$seed_number_model_1 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_1_df <- rlnorm(n = n_subj_model_1_clean(),
                                    meanlog = log(input$custom_cov_3_meanlog_model_1),
                                    sdlog = log(input$custom_cov_3_sdlog_model_1)) %>% round(digits = 2)
@@ -8582,7 +8586,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_3_dist_model_1 == "Uniform") { # without rounding does something silly
         shiny::req(input$custom_cov_3_min_model_1)
         shiny::req(input$custom_cov_3_max_model_1)
-        set.seed(input$seed_number_model_1 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_1_df <- runif(n  = n_subj_model_1_clean(),
                                   min = input$custom_cov_3_min_model_1,
                                   max = input$custom_cov_3_max_model_1) %>% round(digits = 2)
@@ -8591,7 +8595,7 @@ server <- function(input, output, session) {
         shiny::req(input$custom_cov_3_catprop_model_1)
         shiny::req(input$custom_cov_3_catvalue1_model_1)
         shiny::req(input$custom_cov_3_catvalue2_model_1)
-        set.seed(input$seed_number_model_1 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_1) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_1_df <- binary_cat_dist(
           n = n_subj_model_1_clean(),
           percent = input$custom_cov_3_catprop_model_1,
@@ -8654,7 +8658,7 @@ server <- function(input, output, session) {
       
       n_unique_subj <- nrow(subj_level)
       
-      set.seed(input$seed_number_model_1 + 40000) # Seed is perturbed for each covariate(s)
+      set.seed(safe_seed(input$seed_number_model_1) + 40000) # Seed is perturbed for each covariate(s)
       if (n_unique_subj == n_target) {
         # Exact match -> use each subject's covariate row once, no replacement
         shiny::showNotification(paste0("Number of unique subjects in dataset matches the number of subjects to be simulated (", n_target,
@@ -9176,7 +9180,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_1_dist_model_2 == "Normal") {
         shiny::req(input$custom_cov_1_mean_model_2)
         shiny::req(input$custom_cov_1_sd_model_2)
-        set.seed(input$seed_number_model_2 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_2_df <- rnorm(n = n_subj_model_2_clean(),
                                   mean = input$custom_cov_1_mean_model_2,
                                   sd = input$custom_cov_1_sd_model_2) %>% round(digits = 2)
@@ -9184,7 +9188,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_1_dist_model_2 == "Log-Normal") {
         shiny::req(input$custom_cov_1_meanlog_model_2)
         shiny::req(input$custom_cov_1_sdlog_model_2)
-        set.seed(input$seed_number_model_2 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_2_df <- rlnorm(n = n_subj_model_2_clean(),
                                    meanlog = log(input$custom_cov_1_meanlog_model_2),
                                    sdlog = log(input$custom_cov_1_sdlog_model_2)) %>% round(digits = 2)
@@ -9192,7 +9196,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_1_dist_model_2 == "Uniform") { # without rounding does something silly
         shiny::req(input$custom_cov_1_min_model_2)
         shiny::req(input$custom_cov_1_max_model_2)
-        set.seed(input$seed_number_model_2 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_2_df <- runif(n  = n_subj_model_2_clean(),
                                   min = input$custom_cov_1_min_model_2,
                                   max = input$custom_cov_1_max_model_2) %>% round(digits = 2)
@@ -9201,7 +9205,7 @@ server <- function(input, output, session) {
         shiny::req(input$custom_cov_1_catprop_model_2)
         shiny::req(input$custom_cov_1_catvalue1_model_2)
         shiny::req(input$custom_cov_1_catvalue2_model_2)
-        set.seed(input$seed_number_model_2 + 10000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 10000) # Seed is perturbed for each covariate(s)
         cov_1_model_2_df <- binary_cat_dist(
           n = n_subj_model_2_clean(),
           percent = input$custom_cov_1_catprop_model_2,
@@ -9291,7 +9295,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_2_dist_model_2 == "Normal") {
         shiny::req(input$custom_cov_2_mean_model_2)
         shiny::req(input$custom_cov_2_sd_model_2)
-        set.seed(input$seed_number_model_2 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_2_df <- rnorm(n = n_subj_model_2_clean(),
                                   mean = input$custom_cov_2_mean_model_2,
                                   sd = input$custom_cov_2_sd_model_2) %>% round(digits = 2)
@@ -9299,7 +9303,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_2_dist_model_2 == "Log-Normal") {
         shiny::req(input$custom_cov_2_meanlog_model_2)
         shiny::req(input$custom_cov_2_sdlog_model_2)
-        set.seed(input$seed_number_model_2 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_2_df <- rlnorm(n = n_subj_model_2_clean(),
                                    meanlog = log(input$custom_cov_2_meanlog_model_2),
                                    sdlog = log(input$custom_cov_2_sdlog_model_2)) %>% round(digits = 2)
@@ -9307,7 +9311,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_2_dist_model_2 == "Uniform") { # without rounding does something silly
         shiny::req(input$custom_cov_2_min_model_2)
         shiny::req(input$custom_cov_2_max_model_2)
-        set.seed(input$seed_number_model_2 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_2_df <- runif(n  = n_subj_model_2_clean(),
                                   min = input$custom_cov_2_min_model_2,
                                   max = input$custom_cov_2_max_model_2) %>% round(digits = 2)
@@ -9316,7 +9320,7 @@ server <- function(input, output, session) {
         shiny::req(input$custom_cov_2_catprop_model_2)
         shiny::req(input$custom_cov_2_catvalue1_model_2)
         shiny::req(input$custom_cov_2_catvalue2_model_2)
-        set.seed(input$seed_number_model_2 + 20000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 20000) # Seed is perturbed for each covariate(s)
         cov_2_model_2_df <- binary_cat_dist(
           n = n_subj_model_2_clean(),
           percent = input$custom_cov_2_catprop_model_2,
@@ -9406,7 +9410,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_3_dist_model_2 == "Normal") {
         shiny::req(input$custom_cov_3_mean_model_2)
         shiny::req(input$custom_cov_3_sd_model_2)
-        set.seed(input$seed_number_model_2 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_2_df <- rnorm(n = n_subj_model_2_clean(),
                                   mean = input$custom_cov_3_mean_model_2,
                                   sd = input$custom_cov_3_sd_model_2) %>% round(digits = 2)
@@ -9414,7 +9418,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_3_dist_model_2 == "Log-Normal") {
         shiny::req(input$custom_cov_3_meanlog_model_2)
         shiny::req(input$custom_cov_3_sdlog_model_2)
-        set.seed(input$seed_number_model_2 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_2_df <- rlnorm(n = n_subj_model_2_clean(),
                                    meanlog = log(input$custom_cov_3_meanlog_model_2),
                                    sdlog = log(input$custom_cov_3_sdlog_model_2)) %>% round(digits = 2)
@@ -9422,7 +9426,7 @@ server <- function(input, output, session) {
       if (input$custom_cov_3_dist_model_2 == "Uniform") { # without rounding does something silly
         shiny::req(input$custom_cov_3_min_model_2)
         shiny::req(input$custom_cov_3_max_model_2)
-        set.seed(input$seed_number_model_2 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_2_df <- runif(n  = n_subj_model_2_clean(),
                                   min = input$custom_cov_3_min_model_2,
                                   max = input$custom_cov_3_max_model_2) %>% round(digits = 2)
@@ -9431,7 +9435,7 @@ server <- function(input, output, session) {
         shiny::req(input$custom_cov_3_catprop_model_2)
         shiny::req(input$custom_cov_3_catvalue1_model_2)
         shiny::req(input$custom_cov_3_catvalue2_model_2)
-        set.seed(input$seed_number_model_2 + 30000) # Seed is perturbed for each covariate(s)
+        set.seed(safe_seed(input$seed_number_model_2) + 30000) # Seed is perturbed for each covariate(s)
         cov_3_model_2_df <- binary_cat_dist(
           n = n_subj_model_2_clean(),
           percent = input$custom_cov_3_catprop_model_2,
@@ -9494,7 +9498,7 @@ server <- function(input, output, session) {
       
       n_unique_subj <- nrow(subj_level)
       
-      set.seed(input$seed_number_model_2 + 40000) # Seed is perturbed for each covariate(s)
+      set.seed(safe_seed(input$seed_number_model_2) + 40000) # Seed is perturbed for each covariate(s)
       if (n_unique_subj == n_target) {
         # Exact match -> use each subject's covariate row once, no replacement
         shiny::showNotification(paste0("Number of unique subjects in dataset matches the number of subjects to be simulated (", n_target,

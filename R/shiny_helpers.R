@@ -542,3 +542,22 @@ help_popover <- function(title, content, placement = "right", trigger = "hover")
     title = title, `data-content` = content
   )
 }
+
+#-------------------------------------------------------------------------------
+#' @name safe_seed
+#'
+#' @title Validate a seed typed into the app
+#'
+#' @description Pauses the calling reactive/observer (via `shiny::req()`) while
+#'   the Seed box is empty or not a finite number, instead of erroring in
+#'   `set.seed()` (which would close the session from inside an observer).
+#'
+#' @param x Seed value from a numericInput.
+#'
+#' @returns `x`, if it is a single finite number.
+#' @noRd
+#-------------------------------------------------------------------------------
+safe_seed <- function(x) {
+  shiny::req(is.numeric(x), length(x) == 1, is.finite(x))
+  x
+}

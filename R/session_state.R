@@ -406,7 +406,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   
   # --- Version compatibility check ---
   if(show_note) {
-    if (!is.null(state$version)) {
+    if (!is.null(state$version) && !identical(state$version, mvp_version())) {
       showNotification(
         paste0("Session was saved with v", state$version, ". ",
                "Some settings may not restore correctly if you are on a different version."),
@@ -587,7 +587,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput(session, "model_rate_checkbox_2",        value    = state$dosing$model_rate_checkbox_2)
   
   # --- Simulation options ---
-  updateSelectInput( session, "time_unit",                 selected = state$sim$time_unit)
+  updateSelectizeInput( session, "time_unit",                 selected= state$sim$time_unit)
   updateTextInput(   session, "x_axis_label",              value    = state$sim$x_axis_label)
   updateSelectInput( session, "yaxis_name",                selected = state$sim$yaxis_name)
   updateSelectInput( session, "yaxis_name_model_2",        selected = state$sim$yaxis_name_model_2)
@@ -616,13 +616,13 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
     updateSelectizeInput(session, "color_data_by", selected = state$sim$color_data_by)
   }
   
-  updateCheckboxInput(session, "stat_sum_data_by",         value    = state$sim$stat_sum_data_by)
+  updateSelectizeInput(session, "stat_sum_data_by",         selected = state$sim$stat_sum_data_by)
   updateCheckboxInput(session, "combine_nmdata",           value    = state$sim$combine_nmdata)
   updateCheckboxInput(session, "stat_sum_data_option",     value    = state$sim$stat_sum_data_option)
   updateCheckboxInput(session, "geom_point_data_option",   value    = state$sim$geom_point_data_option)
   
   # --- PSA ---
-  updateSelectInput( session, "digits_model_1",                  selected = state$psa$digits_model_1)
+  updateNumericInput( session, "digits_model_1",                  value = state$psa$digits_model_1)
   updateCheckboxInput(session, "dp_checkbox_model_1",            value    = state$psa$dp_checkbox_model_1)
   shinyWidgets::updatePickerInput( session,  "min_nca_obs_time_model_1",       selected = state$psa$min_nca_obs_time_model_1)
   shinyWidgets::updatePickerInput( session,  "max_nca_obs_time_model_1",       selected = state$psa$max_nca_obs_time_model_1)
@@ -637,7 +637,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateTextInput(    session, "plot_title_psa_model_1",         value    = state$psa$plot_title_psa_model_1)
   updateCheckboxInput(session, "do_psa_plotly_model_1",          value    = state$psa$do_psa_plotly_model_1)
   
-  updateSelectInput( session, "digits_model_2",                  selected = state$psa$digits_model_2)
+  updateNumericInput( session, "digits_model_2",                  value = state$psa$digits_model_2)
   updateCheckboxInput(session, "dp_checkbox_model_2",            value    = state$psa$dp_checkbox_model_2)
   shinyWidgets::updatePickerInput( session,  "min_nca_obs_time_model_2",       selected = state$psa$min_nca_obs_time_model_2)
   shinyWidgets::updatePickerInput( session,  "max_nca_obs_time_model_2",       selected = state$psa$max_nca_obs_time_model_2)
@@ -655,13 +655,13 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   # --- Tornado - Model 1 ---
   updateNumericInput(  session, "tor_lower_model_1",          value    = state$psa$tor_lower_model_1)
   updateNumericInput(  session, "tor_upper_model_1",          value    = state$psa$tor_upper_model_1)
-  updateCheckboxInput( session, "tor_fix_model_1",            value    = state$psa$tor_fix_model_1)
+  updateSelectizeInput( session, "tor_fix_model_1",            selected = state$psa$tor_fix_model_1)
   updateCheckboxInput( session, "tor_show_digits_model_1",    value    = state$psa$tor_show_digits_model_1)
   updateCheckboxInput( session, "tor_do_gradient_model_1",    value    = state$psa$tor_do_gradient_model_1)
   updateSelectizeInput(session, "tor_var_model_1",            selected = state$psa$tor_var_model_1)
   updateSelectInput(   session, "select_tor_metric_model_1",  selected = state$psa$select_tor_metric_model_1)
   updateSelectInput(   session, "tor_display_as_model_1",     selected = state$psa$tor_display_as_model_1)
-  updateCheckboxInput( session, "trim_tor_model_1",           value    = state$psa$trim_tor_model_1)
+  updateNumericInput( session, "trim_tor_model_1",           value    = state$psa$trim_tor_model_1)
   updateCheckboxInput( session, "show_bioeq_model_1",         value    = state$psa$show_bioeq_model_1)
   updateTextInput(     session, "plot_title_tor_model_1",     value    = state$psa$plot_title_tor_model_1)
   updateTextInput(     session, "xlab_tor_model_1",           value    = state$psa$xlab_tor_model_1)
@@ -672,13 +672,13 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   # --- Tornado - Model 2 ---
   updateNumericInput(  session, "tor_lower_model_2",          value    = state$psa$tor_lower_model_2)
   updateNumericInput(  session, "tor_upper_model_2",          value    = state$psa$tor_upper_model_2)
-  updateCheckboxInput( session, "tor_fix_model_2",            value    = state$psa$tor_fix_model_2)
+  updateSelectizeInput( session, "tor_fix_model_2",            selected = state$psa$tor_fix_model_2)
   updateCheckboxInput( session, "tor_show_digits_model_2",    value    = state$psa$tor_show_digits_model_2)
   updateCheckboxInput( session, "tor_do_gradient_model_2",    value    = state$psa$tor_do_gradient_model_2)
   updateSelectizeInput(session, "tor_var_model_2",            selected = state$psa$tor_var_model_2)
   updateSelectInput(   session, "select_tor_metric_model_2",  selected = state$psa$select_tor_metric_model_2)
   updateSelectInput(   session, "tor_display_as_model_2",     selected = state$psa$tor_display_as_model_2)
-  updateCheckboxInput( session, "trim_tor_model_2",           value    = state$psa$trim_tor_model_2)
+  updateNumericInput( session, "trim_tor_model_2",           value    = state$psa$trim_tor_model_2)
   updateCheckboxInput( session, "show_bioeq_model_2",         value    = state$psa$show_bioeq_model_2)
   updateTextInput(     session, "plot_title_tor_model_2",     value    = state$psa$plot_title_tor_model_2)
   updateTextInput(     session, "xlab_tor_model_2",           value    = state$psa$xlab_tor_model_2)
@@ -687,7 +687,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput( session, "do_tor_plotly_model_2",      value    = state$psa$do_tor_plotly_model_2)
   
   # --- Variability ---
-  updateSelectInput( session, "db_model_1",          selected = state$variability$db_model_1)
+  updateSelectizeInput( session, "db_model_1",          selected= state$variability$db_model_1)
   updateNumericInput(session, "n_subj_model_1",       value    = state$variability$n_subj_model_1)
   updateNumericInput(session, "seed_number_model_1",  value    = state$variability$seed_number_model_1)
   shiny::updateSliderInput( session, "age_db_model_1",       value    = state$variability$age_db_model_1)
@@ -702,7 +702,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateSelectInput( session, "custom_cov_3_dist_model_1", selected = state$variability$custom_cov_3_dist_model_1)
   
   # --- Variability: Model 2 ---
-  updateSelectInput( session, "db_model_2",          selected = state$variability$db_model_2)
+  updateSelectizeInput( session, "db_model_2",          selected= state$variability$db_model_2)
   updateNumericInput(session, "n_subj_model_2",       value    = state$variability$n_subj_model_2)
   updateNumericInput(session, "seed_number_model_2",  value    = state$variability$seed_number_model_2)
   shiny::updateSliderInput( session, "age_db_model_2",       value    = state$variability$age_db_model_2)
@@ -726,8 +726,8 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput(session, "show_iiv_model_2",            value    = state$variability$show_iiv_model_2)
   updateCheckboxInput(session, "log_x_axis_iiv",              value    = state$variability$log_x_axis_iiv)
   updateCheckboxInput(session, "combine_nmdata_iiv",          value    = state$variability$combine_nmdata_iiv)
-  updateSelectInput(  session, "stat_sum_data_option_iiv",    selected = state$variability$stat_sum_data_option_iiv)
-  updateSelectInput(  session, "geom_point_data_option_iiv",  selected = state$variability$geom_point_data_option_iiv)
+  updateCheckboxInput(  session, "stat_sum_data_option_iiv",    value = state$variability$stat_sum_data_option_iiv)
+  updateCheckboxInput(  session, "geom_point_data_option_iiv",  value = state$variability$geom_point_data_option_iiv)
   updateTextInput(    session, "plot_title_iiv",              value    = state$variability$plot_title_iiv)
   updateNumericInput( session, "y_value_threshold",           value    = state$variability$y_value_threshold)
   shinyWidgets::updatePickerInput( session,  "x_value_threshold",           selected = state$variability$x_value_threshold)

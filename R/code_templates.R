@@ -121,32 +121,33 @@ update_model_choices <- function(input_password, session, model_list = model_exa
     new_choices <- c('Test Passworded Model', model_examples_list)
     updateNumericInput(session, "mw", value = 12345)
     updateCheckboxInput(session, "mw_checkbox", value = TRUE)
-    updateNumericInput(session, "mw2", value = 12345)
-    updateCheckboxInput(session, "mw_checkbox2", value = TRUE)
+    updateNumericInput(session, "mw_2", value = 12345)
+    updateCheckboxInput(session, "mw_checkbox_2", value = TRUE)
     updateNumericInput(session, "tgrid_max", value = 2016)
     updateNumericInput(session, "delta", value = 2)
     updateNumericInput(session, "total1", value = 3)
     updateNumericInput(session, "amt1", value = 2500)
-    updateNumericInput(session, "tota1", value = 3)
     updateNumericInput(session, "ii1", value = 168)
     updateNumericInput(session, "tinf1", value = 1)
     updateNumericInput(session, "amt2", value = 1125)
     updateNumericInput(session, "total2", value = 4)
-    updateNumericInput(session, "ii22", value = 672)
+    updateNumericInput(session, "ii2", value = 672)
     updateNumericInput(session, "tinf2", value = 1)
     updateNumericInput(session, "delay_time2", value = 1176)
     updateTextInput(session, "y_axis_label", value = "Concentration (nM)")
     updateSelectizeInput(session, "time_unit", selected = '168', options = list(create = TRUE))
   } 
   
-  # Update the selectInput with the new choices
-  if(input_password %in% list_of_valid_passwords) {
-    updateSelectInput(session, "model_select",  choices = new_choices)
-    updateSelectInput(session, "model_select2", choices = new_choices)
-  } else {
-    updateSelectInput(session, "model_select",  choices = model_list)
-    updateSelectInput(session, "model_select2", choices = model_list)    
+  # Update the selectInput with the new choices, keeping each model's current
+  # selection (otherwise both dropdowns reset to the first model, which also
+  # replaces any edited model code)
+  if (!input_password %in% list_of_valid_passwords) new_choices <- model_list
+  keep_selected <- function(id) {
+    current <- shiny::isolate(session$input[[id]])
+    if (!is.null(current) && current %in% unlist(new_choices)) current else NULL
   }
+  updateSelectInput(session, "model_select",  choices = new_choices, selected = keep_selected("model_select"))
+  updateSelectInput(session, "model_select2", choices = new_choices, selected = keep_selected("model_select2"))
   
   return(input_password %in% list_of_valid_passwords)
 }
