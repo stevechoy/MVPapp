@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Model Visualization Platform
+# Model Visualization Platform <img align="right" src="man/figures/logo.png" width="125px" alt="MVPapp hex logo">
 
 <span style="color:red;"><strong>Note: Please check
 <a href="https://github.com/Boehringer-Ingelheim/MVPapp">here</a> for
