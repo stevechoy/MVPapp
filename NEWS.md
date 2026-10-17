@@ -28,7 +28,7 @@ First release prepared for CRAN.
 * Reproducible bundle downloads used the dosing events of whichever model was simulated last (#29)
 * Launching via `shiny::runGitHub()` failed unless shiny was attached (#30)
 * The LLM API key is no longer printed to the console during AI translation (#34)
-* AI translation: NONMEM to rxode2 (nonmem2rx) works again, uploads are checked against the selected provider's file types, and translated code containing backslashes or quotes is kept intact (#35)
+* AI translation: NONMEM to rxode2 (nonmem2rx) works again and accepts supporting files (`.ext`, `.phi`, `.cov`, ...) alongside the control stream or listing file, uploads are checked against the selected provider's file types, and translated code containing backslashes or quotes is kept intact (#35)
 * Typing in the password box no longer resets the model selection or erases edited model code (#36)
 * Session loading: a second load via the other "Load Session" button is no longer ignored, and all settings are restored correctly (#37)
 * NCA: the geometric mean is no longer biased low when values are NA or zero, and subject IDs containing quotes no longer break NCA (#38)

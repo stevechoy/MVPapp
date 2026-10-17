@@ -3,7 +3,7 @@
 This is a new release (first submission of MVPapp to CRAN).
 
 MVPapp bundles an interactive 'shiny' application for exploring
-pharmacometric models with 'mrgsolve'. The exported API is intentionally
+pharmacometrics models with 'mrgsolve'. The exported API is intentionally
 small: `run_mvp()` launches the app and `mvp_app()` returns the app object
 (e.g. for deployment on Posit Connect or shinyapps.io).
 
@@ -12,9 +12,9 @@ small: `run_mvp()` launches the app and `mvp_app()` returns the app object
 0 errors | 0 warnings | 1 note
 
 * This is a new submission.
-* Possibly misspelled words in DESCRIPTION (Pharmacometric, pharmacometric,
-  NCA, Choy, et, al): these are correct. "Pharmacometric" is the standard
-  term for the field, NCA (non-compartmental analysis) is defined in the
+* Possibly misspelled words in DESCRIPTION (Pharmacometrics, pharmacometrics,
+  NCA, Choy, et, al): these are correct. "Pharmacometrics" is the standard
+  name of the field, NCA (non-compartmental analysis) is defined in the
   Description, and "Choy et al. (2025)" is the reference to the paper
   describing the app.
 * Suggests or Enhances not in mainstream repositories: nonmem2mrgsolve

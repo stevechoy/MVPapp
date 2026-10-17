@@ -1,12 +1,12 @@
 Package: MVPapp
-Title: Interactive Platform for Pharmacometric Model Visualization and Simulation
+Title: Interactive Platform for Pharmacometrics Model Visualization and Simulation
 Version: 1.0.0
 Authors@R: c(
     person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre", "cph")),
     person("Jin Gyu", "Kim", role = "aut"),
     person("Matthew", "Fidler", role = "ctb"))
 Description: An interactive 'shiny' application for exploring
-    pharmacometric models with minimal setup. Users can explore model
+    pharmacometrics models with minimal setup. Users can explore model
     structures, parameters and dosing regimens with 'mrgsolve', and compare
     simulations with observed data. Additional features include parameter
     sensitivity analysis, non-compartmental analysis (NCA), data exploration,

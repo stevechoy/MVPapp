@@ -116,7 +116,7 @@ MVP (>= v0.4.1) supports deterministic translation (i.e. not using LLMs) of NONM
 When either packages are installed, new checkbox options would be available during customization (default not used). When checked, deterministic translation will be triggered when:  
 
   - nonmem2mrgsolve - If the user uploads **EXACTLY** 2 files: the NONMEM (`.ctl/.mod`) file **AND** the corresponding `.ext` file.  
-  - nonmem2rx - If the user uploads **EXACTLY** 1 file: the NONMEM control stream or listing file (`.ctl/.mod/.lst`). Supporting files (e.g. `.ext/.phi/.cov/.xml`) are not currently accepted alongside it.  
+  - nonmem2rx - If the user uploads **EXACTLY** 1 NONMEM control stream (`.ctl/.mod`) or, without one, **EXACTLY** 1 listing file (`.lst`), optionally together with **ANY** number of supporting files (`.lst/.ext/.phi/.cov/.cor/.coi/.xml/.grd/.shk`). Supporting files should share the control stream's base name (e.g. `run1.ctl`, `run1.ext`, `run1.phi`) so that nonmem2rx can find them.  
   
 `r "\U0001F4A1"` Automatic retries can still happen when using nonmem2mrgsolve, as internal compilation checks can still be performed. However, no self-validation will be performed when using nonmem2rx.  
 
