@@ -495,7 +495,7 @@ tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colCon
   else if (length(dose) != nID) {
     stop("Count of dose does not match with number of NCAs!")
   }
-  Res = vector()
+  res_list = vector("list", nID) # filled per subject, bound once (rbind in a loop is quadratic)
   withProgress(message = "Calculating NCA", value = 0, {
     for (i in 1:nID) {
       if(show_progress) {setProgress(value = i / nID, detail = paste0("Subject ", i, "/", nID))}
@@ -507,10 +507,11 @@ tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colCon
                     concUnit = concUnit, R2ADJ = R2ADJ, down = down,
                     MW = MW, SS = SS, iAUC = iAUC, Keystring = strHeader,
                     excludeDelta = excludeDelta)
-        Res = rbind(Res, tRes)
+        res_list[[i]] = tRes
       }
     }
   })
+  Res = do.call(rbind, res_list) # NULL entries (subjects without data) are dropped
   Res = cbind(IDs, Res)
   rownames(Res) = NULL
   colnames(Res)[1:nKey] = key
@@ -650,7 +651,6 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
   else if (length(dose) != nID) {
     stop("Count of dose does not match with number of NCAs!")
   }
-  Res = vector()
   for (i in 1:nID) {
     if(show_progress) {
       shiny::incProgress(1/nID, detail = paste("Subject ", i, "/", nID))
@@ -667,7 +667,6 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
       UsedPoints = attr(tabRes, "UsedPoints")
       txtRes = ncar::Res2Txt(tabRes, x, y, dose = dose[i], adm = adm,
                              dur = dur, doseUnit = doseUnit, down = down)
-      Res = c(Res, txtRes)
       nca_add_page(Header1 = strHeader)
       nca_text_m(txtRes, StartRow = 1, Header1 = strHeader)
       scrnmat = matrix(0, 3, 4)

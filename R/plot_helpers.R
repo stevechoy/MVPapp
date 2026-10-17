@@ -409,18 +409,14 @@ create_facet_label <- function(df, sort_by) {
       dplyr::distinct(ID, .keep_all = TRUE)
 
     # Create the facet_label using the first row values of each ID group
-    df_first <- df_first %>%
-      dplyr::rowwise() %>%
-      dplyr::mutate(
-        facet_label = paste0("ID: ", ID, ", ", sapply(unlist(sort_by), function(col_name) {
-          col_value <- dplyr::c_across(dplyr::all_of(col_name))
-          paste0(col_name, ": ", col_value)
-        })
-        %>% paste(collapse = ", ")
-        )
-      ) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(ID, facet_label)
+    # (vectorised over subjects; previously built row by row, ~100x slower)
+    label_parts <- lapply(sort_by, function(col_name) paste0(col_name, ": ", df_first[[col_name]]))
+    df_first <- data.frame(
+      ID          = df_first$ID,
+      facet_label = if (nrow(df_first) == 0) character(0) else
+        paste0("ID: ", df_first$ID, ", ", do.call(paste, c(label_parts, sep = ", "))),
+      stringsAsFactors = FALSE
+    )
 
     df <- dplyr::left_join(df, df_first, by = "ID")
   }

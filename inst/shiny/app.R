@@ -3678,7 +3678,9 @@ server <- function(input, output, session) {
   }, label = 'dataset_page_plot')
   
   output$dataset_page_plot <- renderUI({
-    shiny::req(dataset_page_plot())
+    # Depend on the axis selections (set once data is loaded), not on the plot
+    # itself, so that changing plot options doesn't rebuild the output widget
+    shiny::req(input$x_axis, input$y_axis)
     div(style = "height:600px",
         if (input$do_data_plotly) {
           plotly::plotlyOutput("data_plotly", height = '600px') %>%
@@ -3847,7 +3849,9 @@ server <- function(input, output, session) {
   }, label = 'dataset_page_ind_plot')
   
   output$dataset_page_ind_plot <- renderUI({
-    shiny::req(dataset_page_ind_plot())
+    # Depend on the axis selections (set once data is loaded), not on the plot
+    # itself, so that changing plot options doesn't rebuild the output widget
+    shiny::req(input$x_axis, input$y_axis)
     div(style = "height:600px",
         if (input$do_data_ind_plotly) {
           plotly::plotlyOutput("data_ind_plotly", height = '600px') %>%
@@ -7662,11 +7666,11 @@ server <- function(input, output, session) {
       df              = tmp2,
       reference_value = reference_value,
       metric_name     = input$select_tor_metric_model_1,
-      plot_title      = input$plot_title_tor_model_1,
+      plot_title      = d_plot_title_tor_model_1(),
       display_as      = input$tor_display_as_model_1,
       display_text    = input$tor_display_text_model_1,
-      filter_rows     = input$trim_tor_model_1,
-      xlabname        = input$xlab_tor_model_1,
+      filter_rows     = d_trim_tor_model_1(),
+      xlabname        = d_xlab_tor_model_1(),
       bioeq_lines     = input$show_bioeq_model_1
     )
     
@@ -7748,10 +7752,10 @@ server <- function(input, output, session) {
       df               = tmp3,
       reference_value  = reference_value,
       metric_name      = input$select_tor_metric_model_1,
-      plot_title       = input$plot_title_tor_model_1,
+      plot_title       = d_plot_title_tor_model_1(),
       display_as       = input$tor_display_as_model_1,
-      filter_rows      = input$trim_tor_model_1,
-      ylabname         = input$xlab_tor_model_1,
+      filter_rows      = d_trim_tor_model_1(),
+      ylabname         = d_xlab_tor_model_1(),
       bioeq_lines      = input$show_bioeq_model_1,
       normalize_x_axis = input$spi_normalize_model_1
     )
@@ -7997,11 +8001,11 @@ server <- function(input, output, session) {
       df              = tmp2,
       reference_value = reference_value,
       metric_name     = input$select_tor_metric_model_2,
-      plot_title      = input$plot_title_tor_model_2,
+      plot_title      = d_plot_title_tor_model_2(),
       display_as      = input$tor_display_as_model_2,
       display_text    = input$tor_display_text_model_2,
-      filter_rows     = input$trim_tor_model_2,
-      xlabname        = input$xlab_tor_model_2,
+      filter_rows     = d_trim_tor_model_2(),
+      xlabname        = d_xlab_tor_model_2(),
       bioeq_lines     = input$show_bioeq_model_2
     )
     
@@ -8083,10 +8087,10 @@ server <- function(input, output, session) {
       df               = tmp3,
       reference_value  = reference_value,
       metric_name      = input$select_tor_metric_model_2,
-      plot_title       = input$plot_title_tor_model_2,
+      plot_title       = d_plot_title_tor_model_2(),
       display_as       = input$tor_display_as_model_2,
-      filter_rows      = input$trim_tor_model_2,
-      ylabname         = input$xlab_tor_model_2,
+      filter_rows      = d_trim_tor_model_2(),
+      ylabname         = d_xlab_tor_model_2(),
       bioeq_lines      = input$show_bioeq_model_2,
       normalize_x_axis = input$spi_normalize_model_2
     )
@@ -8998,49 +9002,55 @@ server <- function(input, output, session) {
   })
   
   ## IIV simulation 1 ----
-  simulation_IIV_output_model_1 <- reactive({
+  # The simulation itself (expensive) only depends on simulation inputs; the
+  # percentiles and y-axis are applied in simulation_IIV_output_model_1() below,
+  # so changing them reuses the cached simulation instead of re-simulating
+  iiv_raw_model_1 <- reactive({
     if (iiv_checkpoint_model_1$reconstructed_iiv) {
-      iiv_sim_output_model_1 <-
-        run_single_sim(
-          input_model_object = changed_matrix_model_1(),
-          save_events_as     = "model_1", # kept for this model's bundle download
-          pred_model         = model_1_is_pred(),
-          wt_based_dosing    = input$wt_based_dosing_checkbox,
-          wt_name            = input$wt_based_dosing_name,
-          ev_df              = dosing_regimen_model_1(),
-          model_dur          = model_duration_argument_model_1(),
-          model_rate         = model_rate_argument_model_1(),
-          sampling_times     = sampling_options(),
-          seed               = d_seed_number_model_1(),
-          debug              = show_debugging_msg,
-          divide_by          = time_value(),
-          nsubj              = n_subj_model_1_clean(),
-          nsubj_offset       = 0,
-          ext_db             = database_model_1(),
-          show_matches       = TRUE,
-          parallel_sim       = FALSE, #input$para_checkbox,
-          parallel_n         = 100 # input$para_n,
-        )
+      run_single_sim(
+        input_model_object = changed_matrix_model_1(),
+        save_events_as     = "model_1", # kept for this model's bundle download
+        pred_model         = model_1_is_pred(),
+        wt_based_dosing    = input$wt_based_dosing_checkbox,
+        wt_name            = input$wt_based_dosing_name,
+        ev_df              = dosing_regimen_model_1(),
+        model_dur          = model_duration_argument_model_1(),
+        model_rate         = model_rate_argument_model_1(),
+        sampling_times     = sampling_options(),
+        seed               = d_seed_number_model_1(),
+        debug              = show_debugging_msg,
+        divide_by          = time_value(),
+        nsubj              = n_subj_model_1_clean(),
+        nsubj_offset       = 0,
+        ext_db             = database_model_1(),
+        show_matches       = TRUE,
+        parallel_sim       = FALSE, #input$para_checkbox,
+        parallel_n         = 100 # input$para_n,
+      )
+    }
+  }, label = 'iiv_raw_model_1()')
+
+  simulation_IIV_output_model_1 <- reactive({
+    iiv_sim_output_model_1 <- iiv_raw_model_1()
+
+    if(!is.null(iiv_sim_output_model_1)) {
+      iiv_sim_output_model_1 <- quantile_output(iiv_sim_output_model_1,
+                                                yvar = input$yaxis_name,
+                                                lower_quartile = sanitize_numeric_input(d_lower_quartile(), legal_minimum = 0, display_error = TRUE)/100,
+                                                upper_quartile = sanitize_numeric_input(d_upper_quartile(), legal_maximum = 100, display_error = TRUE)/100
+      )
       
-      if(!is.null(iiv_sim_output_model_1)) {
-        iiv_sim_output_model_1 <- quantile_output(iiv_sim_output_model_1,
-                                                  yvar = input$yaxis_name,
-                                                  lower_quartile = sanitize_numeric_input(d_lower_quartile(), legal_minimum = 0, display_error = TRUE)/100,
-                                                  upper_quartile = sanitize_numeric_input(d_upper_quartile(), legal_maximum = 100, display_error = TRUE)/100
-        )
-        
-        iiv_sim_output_model_1$yvar <- iiv_sim_output_model_1[[input$yaxis_name]]
-        
-        if(is.data.frame(iiv_sim_output_model_1)) {
-          iiv_checkpoint_model_1$iiv_simulation <- TRUE
-          if (show_debugging_msg) {
-            message('simulation1 iiv generated')
-          }
-          return(iiv_sim_output_model_1)
+      iiv_sim_output_model_1$yvar <- iiv_sim_output_model_1[[input$yaxis_name]]
+      
+      if(is.data.frame(iiv_sim_output_model_1)) {
+        iiv_checkpoint_model_1$iiv_simulation <- TRUE
+        if (show_debugging_msg) {
+          message('simulation1 iiv generated')
         }
-      } else {
-        return(NULL)
+        return(iiv_sim_output_model_1)
       }
+    } else {
+      return(NULL)
     }
   }, label = 'iiv_output_model_1()')
   
@@ -9843,50 +9853,56 @@ server <- function(input, output, session) {
   })
   
   ## IIV simulation 2 ----
-  simulation_IIV_output_model_2 <- reactive({
+  # The simulation itself (expensive) only depends on simulation inputs; the
+  # percentiles and y-axis are applied in simulation_IIV_output_model_2() below,
+  # so changing them reuses the cached simulation instead of re-simulating
+  iiv_raw_model_2 <- reactive({
     if (iiv_checkpoint_model_2$reconstructed_iiv) {
-      iiv_sim_output_model_2 <-
-        run_single_sim(
-          input_model_object = changed_matrix_model_2(),
-          save_events_as     = "model_2", # kept for this model's bundle download
-          pred_model         = model_2_is_pred(),
-          wt_based_dosing    = input$wt_based_dosing_checkbox_2,
-          wt_name            = input$wt_based_dosing_name_2,
-          ev_df              = dosing_regimen_model_2(),
-          model_dur          = model_duration_argument_model_2(),
-          model_rate         = model_rate_argument_model_2(),
-          sampling_times     = sampling_options(),
-          seed               = d_seed_number_model_2(),
-          debug              = show_debugging_msg,
-          divide_by          = time_value(),
-          nsubj              = n_subj_model_2_clean(),
-          nsubj_offset       = n_subj_model_1_clean(),
-          append_id_text     = "m2-",
-          ext_db             = database_model_2(),
-          show_matches       = TRUE,
-          parallel_sim       = FALSE, #input$para_checkbox,
-          parallel_n         = 100 # input$para_n
-        )
+      run_single_sim(
+        input_model_object = changed_matrix_model_2(),
+        save_events_as     = "model_2", # kept for this model's bundle download
+        pred_model         = model_2_is_pred(),
+        wt_based_dosing    = input$wt_based_dosing_checkbox_2,
+        wt_name            = input$wt_based_dosing_name_2,
+        ev_df              = dosing_regimen_model_2(),
+        model_dur          = model_duration_argument_model_2(),
+        model_rate         = model_rate_argument_model_2(),
+        sampling_times     = sampling_options(),
+        seed               = d_seed_number_model_2(),
+        debug              = show_debugging_msg,
+        divide_by          = time_value(),
+        nsubj              = n_subj_model_2_clean(),
+        nsubj_offset       = n_subj_model_1_clean(),
+        append_id_text     = "m2-",
+        ext_db             = database_model_2(),
+        show_matches       = TRUE,
+        parallel_sim       = FALSE, #input$para_checkbox,
+        parallel_n         = 100 # input$para_n
+      )
+    }
+  }, label = 'iiv_raw_model_2()')
+
+  simulation_IIV_output_model_2 <- reactive({
+    iiv_sim_output_model_2 <- iiv_raw_model_2()
+
+    if(!is.null(iiv_sim_output_model_2)) {
+      iiv_sim_output_model_2 <- quantile_output(iiv_sim_output_model_2,
+                                                yvar = input$yaxis_name_model_2,
+                                                lower_quartile = sanitize_numeric_input(d_lower_quartile(), legal_minimum = 0, display_error = TRUE)/100,
+                                                upper_quartile = sanitize_numeric_input(d_upper_quartile(), legal_maximum = 100, display_error = TRUE)/100
+      )
       
-      if(!is.null(iiv_sim_output_model_2)) {
-        iiv_sim_output_model_2 <- quantile_output(iiv_sim_output_model_2,
-                                                  yvar = input$yaxis_name_model_2,
-                                                  lower_quartile = sanitize_numeric_input(d_lower_quartile(), legal_minimum = 0, display_error = TRUE)/100,
-                                                  upper_quartile = sanitize_numeric_input(d_upper_quartile(), legal_maximum = 100, display_error = TRUE)/100
-        )
-        
-        iiv_sim_output_model_2$yvar <- iiv_sim_output_model_2[[input$yaxis_name_model_2]]
-        
-        if(is.data.frame(iiv_sim_output_model_2)) {
-          iiv_checkpoint_model_2$iiv_simulation <- TRUE
-          if (show_debugging_msg) {
-            message('simulation2 iiv generated successfully')
-          }
-          return(iiv_sim_output_model_2)
+      iiv_sim_output_model_2$yvar <- iiv_sim_output_model_2[[input$yaxis_name_model_2]]
+      
+      if(is.data.frame(iiv_sim_output_model_2)) {
+        iiv_checkpoint_model_2$iiv_simulation <- TRUE
+        if (show_debugging_msg) {
+          message('simulation2 iiv generated successfully')
         }
-      } else {
-        return(NULL)
+        return(iiv_sim_output_model_2)
       }
+    } else {
+      return(NULL)
     }
   }, label = 'iiv_output_model_2()')
   

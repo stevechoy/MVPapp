@@ -85,3 +85,12 @@ test_that("safe_seed() pauses on an empty seed instead of erroring", {
   expect_error(MVPapp:::safe_seed(NA_real_), class = "shiny.silent.error")
   expect_error(MVPapp:::safe_seed(NULL), class = "shiny.silent.error")
 })
+
+test_that("create_facet_label() builds sorted labels and handles empty data", {
+  d <- data.frame(ID = c(2, 2, 1, 1, 3), SEX = c("F", "F", "M", "M", "F"), WT = c(60, 60, 80, 80, 55.5))
+  out <- MVPapp:::create_facet_label(d, c("SEX", "WT"))
+  expect_equal(unique(out$facet_label),
+               c("ID: 3, SEX: F, WT: 55.5", "ID: 2, SEX: F, WT: 60", "ID: 1, SEX: M, WT: 80"))
+  expect_equal(nrow(MVPapp:::create_facet_label(d[0, ], c("SEX", "WT"))), 0)
+  expect_equal(unique(MVPapp:::create_facet_label(d, "ID")$facet_label), c("ID: 2", "ID: 1", "ID: 3"))
+})
