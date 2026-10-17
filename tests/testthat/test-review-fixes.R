@@ -94,3 +94,29 @@ test_that("create_facet_label() builds sorted labels and handles empty data", {
   expect_equal(nrow(MVPapp:::create_facet_label(d[0, ], c("SEX", "WT"))), 0)
   expect_equal(unique(MVPapp:::create_facet_label(d, "ID")$facet_label), c("ID: 2", "ID: 1", "ID: 3"))
 })
+
+test_that("nonmem2rx uploads: control stream or listing plus supporting files", {
+  skip_if_not(utils::packageVersion("testthat") >= "3.1.7") # local_mocked_bindings()
+  local_mocked_bindings(nonmem2rx_available = function() TRUE, .package = "MVPapp")
+  src <- tempfile("uploads_"); dir.create(src)
+  on.exit(unlink(src, recursive = TRUE), add = TRUE)
+  upload <- function(names) {
+    paths <- file.path(src, paste0(seq_along(names), "_tmp"))
+    for (k in seq_along(names)) writeLines(names[k], paths[k])   # content = original name
+    data.frame(name = names, datapath = paths, stringsAsFactors = FALSE)
+  }
+  prep <- function(files) with_mock_session(MVPapp:::prepare_uploaded_files(
+    files, llm_service = "Claude", model_lang = "rxode2", use_nonmem2mrgsolve = FALSE,
+    use_nonmem2rx = TRUE, single_file_types = c(".pdf", ".txt"), multi_file_types = c(".pdf", ".txt")))
+
+  one <- prep(upload("run1.lst"))
+  expect_equal(basename(one$primary_path), "run1.lst")
+
+  many <- prep(upload(c("run1.ext", "run1.ctl", "run1.phi", "run1.lst")))
+  expect_equal(basename(many$primary_path), "run1.ctl")
+  expect_setequal(list.files(many$dir), c("run1.ext", "run1.ctl", "run1.phi", "run1.lst"))
+  expect_equal(readLines(file.path(many$dir, "run1.phi")), "run1.phi")  # copied under original name
+
+  expect_null(prep(upload(c("a.ctl", "b.ctl"))))      # two control streams: rejected
+  expect_null(prep(upload(c("run1.ext", "run1.phi"))))   # no control stream: not nonmem2rx
+})

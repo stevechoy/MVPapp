@@ -1109,8 +1109,10 @@ prepare_uploaded_files <- function(files,
     accept_types <- c(accept_types, ".ext")
   }
   
-  if(model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE)) {
-    accept_types <- c(accept_types, ".lst")
+  nonmem2rx_types <- c(".ctl", ".mod", ".lst", ".ext", ".phi", ".cov", ".cor", ".coi", ".xml", ".grd", ".shk")
+  use_rx <- model_lang == "rxode2" && use_nonmem2rx && nonmem2rx_available()
+  if (use_rx) {
+    accept_types <- unique(c(accept_types, nonmem2rx_types))
   }
   
   # ── Helper: normalise interchangeable plain-text extensions ──────────────────
@@ -1121,6 +1123,47 @@ prepare_uploaded_files <- function(files,
   exts            <- tolower(paste0(".", tools::file_ext(files$name)))
   normalized_exts <- normalize_ext(exts)
   
+  # ── nonmem2rx: one control stream (.ctl/.mod) or listing (.lst), optionally
+  #    with supporting files (.ext, .phi, .cov, .xml, ...) ──────────────────────
+  # nonmem2rx looks for supporting files next to the control stream by base
+  # name, so all uploads are copied under their original names into one folder.
+  if (use_rx && all(exts %in% nonmem2rx_types) &&
+      any(exts %in% c(".ctl", ".mod", ".lst"))) {
+
+    is_ctl  <- exts %in% c(".ctl", ".mod")
+    is_lst  <- exts == ".lst"
+    primary <- if (sum(is_ctl) == 1) {
+      which(is_ctl)
+    } else if (sum(is_ctl) == 0 && sum(is_lst) == 1) {
+      which(is_lst)
+    } else {
+      NA_integer_
+    }
+
+    if (is.na(primary)) {
+      safely_showNotification(
+        paste0("For nonmem2rx, please upload one control stream (.ctl/.mod) or one ",
+               "listing file (.lst), optionally with its supporting files ",
+               "(e.g. .ext, .phi, .cov, .xml) using the same base name."),
+        type     = "error",
+        duration = NULL
+      )
+      return(invisible(NULL))
+    }
+
+    work_dir <- tempfile("nonmem2rx_")
+    dir.create(work_dir)
+    file.copy(files$datapath, file.path(work_dir, files$name))
+
+    return(list(
+      primary_path = file.path(work_dir, files$name[primary]),
+      dir          = work_dir,
+      path         = files$datapath[primary],
+      ext          = exts[primary],
+      name         = files$name[primary]
+    ))
+  }
+
   # ── Single file ───────────────────────────────────────────────────────────────
   if (nrow(files) == 1) {
     
@@ -1133,25 +1176,6 @@ prepare_uploaded_files <- function(files,
         duration = NULL
       )
       return(invisible(NULL))
-    }
-    
-    # ── nonmem2rx path: single .ctl/.mod/.lst when targeting rxode2 ─────────────
-    if (model_lang == "rxode2" && use_nonmem2rx && requireNamespace("nonmem2rx", quietly = TRUE) &&
-        exts %in% c(".ctl", ".mod", ".lst")) {
-      
-      # nonmem2rx looks for companion files (e.g. .ext, .phi) next to the
-      # control stream by name, so copy the upload under its original name
-      work_dir <- tempfile("nonmem2rx_")
-      dir.create(work_dir)
-      primary_path <- file.path(work_dir, files$name[1])
-      file.copy(files$datapath[1], primary_path)
-      return(list(
-        primary_path = primary_path,
-        dir          = work_dir,
-        path         = files$datapath[1],
-        ext          = exts,
-        name         = files$name[1]
-      ))
     }
     
     return(files$datapath[1])
@@ -1468,4 +1492,16 @@ get_apollo_token_ext <- function() {
     httr2::req_perform()
   
   httr2::resp_body_json(response)$access_token
+}
+
+#-------------------------------------------------------------------------------
+#' @name nonmem2rx_available
+#'
+#' @title Is the optional nonmem2rx package installed?
+#'
+#' @returns `TRUE` or `FALSE`.
+#' @noRd
+#-------------------------------------------------------------------------------
+nonmem2rx_available <- function() {
+  requireNamespace("nonmem2rx", quietly = TRUE)
 }
