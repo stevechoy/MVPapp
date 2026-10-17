@@ -4,7 +4,7 @@ First release prepared for CRAN.
 
 ## Breaking changes
 
-* Only `run_mvp()` (and the `%>%` re-export) is exported; the helper functions, model templates and UI settings are now internal. They remain available by name inside the app, the in-app code editors and `pw_models_path` scripts.
+* Only `run_mvp()`, `mvp_app()` and the `%>%` re-export are exported; the helper functions, model templates and UI settings are now internal. They remain available by name inside the app, the in-app code editors and `pw_models_path` scripts.
 * The inactive `use_bi_styling` argument of `run_mvp()` was removed, together with the BI logo files and BI color names.
 * `nonmem2mrgsolve` is declared in Suggests via the `stevechoy.r-universe.dev` repository; `httr2`, `curl` and `mime` (only needed for AI translation) moved from Imports to Suggests.
 * License is now declared as `GPL (>= 3)`.
@@ -36,6 +36,12 @@ First release prepared for CRAN.
 * Variability: a clear message instead of duplicated subjects when too few database subjects match the filters, and clearing the Seed box no longer closes the session (#40)
 * Data Exploration: 'Flag Outliers' works with dosing rows present, text columns with NA no longer break plots, and ID/TIME are detected from `PTNO`/`ATSD` columns (#41)
 * Spider plots rank parameters by how much they change the metric (#42)
+* Saved sessions record the running MVPapp version (previously always 0.4.5), the locked-models help text links to this repository, and Data Exploration plots no longer print ggplot2 messages to the console (#46)
+
+## Documentation
+
+* Help pages for the `cdc.expand`, `nhanes.filtered` and `who.expand` datasets describe each column (with units and `SEX` coding), how the data were derived, and their sources; `?run_mvp` defaults and arguments are up to date (#46)
+* Scripts supplied via `pw_models_path` that were copied from the template before 1.0.0 should update the end of `update_model_choices()`; see `vignette("supply-passwords")` (#36)
 
 # MVPapp 0.4.7 (2026-10-03)
 
