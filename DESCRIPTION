@@ -11,7 +11,8 @@ Description: An interactive 'shiny' application for exploring
     simulations with observed data. Additional features include parameter
     sensitivity analysis, non-compartmental analysis (NCA), data exploration,
     variability assessment with virtual populations, and optional AI-assisted
-    model translation.
+    model translation. For design considerations of the app, see Choy et al.
+    (2025) <doi:10.1002/psp4.70023>.
 License: GPL (>= 3)
 URL: https://github.com/stevechoy/MVPapp, https://stevechoy.github.io/MVPapp/, https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.70023
 Encoding: UTF-8
