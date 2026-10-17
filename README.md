@@ -9,6 +9,7 @@ earlier versions of MVPapp (\<= v0.3.3).</strong></span>
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 `MVPapp` is an R package that bundles the
@@ -342,7 +343,7 @@ live)!
     or use “None” to only change the number of subjects being simulated.
     - If the model code contains any of `AGE`, `WT`, `HT`, `BMI`, or
       `BSA` in its `$PARAM` section, its value will be **replaced** by
-      the subjects’ value from the sampled database.  
+      the subjects' value from the sampled database.  
     - Sampled demographics can be downloaded in the “Summary Statistics”
       sub-tab if the user wants to use this to perform their own
       simulations.  
@@ -366,7 +367,7 @@ live)!
         will be used (i.e. a 1:1 substitution). Otherwise, sampling
         *with* replacement will be used.  
       - Don’t forget to set the corresponding OMEGAs to 0 if you are
-        sampling EBEs from the dataset (see ‘Assessing Variability’
+        sampling EBEs from the dataset (see 'Assessing Variability'
         section below).  
       - Tip: you may use the “Data Input” page’s code editor to rename
         columns if required.  

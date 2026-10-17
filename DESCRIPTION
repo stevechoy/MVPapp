@@ -64,7 +64,9 @@ Suggests: curl,
           nonmem2rx,
           pdftools,
           rmarkdown,
-          shinyalert
+          shinyalert,
+          spelling,
+          testthat (>= 3.0.0)
 Additional_repositories: https://stevechoy.r-universe.dev
 Depends: R (>= 4.1)
 LazyData: true
@@ -86,4 +88,6 @@ Collate: "utils-pipe.R"
          "run_mvp.R"
          "data.R"
 VignetteBuilder: knitr
+Config/testthat/edition: 3
+Language: en-US
 Config/roxygen2/version: 8.0.0

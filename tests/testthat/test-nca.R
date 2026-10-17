@@ -1,0 +1,10 @@
+test_that("NCA PDF page helpers work without unexported ncar functions (#26)", {
+  f <- tempfile(fileext = ".pdf")
+  MVPapp:::nca_prep_pdf(f)
+  MVPapp:::nca_add_page(Header1 = "Header")
+  MVPapp:::nca_text1(1, 1, "Title")
+  MVPapp:::nca_text_m(c("line 1", "line 2"), StartRow = 2)
+  MVPapp:::nca_close_pdf()
+  expect_true(file.exists(f))
+  expect_gt(file.size(f), 0)
+})

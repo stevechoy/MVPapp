@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
+[![R-CMD-check](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 `MVPapp` is an R package that bundles the [Model Visualization Platform (MVP)](https://lagom.shinyapps.io/MVPapp/){target="_blank"} Shiny application for local use and/or deployment. MVP is an interactive pharmacometrics environment requiring minimal setup from the users, and is developed with user-friendliness as a top priority so even non-modelers may be able to explore different aspects of the models without too much hassle, whilst balancing complexity for advanced users. Some features include:\
