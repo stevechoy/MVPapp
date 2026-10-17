@@ -4089,7 +4089,7 @@ server <- function(input, output, session) {
       updateNumericInput(session, "amt5_2", value = 0)
     }
     
-  }, ignoreInit = TRUE, label = 'updateAceEditor Model 2')
+  }, label = 'updateAceEditor Model 2') # also runs at startup (like Model 1) so the editor gets the selected model and its model_object line
   
   ## Handling upload of .cpp file option
   output$upload_cpp_model_1 <- renderUI({
