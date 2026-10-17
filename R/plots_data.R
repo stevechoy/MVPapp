@@ -1572,7 +1572,7 @@ plot_iiv_data_with_nm <- function(
         ggplot2::geom_line(
           data    = dataset,
           mapping = ggplot2::aes(x = .data[[xvar]], y = .data[[yvar_name]],
-                                 color = ID),
+                                 group = ID, color = ID), # numeric ID gives a continuous colour scale, which does not group lines
           alpha = 0.4)
     }
     
