@@ -41,8 +41,11 @@ if(standalone_mode) {
   #source("C:/MYREPOS/MVPapp/R/ui_settings.R") # example for local edit
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/code_templates.R")   # List of example mrgsolve models
   #source("C:/MYREPOS/MVPapp/R/code_templates.R") # example for local edit
-  source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/functions.R")        # List of helper functions required for the app
-  #source("C:/MYREPOS/MVPapp/R/functions.R") # example for local edit
+  for (r_file in c("utils.R", "shiny_helpers.R", "plot_helpers.R", "data_utils.R", "plots_data.R", "simulation.R",
+                    "variability.R", "nca.R", "sensitivity.R", "llm.R", "session_state.R", "repro_bundle.R")) { # Helper functions required for the app
+    source(paste0("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/R/", r_file))
+    #source(file.path("C:/MYREPOS/MVPapp/R", r_file)) # example for local edit
+  }
   source("https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R") # Prompts file for automatic model translation
   #source("C:/MYREPOS/MVPapp/R/prompts.R") # example for local edit
   

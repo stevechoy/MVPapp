@@ -469,7 +469,8 @@ files to be sourced locally, in the same directory:
 - External database files: `nhanes.filtered.rda`, `who.expand.rda`,
 `cdc.expand.rda`  
 - MVPapp internal files: `ui_settings.R`, `code_templates.R`,
-`functions.R`, `prompts.R`
+`utils.R`, the helper function files in `R/` (e.g. `simulation.R`,
+`plots_data.R`, `nca.R`, `llm.R`), `prompts.R`
 
 Some example code (commented out by default) inside the standalone mode
 code block (near the top of the script) is provided to help you get

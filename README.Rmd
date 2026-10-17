@@ -244,7 +244,7 @@ Please see the article on [Effective Exploratory Data Analysis (EDA)](https://st
 
 To run MVP without calling `run_mvp()`, navigate to the path of the installed `MVPapp` package (path can be obtained by running `system.file(package = 'MVPapp')`), open `shiny/app.R`, and set `standalone_mode <- TRUE`. Then you would be able to run the App as-is. Change back to `standalone_mode <- FALSE` to allow passing of options via `run_mvp()` again. This is especially useful if you wish to deploy MVP, in which case you may also want to have a copy of the following files to be sourced locally, in the same directory:  
     -   External database files: `nhanes.filtered.rda`, `who.expand.rda`, `cdc.expand.rda`  
-    -   MVPapp internal files: `ui_settings.R`, `code_templates.R`, `functions.R`, `prompts.R`  
+    -   MVPapp internal files: `ui_settings.R`, `code_templates.R`, `utils.R`, the helper function files in `R/` (e.g. `simulation.R`, `plots_data.R`, `nca.R`, `llm.R`), `prompts.R`  
     
 Some example code (commented out by default) inside the standalone mode code block (near the top of the script) is provided to help you get started.  
     
