@@ -3,33 +3,51 @@
 \docType{data}
 \name{who.expand}
 \alias{who.expand}
-\title{World Health Organization Pediatric Data}
+\title{WHO pediatric virtual population}
 \format{
-\subsection{\code{who.expand}}{
-
-A data frame with 77744 rows and 6 columns SEX, AGEMO, AGEYR, WT, HT
-(approx. 80k virtual subjects)
+A data frame with 77,744 rows and 6 columns:
+\describe{
+\item{SEX}{Sex: 0 = male, 1 = female.}
+\item{AGEMO}{Age (months).}
+\item{AGEYR}{Age (years).}
+\item{WT}{Body weight (kg).}
+\item{HT}{Length/height (cm).}
+\item{BMI}{Body mass index (kg/m\eqn{^2}).}
 }
 }
 \source{
-\url{https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age}
+WHO Child Growth Standards:
+\url{https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age},
+\url{https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age}.
+WHO Growth Reference 5-19 years:
+\url{https://www.who.int/growthref/who2007_height_for_age/en/}.
 }
 \usage{
 who.expand
 }
 \description{
-WHO weight-for-age (https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age)
-from birth to 10 yo in boys and girls
-Individual files are stacked together to create one overall dataframe 'who'
-Insert citation notes here in the future
+A virtual pediatric population (birth to 10 years) simulated from the World
+Health Organization (WHO) Child Growth Standards and Growth Reference. Used
+by the app to sample age, weight and height when the "WHO" database is
+selected for variability simulations.
 }
 \details{
-WHO length/height for age (https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age)
-from birth to 5 yo in boys and girls
-Individual files are stacked together to create one overall dataframe 'who.ht'
+Body weight and height were simulated from the published LMS parameters
+(Box-Cox power, median and coefficient of variation) for each sex and month
+of age, by drawing standard normal Z-scores and applying
+\eqn{X = M (1 + L S Z)^{1/L}}. Sources:
+\itemize{
+\item Weight-for-age, 0 to 10 years.
+\item Length/height-for-age, 0 to 5 years (Child Growth Standards) and 5 to
+10 years (Growth Reference 5-19 years).
+}
 
-WHO length/height for age from birth to 5 yo in boys and girls (https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age)
-WHO growth reference 5-19 yo in boys and girls (https://www.who.int/growthref/who2007_height_for_age/en/)
-Individual files are stacked together to create one overall dataframe 'who.ht'
+Rows with implausible BMI (outside 10 to 50 kg/m\eqn{^2}) were removed. See
+\code{data-raw/databases.R} in the
+\href{https://github.com/stevechoy/MVPapp/tree/master/data-raw}{GitHub repository}
+for the code.
+}
+\seealso{
+\link{cdc.expand}, \link{nhanes.filtered}
 }
 \keyword{datasets}

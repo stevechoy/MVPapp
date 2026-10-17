@@ -3,31 +3,40 @@
 \docType{data}
 \name{nhanes.filtered}
 \alias{nhanes.filtered}
-\title{NHANES 1999-2023
-(https://wwwn.cdc.gov/nchs/nhanes/Default.aspx)
-ID, WT, SEX, AGEYR are retained by default.
-Insert citation notes here in the future}
+\title{NHANES population (1999-2023)}
 \format{
-\subsection{\code{nhanes.filtered}}{
-
-'data.frame':	101400 obs. of  5 variables:
-SEX  : num  1 0 1 0 1 1 0 1 0 0 ...
-AGEMO: num  24 924 120 588 228 708 156 132 516 180 ...
-AGEYR: num  2 77 10 49 19 59 13 11 43 15 ...
-WT   : num  12.5 75.4 32.9 92.5 59.2 ...
-HT   : num  91.6 174 136.6 178.3 162 ...
+A data frame with 101,400 rows and 5 columns:
+\describe{
+\item{SEX}{Sex: 0 = male, 1 = female.}
+\item{AGEMO}{Age (months), derived from \code{AGEYR}.}
+\item{AGEYR}{Age (years).}
+\item{WT}{Body weight (kg).}
+\item{HT}{Standing height (cm).}
 }
 }
 \source{
-\url{https://wwwn.cdc.gov/nchs/nhanes/Default.aspx}
+Centers for Disease Control and Prevention (CDC), National Center for
+Health Statistics, National Health and Nutrition Examination Survey:
+\url{https://wwwn.cdc.gov/nchs/nhanes/Default.aspx}.
 }
 \usage{
 nhanes.filtered
 }
 \description{
-NHANES 1999-2023
-(https://wwwn.cdc.gov/nchs/nhanes/Default.aspx)
-ID, WT, SEX, AGEYR are retained by default.
-Insert citation notes here in the future
+Sex, age, body weight and height of participants in the US National Health
+and Nutrition Examination Survey (NHANES), cycles 1999-2000 to 2021-2023,
+aged 2 years and older. Used by the app to sample age, weight and height
+when the "NHANES" database is selected for variability simulations.
+}
+\details{
+Demographics and body measures files were merged by participant
+and only complete records were kept. Age is recorded in whole years, so
+\code{AGEMO} is \code{AGEYR * 12}. See
+\code{data-raw/databases.R} in the
+\href{https://github.com/stevechoy/MVPapp/tree/master/data-raw}{GitHub repository}
+for the code.
+}
+\seealso{
+\link{cdc.expand}, \link{who.expand}
 }
 \keyword{datasets}

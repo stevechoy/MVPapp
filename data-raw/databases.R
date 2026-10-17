@@ -21,12 +21,10 @@ read_pre_baked_databases <- TRUE
 # CDC weight-for-age (https://www.cdc.gov/growthcharts/percentile_data_files.htm)
 # Weight-for-age charts, 0 to 20 years, LMS parameters and selected smoothed weight percentiles in kilograms, by sex and age
 # Stature-for-age charts, 0 to 20 years, LMS parameters and selected smoothed weight percentiles in cm, by sex and age
-# Insert citation notes here in the future
 
 # WHO weight-for-age (https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age)
 # from birth to 10 yo in boys and girls
 # Individual files are stacked together to create one overall dataframe 'who'
-# Insert citation notes here in the future
 #
 # WHO length/height for age (https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age)
 # from birth to 5 yo in boys and girls
@@ -47,7 +45,6 @@ read_pre_baked_databases <- TRUE
 # NHANES 1999-2020 (pre-pandemic, until March 2020 [pre-pandemic])
 # (https://wwwn.cdc.gov/nchs/nhanes/Default.aspx) 
 # ID, WT, SEX, AGEYR are retained by default.
-# Insert citation notes here in the future
 
 if(read_pre_baked_databases) {
   load("databases.RData")
@@ -73,7 +70,6 @@ if(read_pre_baked_databases) {
     # CDC weight-for-age (https://www.cdc.gov/growthcharts/percentile_data_files.htm)
     # Weight-for-age charts, 0 to 20 years, LMS parameters and selected smoothed weight percentiles in kilograms, by sex and age
     # Stature-for-age charts, 0 to 20 years, LMS parameters and selected smoothed weight percentiles in cm, by sex and age
-    # Insert citation notes here in the future
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     cdc.wt.age36  <- read.csv(file.path(database_path, "CDC", "wtageinf.csv"), header = TRUE) #0-36 months
@@ -106,7 +102,6 @@ if(read_pre_baked_databases) {
     # WHO weight-for-age (https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age)
     # from birth to 10 yo in boys and girls
     # Individual files are stacked together to create one overall dataframe 'who'
-    # Insert citation notes here in the future
     #
     # WHO length/height for age (https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age)
     # from birth to 5 yo in boys and girls
@@ -256,7 +251,6 @@ if(read_pre_baked_databases) {
     # NHANES 1999-2023
     # (https://wwwn.cdc.gov/nchs/nhanes/Default.aspx) 
     # ID, WT, SEX, AGEYR are retained by default.
-    # Insert citation notes here in the future
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     nhanes.demogs.A <- read.xport(file.path(database_path, "NHANES", "DEMO_A_NHANES_1999-2000_demographics.xpt"))
