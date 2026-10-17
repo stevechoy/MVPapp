@@ -855,29 +855,3 @@ calculate_quantiles <- function(df, xvar, num_quantiles) {
     dplyr::select(starts_with("Q")) %>%
     dplyr::distinct()
 }
-
-#-------------------------------------------------------------------------------
-#' @name quantile_ranges_name
-#'
-#' @title Function that stores the names and ranges of quantiles as a
-#' character string to be used in Figure footnotes etc (Not used)
-#'
-#' @param quantiles_df    Name of dataframe containing columns corresponding to number of quantiles
-#' @param df_orig         Name of original dataframe containing the continuous x-axis variable
-#' @param xvar            Name of x-axis variable to split by
-#'
-#' @returns a character string containing the quantile limits
-#' @noRd
-#-------------------------------------------------------------------------------
-
-quantile_ranges_name <- function(quantiles_df, df_orig, xvar) {
-  range_name <- ""
-  for(i in seq_along(quantiles_df)) {
-    if(i == 1) { # Special case for first quantile
-      range_name <- paste0(range_name, "Q", i, " = [", round(min(df_orig[[xvar]], na.rm = TRUE)), " - ", round(quantiles_df[[names(quantiles_df)[i]]]), "]")
-    } else {
-      range_name <- paste0(range_name, ", Q", i, " = (", round(quantiles_df[[names(quantiles_df)[i-1]]]), " - ", round(quantiles_df[[names(quantiles_df)[i]]]), "]")
-    }
-  }
-  return(range_name)
-}

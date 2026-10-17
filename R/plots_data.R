@@ -1014,69 +1014,6 @@ print_cov_plot <- function(data, lo_percentile = 0.025, hi_percentile = 0.975) {
 }
 
 #-------------------------------------------------------------------------------
-#' NOT CURRENTLY USED
-#'
-#' @name compare_dist_histogram
-#'
-#' @title Sanity check plots comparing newly created
-#'                         distributions vs NONMEM dataset (or databases)
-#'
-#' @param df         Dataframe of newly created distribution
-#' @param variable_name  Name of variable (string) to use for plotting histograms
-#' @param variable_label Nice label of variable_name
-#' @param lo_percentile  Default 0.025, (2.5th percentile)
-#' @param hi_percentile  Default 0.975, (97.5th percentile)
-#'
-#' @returns a ggplot object
-#' @importFrom dplyr case_when mutate filter
-#' @noRd
-#-------------------------------------------------------------------------------
-
-compare_dist_histogram <- function(df, variable_name, variable_label,
-                                   lo_percentile = 0.025, hi_percentile = 0.975) {
-
-  df <- df %>% dplyr::mutate(SEX = dplyr::case_when(SEX == 0 ~ "Male",
-                                                    SEX == 1 ~ "Female"))
-
-  df_male   <- df %>% dplyr::filter(SEX == "Male")
-  df_female <- df %>% dplyr::filter(SEX == "Female")
-
-  df_male_median <- round(quantile(df_male[[variable_name]], probs = 0.5), 1)
-  df_male_lo     <- round(quantile(df_male[[variable_name]], probs = lo_percentile), 1)
-  df_male_hi     <- round(quantile(df_male[[variable_name]], probs = hi_percentile), 1)
-
-  df_female_median <- round(quantile(df_female[[variable_name]], probs = 0.5), 1)
-  df_female_lo     <- round(quantile(df_female[[variable_name]], probs = lo_percentile), 1)
-  df_female_hi     <- round(quantile(df_female[[variable_name]], probs = hi_percentile), 1)
-
-  range_text    <- (hi_percentile - lo_percentile) * 100
-
-  plot_histo <- ggplot2::ggplot()+
-    #add_watermark() +
-    ggplot2::geom_histogram(data = df_male, ggplot2::aes(y=..count../sum(..count..) * 100, x= .data[[variable_name]]), fill='blue', binwidth = 5, alpha = 0.25) +
-    ggplot2::geom_histogram(data = df_female, ggplot2::aes(y=..count../sum(..count..) * 100, x= .data[[variable_name]]), fill='red', binwidth = 5, alpha = 0.25) +
-    ggplot2::geom_vline(xintercept = df_male_median, color = 'blue', alpha = 0.5) +
-    ggplot2::geom_vline(xintercept = df_male_lo, color = 'blue', linetype = "dashed", alpha = 0.5) +
-    ggplot2::geom_vline(xintercept = df_male_hi, color = 'blue', linetype = "dashed", alpha = 0.5) +
-    ggplot2::geom_vline(xintercept = df_female_median, color = 'red', alpha = 0.5) +
-    ggplot2::geom_vline(xintercept = df_female_lo, color = 'red', linetype = "dashed", alpha = 0.5) +
-    ggplot2::geom_vline(xintercept = df_female_hi, color = 'red', linetype = "dashed", alpha = 0.5) +
-    ggplot2::annotate(x = df_male_median, y = -Inf, label = paste0("\n",df_male_median), geom = "text", color = 'blue', lineheight = 0.6, vjust = 0.8, size = 3) +
-    ggplot2::annotate(x = df_male_lo, y = -Inf, label = paste0("\n",df_male_lo), geom = "text", color = 'blue', lineheight = 0.6, vjust = 0.8, size = 3) +
-    ggplot2::annotate(x = df_male_hi, y = -Inf, label = paste0("\n",df_male_hi), geom = "text", color = 'blue', lineheight = 0.6, vjust = 0.8, size = 3) +
-    ggplot2::annotate(x = df_female_median, y = -Inf, label = paste0("\n",df_female_median), geom = "text", color = 'red', lineheight = 0.6, vjust = 1.5, size = 3) +
-    ggplot2::annotate(x = df_female_lo, y = -Inf, label = paste0("\n",df_female_lo), geom = "text", color = 'red', lineheight = 0.6, vjust = 1.5, size = 3) +
-    ggplot2::annotate(x = df_female_hi, y = -Inf, label = paste0("\n",df_female_hi), geom = "text", color = 'red', lineheight = 0.6, vjust = 1.5, size = 3) +
-    ggplot2::coord_cartesian(clip = "off") +
-    ggplot2::labs(x = variable_label, y='Percentage of Population (%)',
-                  caption = paste0('Blue = Male, Red = Female, Solid Line = Median, Dashed Line = ', range_text, '% range')) +
-    ggplot2::theme_bw(base_size = 14) +
-    ggplot2::theme(plot.caption = ggplot2::element_text(size = 10))
-
-  return(plot_histo)
-}
-
-#-------------------------------------------------------------------------------
 #' @name plot_data_with_nm
 #'
 #' @title Main plot for Simulation tab

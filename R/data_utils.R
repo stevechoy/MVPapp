@@ -33,33 +33,6 @@ check_and_combine_df <- function(model_1_is_valid,
   } else {stop('There are no valid datasets to be downloaded.')}
 }
 
-#-----------------------------------------------------------------------------
-#' @name split_data_frame
-#' @title Function to split dataframes into roughly equal portions to facilitate
-#' distribution to each core
-#'
-#' @param df data.frame to split
-#' @param N number of chunks / cores
-#'
-#' @returns A list containing N data.frames. If N=1, then the original df
-#'         is returned unchanged
-#' @noRd
-#-----------------------------------------------------------------------------
-
-split_data_frame <- function(df, N = 4) {
-  if(N == 1) {
-    return(list(df)) # Note we're coercing df to a list when single core is desired
-  } else if (N < 1) { # This may be redundant as n.cores already have a safeguard
-    stop("N can't be less than one")
-  } else if (N > nrow(df)) { # This may be redundant as n.cores already have a safeguard
-    stop("N must be less than nrows(df)")
-  }
-
-  # split the data.frame into a list
-  res <- split(df, cut(seq_len(nrow(df)), N, labels = FALSE))
-  return(res)
-}
-
 #-------------------------------------------------------------------------------
 #' @name search_id_col
 #' @title Search for Likely ID Columns

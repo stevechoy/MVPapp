@@ -1,22 +1,6 @@
 # Model compilation, dosing regimens and simulation
 
 #-------------------------------------------------------------------------------
-#' @name safely_qsim
-#'
-#' @title Error-capturing (safely) wrappers for various functions
-#' @param ... args to be passed
-#'
-#' @returns A list with two elements:
-#' * `result`: The result of `mrgsolve::qsim`, or `NULL` if an error occurred.
-#' * `error`: The error that occurred, or `NULL` if no error occurred.
-#'
-#' @seealso `mrgsolve::qsim`
-#' @noRd
-#-------------------------------------------------------------------------------
-
-safely_qsim <- mvp_safely(mrgsolve::qsim)
-
-#-------------------------------------------------------------------------------
 #' @name safely_mrgsim_df
 #'
 #' @title Error-capturing (safely) wrappers for various functions
@@ -150,15 +134,6 @@ run_single_sim <- function(input_model_object,
     }
     
     set.seed(seed)
-    
-    # solved_output <- safely_qsim(
-    #   input_model_object,
-    #   data    = ext_db_ev,
-    #   obsonly = FALSE,
-    #   tgrid   = sampling_times,
-    #   tad     = TRUE,
-    #   output  = "df"
-    # )
     
     solved_output <- input_model_object %>%
       mrgsolve::data_set(as.data.frame(ext_db_ev)) %>%

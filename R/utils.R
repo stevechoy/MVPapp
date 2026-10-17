@@ -103,6 +103,7 @@ mvp_user_env <- function() {
 #' @importFrom shinycssloaders withSpinner
 #' @importFrom shinyjs useShinyjs
 #' @importFrom shinythemes shinytheme
+#' @importFrom stats as.formula coef lm
 #' @noRd
 NULL
 

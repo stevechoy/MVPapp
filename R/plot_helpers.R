@@ -1,66 +1,6 @@
 # Plot helpers: axes, log breaks, regression labels, watermarks
 
 #---------------------------------------------------------------------------
-#' @name lm_eqn_old
-#' @title Linear regression text (not used)
-#'
-#' @param df A dataframe
-#' @param x column name (string) of x-variable
-#' @param y column name (string) of y-variable
-#' @importFrom stats as.formula coef lm
-#' @returns A character string containing the expression of the R2 coefficient
-#' for use in ggplot labels or title
-#' @noRd
-#---------------------------------------------------------------------------
-
-lm_eqn_old <- function(df, x, y){
-
-  # Special handling of whether df is an object or a character string
-  if(is.data.frame(df)) {
-    df_plot <- df
-    df_name <- deparse(substitute(df)) # Stores name of dataframe as string
-  } else {
-    df_plot <- get(df) # I.e. removes the quotation marks of the string to get the object
-    df_name <- df
-  }
-
-  string.name <- paste0(y, "~", x)
-  m <- lm(as.formula(string.name), df_plot)
-
-  if(is.na(coef(m)[2])) {
-    eq <- "" # no slope available
-  } else {
-    if(coef(m)[2] < 0) {
-      # eq <- substitute(italic(y) == a - b %.% italic(x)*","~~italic(r)^2~"="~r2,
-      #                  list(a = format(unname(coef(m)[1]), digits = 2),
-      #                       b = format(unname(abs(coef(m)[2])), digits = 2),
-      #                       r2 = format(summary(m)$r.squared, digits = 3)))
-
-      a <- format(unname(coef(m)[1]), digits = 2)
-      b <- format(unname(abs(coef(m)[2])), digits = 2)
-      r2 <- format(summary(m)$r.squared, digits = 3)
-
-      eq <- paste0("y = ", a, " - ", b, "\u00B7x, r\u00B2 = ", r2) # plotly unicode hack
-
-    } else {
-      # eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2,
-      #                  list(a = format(unname(coef(m)[1]), digits = 2),
-      #                       b = format(unname(coef(m)[2]), digits = 2),
-      #                       r2 = format(summary(m)$r.squared, digits = 3)))
-
-      a <- format(unname(coef(m)[1]), digits = 2)
-      b <- format(unname(coef(m)[2]), digits = 2)
-      r2 <- format(summary(m)$r.squared, digits = 3)
-
-      eq <- paste0("y = ", a, " + ", b, "\u00B7x, r\u00B2 = ", r2) # plotly unicode hack
-    }
-    #eq <- as.character(as.expression(eq)) # uncomment for normal ggplot
-  }
-
-  return(eq)
-}
-
-#---------------------------------------------------------------------------
 #' @name lm_eqn
 #' @title Linear regression text (for plotly)
 #'
@@ -130,33 +70,6 @@ lm_eqn <- function(df, facet_name, x, y) {
     )
 
   return(df_stats)
-}
-
-#-------------------------------------------------------------------------------
-#' @name add_linear_regression_formula
-#' @title Add Linear Regression Formula (not currently used)
-#' @description
-#' A function that adds linear regression formula and place it as a text annotation
-#' on the top of a plot. Requires ggplot object as input.
-#' @param p ggplot object
-#'
-#' @returns A ggplot object with the formula placed on the top
-#' @importFrom ggplot2 ggplot_build annotate
-#' @importFrom stats median
-#' @noRd
-#-------------------------------------------------------------------------------
-add_linear_regression_formula <- function(p) {
-  data <- ggplot2::ggplot_build(p)$data[[1]]
-  med_x <- median(data$x, na.rm = TRUE)
-  max_y <- max(data$y, na.rm = TRUE)
-
-  p + ggplot2::annotate("text",
-                        x = med_x,
-                        y = max_y,
-                        label = lm_eqn_old(data, "x", "y"),
-                        parse = FALSE, # TRUE for ggplots, FALSE for plotly
-                        hjust = 0,
-                        vjust = 1)
 }
 
 #-------------------------------------------------------------------------------

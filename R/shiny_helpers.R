@@ -47,23 +47,6 @@ safely_eval  <- mvp_safely(eval)
 safely_parse <- mvp_safely(parse)
 
 #-------------------------------------------------------------------------------
-#' @name eval_parse
-#'
-#' @title Short-hand function to eval, and then parse a string
-#'
-#' @param text Some text
-#'
-#' @returns A list with two elements:
-#' * `result`: The result of `eval(parse(text))`, or `NULL` if an error occurred.
-#' * `error`: The error that occurred, or `NULL` if no error occurred.
-#' @noRd
-#-------------------------------------------------------------------------------
-
-eval_parse <- function(text) {
-  eval(parse(text = text))
-}
-
-#-------------------------------------------------------------------------------
 #' Exported from shinyBS:::buildTooltipOrPopoverOptionsList
 #' @noRd
 #-------------------------------------------------------------------------------
@@ -462,26 +445,6 @@ check_cov_name <- function(orig_name, replaced_name = "DUMMY", list_of_reserved_
     new_name <- orig_name
   }
   return(new_name)
-}
-
-#-------------------------------------------------------------------------------
-#' @name check_cov_name_duplicate
-#' @title Function to check covariate names do not duplicate
-#'
-#' @param current_id : id of current textInput
-#' @param all_ids    : list of ids for textInputs to check
-#' @noRd
-#-------------------------------------------------------------------------------
-
-check_cov_name_duplicate <- function(current_id, all_ids) {
-  shiny::observeEvent(input[[current_id]], {
-    if(current_id != "") { # do not perform check if textInput is empty i.e. ""
-      if(any(sapply(all_ids[all_ids != current_id], function(x) input[[current_id]] == input[[x]]))) {
-        shiny::showNotification(paste0("ERORR: Covariate names must be unique from each other. Name is reset."), type = "error", duration = 10)
-        shiny::updateTextInput(session, current_id, value = "")
-      }
-    }
-  })
 }
 
 #-------------------------------------------------------------------------------
