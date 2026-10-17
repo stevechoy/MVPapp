@@ -9,10 +9,11 @@
 ^\.github$
 ^\.Rprofile$
 ^llm-eval$
-
 ^README\.Rmd$
 ^\.RData$
 ^\.Rhistory$
 ^LICENSE\.md$
 ^man/figures/readme$
 ^cran-comments\.md$
+^\.Renviron$
+^\.httr-oauth$
