@@ -17,6 +17,7 @@ First release prepared for CRAN.
 * Objects previously written to the global environment for debugging (e.g. `llm_result`, `llm_refine`, `last_ev_df`) are now kept in `MVPapp:::.mvp_state`; see "Objects kept for debugging" in `?run_mvp`. AI translation responses are only kept when `show_debugging_msg = TRUE`.
 * Helper functions are split from `functions.R` into topic files.
 * Fewer dependencies: 'forcats', 'gridExtra', 'purrr' and 'tibble' are no longer needed, and 'GGally' (used only for the correlation plot in Data Exploration) is now optional (Suggests) (#32).
+* Faster app: changing the y-axis or percentiles on the Variability page no longer re-runs the simulation, sorting individual plots is ~200x faster, and tornado/spider and data plots no longer re-render while typing or changing options (#45)
 * Removed unused internal functions (#33).
 
 ## Bugfixes
