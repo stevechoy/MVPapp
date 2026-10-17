@@ -9,10 +9,9 @@ Description: An interactive 'shiny' application for exploring
     pharmacometric models with minimal setup. Users can explore model
     structures, parameters and dosing regimens with 'mrgsolve', and compare
     simulations with observed data. Additional features include parameter
-    sensitivity analysis, non-compartmental analysis (NCA) over user-defined
-    time ranges, data exploration, variability assessment with virtual
-    populations, and optional AI-assisted model translation. The design is
-    described in Choy et al. (2025) <doi:10.1002/psp4.70023>.
+    sensitivity analysis, non-compartmental analysis (NCA), data exploration,
+    variability assessment with virtual populations, and optional AI-assisted
+    model translation.
 License: GPL (>= 3)
 URL: https://github.com/stevechoy/MVPapp, https://stevechoy.github.io/MVPapp/, https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.70023
 Encoding: UTF-8
