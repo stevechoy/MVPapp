@@ -237,11 +237,11 @@ llm_choices_label     <- shiny::HTML(paste0("Select LLM",
 llm_max_retries_label <- shiny::HTML(paste0("Retries ",
                                             "<i class='fa fa-question-circle' title='Number of automatic fix attempts if model compilation fails.' style='margin-left: 3px;'></i>"))
 #' @export
-llm_compile_success   <- paste0("✅ Internal compilation check OK! Please still check code for correctness.")
+llm_compile_success   <- paste0("\u2705 Internal compilation check OK! Please still check code for correctness.")
 #' @export
-llm_compile_error     <- paste0("❌ Internal compilation failed!")
+llm_compile_error     <- paste0("\u274c Internal compilation failed!")
 #' @export
-llm_max_retries_error <- paste0("❌ Max retries reached. Model still contains errors.")
+llm_max_retries_error <- paste0("\u274c Max retries reached. Model still contains errors.")
 
 
 
@@ -500,7 +500,7 @@ age_range_label       <- "Age Range ('AGE', y) [Post-Natal]"
 #' @export
 weight_range_label    <- "Weight Range ('WT', kg) [Total Body Mass]"
 #' @export
-bmi_range_label       <- "Body Mass Index Range ('BMI', kg/m²)"
+bmi_range_label       <- "Body Mass Index Range ('BMI', kg/m\u00b2)"
 #' @export
 male_range_label      <- "Male Percentage ('SEX = 0', %) [Biological]"
 #' @export

@@ -91,13 +91,16 @@ run_mvp(
 \item{...}{\code{\link[shiny:runApp]{shiny::runApp()}} parameters, \code{\link[shiny:shinyApp]{shiny::shinyApp()}} parameters,
 or parameters to pass to the Shiny app.}
 }
+\value{
+Called for its side effect of launching the Shiny app. Returns the
+value returned by \code{\link[shiny:runApp]{shiny::runApp()}} invisibly, after the app is closed.
+}
 \description{
 This function will launch MVP app and pass along arbitrary parameters through
-the \code{...} parameter to the application. This is done by modifying the
-global environment. This function will attempt to clean up any objects placed
-into the global environment on exit. If objects exist prior to calling this
-function (i.e. \code{exists(OBJECT)} returns TRUE) then the value will be reset
-to it's state prior to calling \code{run_mvp}.
+the \code{...} parameter to the application. The app is evaluated in its own
+environment (whose parent gives access to MVPapp and its key dependencies),
+so neither the global environment nor the search path is modified. Global
+options changed for the app are restored when it closes.
 }
 \details{
 If the user wishes to run the App outside of the function (e.g. preparing for
@@ -109,14 +112,17 @@ standalone_mode = TRUE (and setting these options there as required).
 Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
 }
 \examples{
-\dontrun{
-run_mvp(insert_watermark = FALSE) # remove watermarks
-run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to shinyApp)
-run_mvp(authentication_code = "some_password") # Password-lock the site,
-# could be useful in deployment
-run_mvp(pw_models_path = "path/to/your/private/models.R") # see
-# "shiny/passworded_models_example.R" on how to set one up
-run_mvp(llm_service = "Claude", model_anthropic = "claude-sonnet-4-6", temperature = 0) # Uses Claude only with reproducible results
+if (interactive()) {
+  run_mvp(insert_watermark = FALSE) # remove watermarks
+
+  # Other examples:
+  # run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to runApp)
+  # run_mvp(authentication_code = "some_password") # Password-lock the site,
+  #                                                # could be useful in deployment
+  # run_mvp(pw_models_path = "path/to/your/private/models.R") # see
+  #   "shiny/passworded_models_example.R" on how to set one up
+  # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6",
+  #         temperature = 0) # Uses Claude only with reproducible results
 }
 }
 \seealso{

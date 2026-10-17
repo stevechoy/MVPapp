@@ -11,3 +11,6 @@
 ^\.Rprofile$
 ^llm-eval$
 
+^README\.Rmd$
+^\.RData$
+^\.Rhistory$

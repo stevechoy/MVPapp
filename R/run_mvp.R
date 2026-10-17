@@ -50,13 +50,16 @@
 #'
 #' @examples
 #' if (interactive()) {
-#' run_mvp(insert_watermark = FALSE) # remove watermarks
-#' run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to shinyApp)
-#' run_mvp(authentication_code = "some_password") # Password-lock the site,
-#' # could be useful in deployment
-#' run_mvp(pw_models_path = "path/to/your/private/models.R") # see
-#' # "shiny/passworded_models_example.R" on how to set one up
-#' run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6", temperature = 0) # Uses Claude only with reproducible results
+#'   run_mvp(insert_watermark = FALSE) # remove watermarks
+#'
+#'   # Other examples:
+#'   # run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to runApp)
+#'   # run_mvp(authentication_code = "some_password") # Password-lock the site,
+#'   #                                                # could be useful in deployment
+#'   # run_mvp(pw_models_path = "path/to/your/private/models.R") # see
+#'   #   "shiny/passworded_models_example.R" on how to set one up
+#'   # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6",
+#'   #         temperature = 0) # Uses Claude only with reproducible results
 #' }
 #' @note
 #' Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R

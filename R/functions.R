@@ -1264,7 +1264,7 @@ run_single_sim <- function(input_model_object,
   } else {
     # Covers nsubj <= 1 AND the nsubj > 1 / ext_db NULL edge case ──
     if (nsubj > 1 && is.null(ext_db)) {
-      if (debug) message("nsubj > 1 but ext_db is NULL — falling back to single-subject sim")
+      if (debug) message("nsubj > 1 but ext_db is NULL - falling back to single-subject sim")
     }
     
     ev_df <- transform_ev_df(
@@ -2527,7 +2527,7 @@ smart_x_axis <- function(p1,
                           else if (max_x <= 48) 4
                           else                  12
                         },
-                        NULL  # unrecognised xlabel — fall through to pretty_breaks below
+                        NULL  # unrecognised xlabel - fall through to pretty_breaks below
   )
   
   if (debug) message("x_tick_size: ", x_tick_size)
@@ -3090,7 +3090,7 @@ plot_iiv_data_with_nm <- function(
 #' @note
 #' Should be a tibble of 2 columns and X rows where X = number of params
 #' @importFrom tidyr pivot_longer everything
-#' @import mrgsolve
+#' @rawNamespace import(mrgsolve, except = c(req))
 #' @export
 #-------------------------------------------------------------------------------
 
@@ -3384,7 +3384,7 @@ create_value_box <- function(input_dataset,
   metric_value <- if (dp) round(metric_value, digits = sigdig) else signif(metric_value, digits = sigdig)
   
   shinydashboard::valueBox(
-    value    = tags$p(style = font_size, metric_value),
+    value    = htmltools::tags$p(style = font_size, metric_value),
     subtitle = value_box_subtitle,
     width    = width,
     color    = color,
@@ -3548,7 +3548,7 @@ useShinydashboardMVP <- function() {
     sidebar = shinydashboard::dashboardSidebar(),
     body = shinydashboard::dashboardBody()
   ))
-  htmltools::attachDependencies(tags$div(class = "main-sidebar", style = "display: none;"), value = deps)
+  htmltools::attachDependencies(htmltools::tags$div(class = "main-sidebar", style = "display: none;"), value = deps)
 }
 
 #-------------------------------------------------------------------------------
@@ -3831,6 +3831,74 @@ tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colCon
 }
 
 #-------------------------------------------------------------------------------
+# Internal PDF page helpers for pdfNCA_wm()
+#
+# Adapted from ncar (R/BasicUtil.R, GPL-3, Kyun-Seop Bae). These were exported
+# by earlier versions of ncar but are no longer exported (ncar >= 0.7.2), so
+# they are vendored here as internal functions.
+#-------------------------------------------------------------------------------
+
+#' @noRd
+nca_prep_pdf <- function(FileName, Paper = "letter", FontFamily = "Courier") {
+  grDevices::pdf(FileName, paper = Paper, width = 8.5, height = 11, family = FontFamily, title = "NCA Report")
+}
+
+#' @noRd
+nca_close_pdf <- function() {
+  grDevices::dev.off()
+}
+
+#' @noRd
+nca_add_page <- function(Cex = 0.8, Header1 = "", Header2 = "", Header3 = "",
+                         Footer1 = "", Footer2 = "", Footer3 = "",
+                         PrintRowNum = FALSE, StartRowNum = 1) {
+  if (Cex < 0.1 | Cex > 1.2) stop("Too small or too large cex!")
+  nCol <- trunc(242 - 190 * Cex)
+  nRow <- trunc(155 - 125 * Cex)
+  options(width = max(10, trunc(300 - 250 * Cex))) # restored by pdfNCA_wm() on exit
+
+  graphics::par(oma = c(0, 0, 0, 0), mfrow = c(1, 1), mar = c(0, 0, 0, 0), adj = 0, cex = Cex)
+  graphics::plot(0, 0, type = "n", ylim = c(2 * nRow - 1, 0), xlim = c(0, nCol - 1),
+                 xaxt = "n", yaxt = "n", ylab = "", xlab = "", bty = "n")
+  if (PrintRowNum == TRUE) {
+    for (j in 1:nRow) {
+      graphics::text(-2 - 1 + 3 - floor(log10(j + StartRowNum - 1)), 2 * j - 1,
+                     paste0(j + StartRowNum - 1, ":"), offset = 0)
+    }
+  }
+  graphics::text(0, -3, Header1, pos = 4)
+  graphics::text(nCol / 2, -3, Header2, pos = 3)
+  graphics::text(nCol, -3, Header3, pos = 2)
+
+  graphics::text(0, 2 * nRow + 1, Footer1, pos = 4)
+  graphics::text(nCol / 2, 2 * nRow + 1, Footer2, pos = 1)
+  graphics::text(nCol, 2 * nRow + 1, Footer3, pos = 2)
+}
+
+#' @noRd
+nca_text1 <- function(Row, Col, Text, Cex = 0.8) {
+  if (Cex < 0.1 | Cex > 1.2) stop("Too small or too large cex!")
+  nCol <- trunc(242 - 190 * Cex)
+  nRow <- trunc(155 - 125 * Cex)
+  if (Col > nCol | Row > nRow) stop("Text seems out of paper!")
+  graphics::text(Col - 1, 2 * Row - 1, Text, cex = Cex, offset = 0)
+}
+
+#' @noRd
+nca_text_m <- function(MTxt, StartRow = 0, Cex = 0.8, Header1 = "", Header2 = "", Header3 = "",
+                       Footer1 = "", Footer2 = "", Footer3 = "", PrintRowNum = FALSE) {
+  if (Cex < 0.1 | Cex > 1.2) stop("Too small or too large cex!")
+  nRow <- trunc(155 - 125 * Cex)
+  for (i in seq_along(MTxt)) {
+    if ((StartRow + i) %% nRow == 1) {
+      nca_add_page(Cex = Cex, Header1 = Header1, Header2 = Header2, Header3 = Header3,
+                   Footer1 = Footer1, Footer2 = Footer2, Footer3 = Footer3, PrintRowNum = PrintRowNum)
+    }
+    nca_text1((StartRow + i - 1) %% nRow + 1, 1, MTxt[i])
+  }
+}
+
+#-------------------------------------------------------------------------------
 #' @name pdfNCA_wm
 #' @title Modified ncar::pdfNCA to support watermarks
 #'
@@ -3871,14 +3939,16 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
   class(concData) = "data.frame"
   defPar = par(no.readonly = TRUE)
   on.exit(par(defPar), add = TRUE)
+  old_width <- options("width")
+  on.exit(options(old_width), add = TRUE)
 
   if(debug_msg) {
     message("Trying to open pdf device")
   }
-  ncar::PrepPDF(fileName)
+  nca_prep_pdf(fileName)
 
-  ncar::AddPage()
-  ncar::Text1(1, 1, "Individual Noncompartmental Analysis Result (Non-Validated)",
+  nca_add_page()
+  nca_text1(1, 1, "Individual Noncompartmental Analysis Result (Non-Validated)",
               Cex = 1.2)
   maxx = max(concData[, colTime], na.rm = TRUE)
   maxy = max(concData[, colConc], na.rm = TRUE)
@@ -3921,8 +3991,8 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
       txtRes = ncar::Res2Txt(tabRes, x, y, dose = dose[i], adm = adm,
                              dur = dur, doseUnit = doseUnit, down = down)
       Res = c(Res, txtRes)
-      ncar::AddPage(Header1 = strHeader)
-      ncar::TextM(txtRes, StartRow = 1, Header1 = strHeader)
+      nca_add_page(Header1 = strHeader)
+      nca_text_m(txtRes, StartRow = 1, Header1 = strHeader)
       scrnmat = matrix(0, 3, 4)
       scrnmat[1, ] = c(0, 1, 0, 1)
       scrnmat[2, ] = c(0.1, 0.9, 0.5, 0.95)
@@ -3930,7 +4000,7 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
       ScrNo = split.screen(scrnmat)
       screen(ScrNo[1])
       par(adj = 0)
-      ncar::Text1(1, 1, strHeader, Cex = 1)
+      nca_text1(1, 1, strHeader, Cex = 1)
       screen(ScrNo[2])
       par(oma = c(1, 1, 1, 1), mar = c(4, 4, 3, 1), adj = 0.5)
 
@@ -3983,7 +4053,7 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
     }
   }
   par(defPar)
-  ncar::ClosePDF()
+  nca_close_pdf()
 
 }
 
@@ -5905,7 +5975,7 @@ translate_model_code <- function(ready_path,
     detected_type <- mime::guess_type(file_name)
   }
 
-  model_name <- switch(service,
+  model_name <- switch(EXPR = service,
                        "PROD"              = "[PROD model]",
                        "PMx Co-Modeler"    = "[Apollo model]",
                        "EXP"               = "[EXP model]",
@@ -6099,9 +6169,9 @@ translate_model_code <- function(ready_path,
             style = "font-size: 14px;",
             shiny::tags$b("Translation Complete"),
             shiny::tags$hr(style = "margin: 5px 0;"),
-            shiny::tags$p(paste0("⏱ Time: ", elapsed, " seconds")),
-            shiny::tags$p(paste0("🤖 Model: ", usage_info$model)),
-            shiny::tags$p(paste0("🎟 Tokens: ", usage_info$total, " (", tokens_per_sec, " t/s)")),
+            shiny::tags$p(paste0("\u23f1 Time: ", elapsed, " seconds")),
+            shiny::tags$p(paste0("\U0001f916 Model: ", usage_info$model)),
+            shiny::tags$p(paste0("\U0001f39f Tokens: ", usage_info$total, " (", tokens_per_sec, " t/s)")),
             shiny::tags$p(style = "font-size: 11px; color: #666;",
                           paste0("In: ", usage_info$input, " | Out: ", usage_info$output))
           )
@@ -6214,7 +6284,7 @@ refine_model_code <- function(model_code,
 ) {
   rlang::check_installed("ellmer", reason = "to use `refine_model_code()`.")
   
-  model_name <- switch(service,
+  model_name <- switch(EXPR = service,
                        "PROD"              = "[PROD model]",
                        "PMx Co-Modeler"    = "[Apollo model]",
                        "EXP"               = "[EXP model]",
@@ -6380,9 +6450,9 @@ refine_model_code <- function(model_code,
             style = "font-size: 14px;",
             shiny::tags$b(paste0("Retry Complete (#", attempt, ")")),
             shiny::tags$hr(style = "margin: 5px 0;"),
-            shiny::tags$p(paste0("⏱ Time: ", elapsed, " seconds")),
-            shiny::tags$p(paste0("🤖 Model: ", usage_info$model)),
-            shiny::tags$p(paste0("🎟 Tokens: ", usage_info$total, " (", tokens_per_sec, " t/s)")),
+            shiny::tags$p(paste0("\u23f1 Time: ", elapsed, " seconds")),
+            shiny::tags$p(paste0("\U0001f916 Model: ", usage_info$model)),
+            shiny::tags$p(paste0("\U0001f39f Tokens: ", usage_info$total, " (", tokens_per_sec, " t/s)")),
             shiny::tags$p(style = "font-size: 11px; color: #666;",
                           paste0("In: ", usage_info$input, " | Out: ", usage_info$output))
           )
@@ -6723,7 +6793,7 @@ run_ellmer_chat <- function(service,
   chat_obj <- if(!is.null(chat_obj)) {
     chat_obj
   } else {
-    switch(service,
+    switch(EXPR = service,
            "Gemini"            = ellmer::chat_google_gemini(model = model_name, system = system_prompt, params = optimal_params),
            "OpenAI"            = ellmer::chat_openai(model = model_name, system = system_prompt, params = optimal_params),
            "Claude"            = if(!locally_parse_file) {
@@ -6765,7 +6835,7 @@ run_ellmer_chat <- function(service,
   } else {
     if(debug) message(paste0("run_ellmer_chat: ", service, " with file upload"))
     
-    upload_file <- switch(service,
+    upload_file <- switch(EXPR = service,
                           "Gemini"            = ellmer::content_pdf_file(file_path),
                           #"Gemini"            = ellmer::google_upload(path = file_path, mime_type = detected_type), # seems not work as nice as content_pdf_file
                           "Claude"            = ellmer::claude_file_upload(path = file_path, beta_headers = "files-api-2025-04-14"),
@@ -7141,7 +7211,7 @@ combine_uploaded_files <- function(file_paths, file_names) {
 #'
 #' @export
 get_api_key <- function(llm_service) {
-  switch(llm_service, # edit with usethis::edit_r_environ()
+  switch(EXPR = llm_service, # edit with usethis::edit_r_environ()
          "PROD"              = Sys.getenv("DIFY_API_KEY"),
          "PMx Co-Modeler"    = Sys.getenv("DIFY_API_KEY"),
          "EXP"               = Sys.getenv("DIFY_API_KEY_2"),
@@ -7173,7 +7243,7 @@ get_api_key <- function(llm_service) {
 #'
 #' @export
 get_api_key_name <- function(llm_service) {
-  switch(llm_service,
+  switch(EXPR = llm_service,
          "PROD"              = "DIFY_API_KEY",
          "PMx Co-Modeler"    = "DIFY_API_KEY",
          "EXP"               = "DIFY_API_KEY_2",
@@ -7943,10 +8013,10 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateSelectInput( session, "db_model_1",          selected = state$variability$db_model_1)
   updateNumericInput(session, "n_subj_model_1",       value    = state$variability$n_subj_model_1)
   updateNumericInput(session, "seed_number_model_1",  value    = state$variability$seed_number_model_1)
-  updateSliderInput( session, "age_db_model_1",       value    = state$variability$age_db_model_1)
-  updateSliderInput( session, "wt_db_model_1",        value    = state$variability$wt_db_model_1)
-  updateSliderInput( session, "males_db_model_1",     value    = state$variability$males_db_model_1)
-  updateSliderInput( session, "bmi_db_model_1",       value    = state$variability$bmi_db_model_1)
+  shiny::updateSliderInput( session, "age_db_model_1",       value    = state$variability$age_db_model_1)
+  shiny::updateSliderInput( session, "wt_db_model_1",        value    = state$variability$wt_db_model_1)
+  shiny::updateSliderInput( session, "males_db_model_1",     value    = state$variability$males_db_model_1)
+  shiny::updateSliderInput( session, "bmi_db_model_1",       value    = state$variability$bmi_db_model_1)
   updateTextInput(   session, "custom_cov_1_model_1", value    = state$variability$custom_cov_1_model_1)
   updateTextInput(   session, "custom_cov_2_model_1", value    = state$variability$custom_cov_2_model_1)
   updateTextInput(   session, "custom_cov_3_model_1", value    = state$variability$custom_cov_3_model_1)
@@ -7958,10 +8028,10 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateSelectInput( session, "db_model_2",          selected = state$variability$db_model_2)
   updateNumericInput(session, "n_subj_model_2",       value    = state$variability$n_subj_model_2)
   updateNumericInput(session, "seed_number_model_2",  value    = state$variability$seed_number_model_2)
-  updateSliderInput( session, "age_db_model_2",       value    = state$variability$age_db_model_2)
-  updateSliderInput( session, "wt_db_model_2",        value    = state$variability$wt_db_model_2)
-  updateSliderInput( session, "males_db_model_2",     value    = state$variability$males_db_model_2)
-  updateSliderInput( session, "bmi_db_model_2",       value    = state$variability$bmi_db_model_2)
+  shiny::updateSliderInput( session, "age_db_model_2",       value    = state$variability$age_db_model_2)
+  shiny::updateSliderInput( session, "wt_db_model_2",        value    = state$variability$wt_db_model_2)
+  shiny::updateSliderInput( session, "males_db_model_2",     value    = state$variability$males_db_model_2)
+  shiny::updateSliderInput( session, "bmi_db_model_2",       value    = state$variability$bmi_db_model_2)
   updateTextInput(   session, "custom_cov_1_model_2", value    = state$variability$custom_cov_1_model_2)
   updateTextInput(   session, "custom_cov_2_model_2", value    = state$variability$custom_cov_2_model_2)
   updateTextInput(   session, "custom_cov_3_model_2", value    = state$variability$custom_cov_3_model_2)
