@@ -52,11 +52,6 @@
 #' @returns a named list with \code{answer}, \code{conversation_id}, and
 #'   \code{chat_obj}, or \code{NULL} on failure.
 #' @importFrom shiny setProgress incProgress showNotification
-#' @importFrom httr2 request req_headers req_body_multipart req_retry req_perform
-#' @importFrom httr2 resp_body_json last_response resp_body_string req_body_json
-#' @importFrom httr2 req_auth_bearer_token with_verbosity
-#' @importFrom curl form_file
-#' @importFrom mime guess_type
 #' @importFrom stats setNames
 #' @importFrom rlang %||%
 #' @noRd
@@ -98,7 +93,7 @@ translate_model_code <- function(ready_path,
                                  max_tokens = 128000,
                                  debug = TRUE
 ) {
-  rlang::check_installed("ellmer", reason = "to use `translate_model_code()`.")
+  rlang::check_installed(c("ellmer", "httr2", "mime"), reason = "to use `translate_model_code()`.")
 
   file_path <- ready_path
   file_name <- file_name %||% basename(ready_path)
@@ -423,7 +418,7 @@ refine_model_code <- function(model_code,
                               max_tokens = 128000,
                               debug = TRUE
 ) {
-  rlang::check_installed("ellmer", reason = "to use `refine_model_code()`.")
+  rlang::check_installed(c("ellmer", "httr2"), reason = "to use `refine_model_code()`.")
   
   model_name <- switch(EXPR = service,
                        "PROD"              = "[PROD model]",
@@ -786,6 +781,7 @@ run_dify_chat <- function(instruction_prompt,
                           force_parse        = FALSE,
                           model_name,
                           debug = TRUE) {
+  rlang::check_installed(c("httr2", "curl"), reason = "to use `run_dify_chat()`.")
   
   chat_body <- if(locally_parse_file) {
     
@@ -1416,10 +1412,10 @@ get_api_key_name <- function(llm_service) {
 #' token <- get_apollo_token()
 #' }
 #' 
-#' @importFrom httr2 request req_body_form req_perform resp_body_json
 #' 
 #' @noRd
 get_apollo_token <- function() {
+  rlang::check_installed("httr2", reason = "to use `get_apollo_token()`.")
 
   response <- httr2::request(Sys.getenv("APOLLO_TOKEN_URL")) %>%
     httr2::req_body_form(
@@ -1448,10 +1444,10 @@ get_apollo_token <- function() {
 #' token <- get_apollo_token()
 #' }
 #' 
-#' @importFrom httr2 request req_body_form req_perform resp_body_json
 #' 
 #' @noRd
 get_apollo_token_ext <- function() {
+  rlang::check_installed("httr2", reason = "to use `get_apollo_token_ext()`.")
   
   response <- httr2::request(Sys.getenv("APOLLO_TOKEN_URL_EXT")) %>%
     httr2::req_body_form(

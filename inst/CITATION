@@ -1,12 +1,12 @@
 bibentry(
-  bibtype  = "article",
-  title    = "Less Is More: Design Considerations for Interactive Pharmacometrics Tools - A Case Study Using the Model Visualization Platform (MVP) App",
-  journal  = "CPT: Pharmacometrics & Systems Pharmacology",
-  author   = "Steve Choy, Jin Gyu Kim, Julia Korell",
-  year     = 2025,
-  volume  =  14,
-  number  =  5,
-  pages   =  819-821,
-  url      = "https://github.com/Boehringer-Ingelheim/MVPapp",
-  doi      = "10.1002/psp4.70023"
+  bibtype = "Article",
+  title   = "Less Is More: Design Considerations for Interactive Pharmacometrics Tools - A Case Study Using the Model Visualization Platform (MVP) App",
+  author  = c(person("Steve", "Choy"), person("Jin Gyu", "Kim"), person("Julia", "Korell")),
+  journal = "CPT: Pharmacometrics & Systems Pharmacology",
+  year    = "2025",
+  volume  = "14",
+  number  = "5",
+  pages   = "819--821",
+  doi     = "10.1002/psp4.70023",
+  url     = "https://github.com/stevechoy/MVPapp"
 )

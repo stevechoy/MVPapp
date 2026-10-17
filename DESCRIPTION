@@ -1,21 +1,24 @@
 Package: MVPapp
-Title: Model Visualization Platform
-Version: 0.4.7
+Title: Interactive Platform for Pharmacometric Model Visualization and Simulation
+Version: 1.0.0
 Authors@R: c(
     person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre", "cph")),
     person("Jin Gyu", "Kim", role = "aut"),
     person("Matthew", "Fidler", role = "ctb"))
-Description: Model Visualization Platform (MVP) is an intuitive and interactive pharmacometrics environment requiring minimal setup from the users.
-    It is a flexible tool that allows users to explore model structures, parameters, dosing regimens, and compare with observations.
-    The goal of MVP is to support initial model development and facilitate internal discussions more efficiently.
-    Additional features include parameter sensitivity analysis, displaying NCA metrics using a time range defined by users, basic data exploration, variability assessment, and more.
+Description: An interactive 'shiny' application for exploring
+    pharmacometric models with minimal setup. Users can explore model
+    structures, parameters and dosing regimens with 'mrgsolve', and compare
+    simulations with observed data. Additional features include parameter
+    sensitivity analysis, non-compartmental analysis (NCA) over user-defined
+    time ranges, data exploration, variability assessment with virtual
+    populations, and optional AI-assisted model translation. The design is
+    described in Choy et al. (2025) <doi:10.1002/psp4.70023>.
 License: GPL (>= 3)
 URL: https://github.com/stevechoy/MVPapp, https://stevechoy.github.io/MVPapp/, https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.70023
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports: bslib (>= 0.5.1), 
          cowplot, 
-         curl,
          data.table (>= 1.14.2),
          dplyr,
          DT,
@@ -28,9 +31,7 @@ Imports: bslib (>= 0.5.1),
          grDevices,
          gridExtra,
          htmltools (>= 0.5.5),
-         httr2,
          magrittr,
-         mime,
          mrgsolve (>= 1.5.0),
          plotly (>= 4.10.1),
          purrr,
@@ -53,8 +54,11 @@ Imports: bslib (>= 0.5.1),
          tools,
          utils,
          zip
-Suggests: ellmer (>= 0.4.0),
+Suggests: curl,
+          ellmer (>= 0.4.0),
+          httr2,
           knitr,
+          mime,
           ncar,
           NonCompart,
           nonmem2mrgsolve,

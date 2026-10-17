@@ -1,3 +1,28 @@
+# MVPapp 1.0.0
+
+First release prepared for CRAN.
+
+## Breaking changes
+
+* Only `run_mvp()` (and the `%>%` re-export) is exported; the helper functions, model templates and UI settings are now internal. They remain available by name inside the app, the in-app code editors and `pw_models_path` scripts.
+* The inactive `use_bi_styling` argument of `run_mvp()` was removed, together with the BI logo files and BI colour names.
+* `nonmem2mrgsolve` is declared in Suggests via the `stevechoy.r-universe.dev` repository; `httr2`, `curl` and `mime` (only needed for AI translation) moved from Imports to Suggests.
+* Licence is now declared as `GPL (>= 3)`.
+
+## Improvements
+
+* `run_mvp()` no longer modifies the global environment or search path, and restores any global options it changes when the app closes. Extra arguments in `...` now reach the app.
+* `inst/shiny/packages.R` no longer installs packages; it stops with an `install.packages()` command instead.
+* Helper functions are split from `functions.R` into topic files.
+
+## Bugfixes
+
+* NCA report failed with `ncar` >= 0.7.2, which no longer exports its PDF helpers (#26)
+* Static "Show Individual Profiles" plot joined all subjects into one line; each model's profiles now use that model's colour (#27)
+* Model 2 variability simulation failed when a covariate database was selected (#28)
+* Reproducible bundle downloads used the dosing events of whichever model was simulated last (#29)
+* Launching via `shiny::runGitHub()` failed unless shiny was attached (#30)
+
 # MVPapp 0.4.7 (2026-10-03)
 
 ## Features
