@@ -38,7 +38,7 @@ parameters
 - Variability assessment using external databases such as the
 <a href="https://wwwn.cdc.gov/nchs/nhanes/Default.aspx"
 target="_blank">NHANES</a>,
-<a href="https://www.who.int/childgrowth/standards/weight_for_age/en/"
+<a href="https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age"
 target="_blank">WHO</a>, and
 <a href="https://www.cdc.gov/growthcharts/percentile_data_files.htm"
 target="_blank">CDC</a> virtual patients  
