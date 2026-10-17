@@ -61,13 +61,13 @@ run_mvp()
 # run_mvp(insert_watermark = FALSE)
 ```
 
-Alternatively, if installing packages is restricted, you may run a specific release of `MVPapp` directly from GitHub *without* installing it. Its dependencies (see the `Imports` field of the [DESCRIPTION](https://github.com/stevechoy/MVPapp/blob/master/DESCRIPTION) file) must already be installed; the app checks this on launch and lists anything missing:
+Alternatively, if installing packages is restricted, you may run the development version of `MVPapp` directly from GitHub *without* installing it. Its dependencies (see the `Imports` field of the [DESCRIPTION](https://github.com/stevechoy/MVPapp/blob/master/DESCRIPTION) file) must already be installed; the app checks this on launch and lists anything missing:
 
 ``` r
-shiny::runGitHub("MVPapp", username = "stevechoy", ref = "v1.0.0", subdir = "inst/shiny", launch.browser = TRUE)
+shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 ```
 
-Pinning `ref` to a release tag ensures everyone runs the same, reviewable version of MVP.
+Note that this runs the latest code on GitHub, which may include changes that are not yet in the CRAN release.
 
 ## Getting Started
 

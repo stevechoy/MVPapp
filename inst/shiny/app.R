@@ -15,7 +15,7 @@
 #      MVPapp::mvp_app()
 #
 # 2. Without installing MVPapp (dependencies must be installed), e.g.:
-#      shiny::runGitHub("MVPapp", "stevechoy", ref = "v1.0.0", subdir = "inst/shiny")
+#      shiny::runGitHub("MVPapp", "stevechoy", subdir = "inst/shiny")
 #    MVPapp's functions and datasets are then loaded from the downloaded
 #    source into this app's environment, after checking the dependencies
 #    listed in DESCRIPTION. Settings take the defaults of mvp_app().

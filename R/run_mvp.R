@@ -57,9 +57,9 @@
 #'   `dify_chat_response` (raw chat responses).
 #'
 #' Without installing MVPapp (e.g. where package installation is restricted),
-#' the app can also be launched from a tagged release on GitHub, provided its
+#' the development version can also be launched from GitHub, provided its
 #' dependencies are installed:
-#' `shiny::runGitHub("MVPapp", "stevechoy", ref = "v1.0.0", subdir = "inst/shiny")`.
+#' `shiny::runGitHub("MVPapp", "stevechoy", subdir = "inst/shiny")`.
 #'
 #' @returns `run_mvp()` is called for its side effect of launching the app and
 #'   returns the value of [shiny::runApp()] invisibly once the app is closed.

@@ -152,9 +152,9 @@ answers before cleaning) and \code{ellmer_chat_response} /
 }
 
 Without installing MVPapp (e.g. where package installation is restricted),
-the app can also be launched from a tagged release on GitHub, provided its
+the development version can also be launched from GitHub, provided its
 dependencies are installed:
-\code{shiny::runGitHub("MVPapp", "stevechoy", ref = "v1.0.0", subdir = "inst/shiny")}.
+\code{shiny::runGitHub("MVPapp", "stevechoy", subdir = "inst/shiny")}.
 }
 \note{
 Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
