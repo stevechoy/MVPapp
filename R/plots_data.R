@@ -246,8 +246,8 @@ do_data_page_plot <- function(nmd,
   a <- a +
     ggplot2::xlab(x_label) +
     ggplot2::ylab(y_axis) +
-    ggplot2::theme_bw() +
-    ggplot2::labs(color = color_by)
+    ggplot2::theme_bw()
+  if (color_valid) a <- a + ggplot2::labs(color = color_by) # only when colour is mapped
   
   # ── Scalar && + shared flag + extract xvar col once ───────
   if (med_line && can_draw_lines) {
@@ -712,7 +712,8 @@ do_data_page_ind_plot <- function(nmd,
   
   a <- a +
     ggplot2::xlab(x_axis) + ggplot2::ylab(y_axis) +
-    ggplot2::theme_bw() + ggplot2::labs(color = color_by)
+    ggplot2::theme_bw()
+  if (color_valid) a <- a + ggplot2::labs(color = color_by) # only when colour is mapped
   
   # ── && for scalar + data directly instead of ggplot_build ────
   if (dolm && x_is_numeric && y_is_numeric && !boxplot) {
@@ -868,7 +869,8 @@ draw_correlation_plot <- function(input_df,
     corr_data_id_trimmed,
     mapping             = mapping,
     cardinality_threshold = 30,
-    lower               = list(continuous = GGally::wrap(lowerFn, method = "lm", alpha = 0.4)),
+    lower               = list(continuous = GGally::wrap(lowerFn, method = "lm", alpha = 0.4),
+                               combo      = GGally::wrap("facethist", bins = 30)), # explicit bins avoids stat_bin() messages
     progress            = FALSE          # disabling the progress bar removes per-panel overhead
   ) +
     ggplot2::theme_bw()
