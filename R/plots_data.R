@@ -1572,8 +1572,8 @@ plot_iiv_data_with_nm <- function(
         ggplot2::geom_line(
           data    = dataset,
           mapping = ggplot2::aes(x = .data[[xvar]], y = .data[[yvar_name]],
-                                 group = ID, color = ID), # numeric ID gives a continuous colour scale, which does not group lines
-          alpha = 0.4)
+                                 group = ID), # one line per subject
+          color = line_color, alpha = 0.4)    # one colour per model
     }
     
     if (show_y_mean)
