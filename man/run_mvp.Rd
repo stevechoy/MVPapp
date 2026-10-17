@@ -114,7 +114,8 @@ run_mvp(
 
 \item{prompts_path}{Prompts file. See vignette ("automatic-translation") for more information.}
 
-\item{show_debugging_msg}{Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.}
+\item{show_debugging_msg}{Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
+AI translation responses are then also kept for review (see Details).}
 
 \item{...}{For \code{run_mvp()}, \code{\link[shiny:runApp]{shiny::runApp()}} arguments (e.g. \code{launch.browser},
 \code{port}). Any other named arguments are passed to the app.}
@@ -135,6 +136,21 @@ search path is modified. Global options changed by the app are set when it
 starts and restored when it stops.
 }
 \details{
+\strong{Objects kept for debugging.} MVPapp does not write to the global
+environment. Objects useful for debugging are kept in an internal
+environment, \code{MVPapp:::.mvp_state}, and remain available in the R session
+after the app is closed. List them with \code{ls(MVPapp:::.mvp_state)}:
+\itemize{
+\item \code{last_ev_df$model_1}, \code{last_ev_df$model_2}: the dosing event tables used
+in each model's most recent simulation (also used for the reproducible
+bundle download).
+\item With \code{show_debugging_msg = TRUE}, AI translation responses: \code{llm_result}
+(initial translation), \code{llm_refine} (latest retry that still failed),
+\code{llm_success} (retry that compiled), \code{branch_model} / \code{branch_refine} (raw
+answers before cleaning) and \code{ellmer_chat_response} /
+\code{dify_chat_response} (raw chat responses).
+}
+
 Without installing MVPapp (e.g. where package installation is restricted),
 the app can also be launched from a tagged release on GitHub, provided its
 dependencies are installed:

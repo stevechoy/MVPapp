@@ -47,7 +47,7 @@
 #' @param rxode2_short_user_prompt String for rxode2 short user prompt
 #' @param internal_version Logical. Only relevant for BI
 #' @param max_tokens Numeric. Maximum output tokens.
-#' @param debug Displays debug messages
+#' @param debug Displays debug messages and keeps the responses in MVPapp:::.mvp_state
 #'
 #' @returns a named list with \code{answer}, \code{conversation_id}, and
 #'   \code{chat_obj}, or \code{NULL} on failure.
@@ -376,7 +376,7 @@ translate_model_code <- function(ready_path,
 #' @param internal_version Logical. Only relevant for BI
 #' @param feedback_success Logical. Only relevant for BI, and if reuse_context = TRUE
 #' @param max_tokens Numeric. Maximum output tokens.
-#' @param debug Displays debug messages
+#' @param debug Displays debug messages and keeps the responses in MVPapp:::.mvp_state
 #'
 #' @returns a named list of "answer", "conversation_id", "chat_obj"
 #' @importFrom stats setNames
@@ -604,7 +604,7 @@ refine_model_code <- function(model_code,
       chat_obj        = result$chat_obj
     )
     
-    # Only assign globally during development
+    # Keep responses for review when debugging (see ?run_mvp, "Objects kept for debugging")
     if(debug && !feedback_success) .mvp_state$llm_refine <- list_of_output
     if(debug && feedback_success) .mvp_state$llm_success <- list_of_output
     

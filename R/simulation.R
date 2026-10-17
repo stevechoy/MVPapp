@@ -997,8 +997,6 @@ iterate_batch_runs <- function(batch_run_df,
     
   }) # end withProgress
   
-  #tmp_batch_run_bind <<- dplyr::bind_rows(list_of_runs)
-  
   dplyr::bind_rows(list_of_runs)
 }
 

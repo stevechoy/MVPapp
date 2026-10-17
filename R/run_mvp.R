@@ -38,10 +38,24 @@
 #' @param model_lang Character. Default mrgsolve. Changes model translation language to "mrgsolve", "nonmem" (for testing only), "rxode2" (for testing only)
 #' @param prompts_path Prompts file. See vignette ("automatic-translation") for more information.
 #' @param show_debugging_msg Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
+#'   AI translation responses are then also kept for review (see Details).
 #' @param ... For `run_mvp()`, [shiny::runApp()] arguments (e.g. `launch.browser`,
 #'        `port`). Any other named arguments are passed to the app.
 #'
 #' @details
+#' **Objects kept for debugging.** MVPapp does not write to the global
+#' environment. Objects useful for debugging are kept in an internal
+#' environment, `MVPapp:::.mvp_state`, and remain available in the R session
+#' after the app is closed. List them with `ls(MVPapp:::.mvp_state)`:
+#' * `last_ev_df$model_1`, `last_ev_df$model_2`: the dosing event tables used
+#'   in each model's most recent simulation (also used for the reproducible
+#'   bundle download).
+#' * With `show_debugging_msg = TRUE`, AI translation responses: `llm_result`
+#'   (initial translation), `llm_refine` (latest retry that still failed),
+#'   `llm_success` (retry that compiled), `branch_model` / `branch_refine` (raw
+#'   answers before cleaning) and `ellmer_chat_response` /
+#'   `dify_chat_response` (raw chat responses).
+#'
 #' Without installing MVPapp (e.g. where package installation is restricted),
 #' the app can also be launched from a tagged release on GitHub, provided its
 #' dependencies are installed:
