@@ -87,7 +87,7 @@ In addition, as the advancement of models happens frequently (on a time scale of
 
 ## Usage  
 
-From the Model Selection drop-down list, choose the option called "Upload File (AI Translation)". Next, all you need to do is to upload a file (or multiple files, we currently support PDF or text files `.txt/.mod/.ctl`), click the "Send" button, and then wait for the results to be generated, which takes about a minute.  
+From the Model Selection drop-down list, choose the option called "Upload File (AI Translation)". Next, all you need to do is to upload a file (or multiple files, we currently support PDF or text files `.txt/.mod/.ctl/.cpp`), click the "Send" button, and then wait for the results to be generated, which takes about a minute.  
 
 When the results become available, the code editor will be updated and then you can proceed as normal. If the default settings are not to your preference, you can click on the "Gear" button to further customize settings.    
 
@@ -116,7 +116,7 @@ MVP (>= v0.4.1) supports deterministic translation (i.e. not using LLMs) of NONM
 When either packages are installed, new checkbox options would be available during customization (default not used). When checked, deterministic translation will be triggered when:  
 
   - nonmem2mrgsolve - If the user uploads **EXACTLY** 2 files: the NONMEM (`.ctl/.mod`) file **AND** the corresponding `.ext` file.  
-  - nonmem2rx - If the user uploads **AT LEAST** the NONMEM (`.ctl/.mod/.lst/.xml`) file, and optionally **ANY** number of supporting files (`.phi/.ext/.cov/.xml/.grd`).  
+  - nonmem2rx - If the user uploads **EXACTLY** 1 file: the NONMEM control stream or listing file (`.ctl/.mod/.lst`). Supporting files (e.g. `.ext/.phi/.cov/.xml`) are not currently accepted alongside it.  
   
 `r "\U0001F4A1"` Automatic retries can still happen when using nonmem2mrgsolve, as internal compilation checks can still be performed. However, no self-validation will be performed when using nonmem2rx.  
 
