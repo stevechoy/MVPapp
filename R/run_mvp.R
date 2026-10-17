@@ -20,13 +20,13 @@
 #' @param authentication_code Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.
 #' @param internal_version Logical. Default TRUE. Set to FALSE when hosting the app on a server (e.g. AWS) where the working
 #'   directory is not writable: NCA reports are then written to the session's temporary directory, and the help text for
-#'   locked models points to GitHub instead. For BI users, it also selects the external Apollo endpoint.
+#'   locked models points to GitHub instead. For internal deployments, it also selects the external Apollo endpoint.
 #' @param pw_models_path Character. Default NA_character_. Path to an R file defining password-gated models
 #'   (see `system.file("shiny/passworded_models_example.R", package = "MVPapp")` and `vignette("supply-passwords")`).
 #' @param llm_choices Character vector of LLM providers offered in the app; the first one is selected by default.
 #'   Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek",
-#'   "Azure OpenAI" and "AWS Bedrock". BI-internal providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.
-#' @param api_upload Character. Default NA_character_. API upload URL when using Dify-based workflows (BI-only)
+#'   "Azure OpenAI" and "AWS Bedrock". Internal-deployment providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.
+#' @param api_upload Character. Default NA_character_. API upload URL when using Dify-based workflows (internal deployment only)
 #' @param api_chat Character. Default NA_character_. API chat URL required when using OpenAI-Compatible providers
 #' @param user_id Character. Default MVP_user. User ID for LLMs
 #' @param reuse_context Logical. Default FALSE. Set to TRUE to re-use same conversation during retries.
@@ -36,7 +36,7 @@
 #' @param model_openrouter Character. Default arcee-ai/trinity-large-preview:free. Model for OpenRouter.
 #' @param model_openai_compatible Character. Default gpt-5.2. Model for OpenAI-compatible providers.
 #' @param model_deepseek Character. Default deepseek-flash. Model for DeepSeek.
-#' @param model_apollo Character. Default claude_4_6_sonnet. Model for Apollo (BI-only).
+#' @param model_apollo Character. Default claude_4_6_sonnet. Model for Apollo (internal deployment only).
 #' @param model_azure Character. Default gpt-5.2. Model for Azure OpenAI.
 #' @param model_aws Character. Default anthropic.claude-sonnet-5. Model for AWS Bedrock.
 #' @param temperature Numeric. Default 1. Between 0 (more deterministic) and 1 (more creative) (not all models support this).
@@ -114,7 +114,7 @@ mvp_app <- function(appDir                  = system.file("shiny", package = "MV
                     model_openrouter        = "arcee-ai/trinity-large-preview:free",  # "openrouter/free"
                     model_openai_compatible = "gpt-5.2",
                     model_deepseek          = "deepseek-flash",
-                    model_apollo            = "claude_4_6_sonnet", # For BI-only
+                    model_apollo            = "claude_4_6_sonnet", # For internal deployment only
                     model_azure             = "gpt-5.2",
                     model_aws               = "anthropic.claude-sonnet-5",
                     temperature             = 1,

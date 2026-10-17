@@ -14,19 +14,19 @@
 #'   this should be the combined output of \code{combine_uploaded_files}.
 #' @param file_name Original filename (used for display in notifications and
 #'   for MIME type detection). If \code{NULL}, derived from \code{ready_path}.
-#' @param service Choice of "PROD" (BI-only), "EXP" (BI-only), "Gemini", "OpenAI", "AWS Bedrock",
-#'  "Claude", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Apollo" (BI-only), "Azure OpenAI"
+#' @param service Choice of "PROD" (internal deployment only), "EXP" (internal deployment only), "Gemini", "OpenAI", "AWS Bedrock",
+#'  "Claude", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Apollo" (internal deployment only), "Azure OpenAI"
 #' @param api_key API Key, recommended to store it as env var called "ANTHROPIC_API_KEY" etc
 #' @param api_upload API URL for uploading of files (Dify requires a 2-step process)
 #' @param api_chat API URL for chat messages, required when using OpenAI-compatible API
-#' @param user_id user id for the request (BI-only)
+#' @param user_id user id for the request (internal deployment only)
 #' @param model_gemini Model to be used when calling Gemini API
 #' @param model_openai Model to be used when calling OpenAI API
 #' @param model_anthropic Model to be used when calling Anthropic API
 #' @param model_openrouter Model to be used when calling OpenRouter
 #' @param model_openai_compatible Model to be used when calling OpenAI-compatible API
 #' @param model_deepseek Model to be used when calling DeepSeek
-#' @param model_apollo Model to be used when calling Apollo (BI only)
+#' @param model_apollo Model to be used when calling Apollo (internal deployment only)
 #' @param model_azure Model to be used when calling Azure OpenAI
 #' @param model_aws Model to be used when calling AWS Bedrock
 #' @param display_info Set to TRUE to show how much time/tokens in Shiny UI when job is finished
@@ -34,8 +34,8 @@
 #' @param seed seed number for LLMs
 #' @param locally_parse_file if TRUE, extracts text locally and includes in prompt instead of uploading file
 #' @param model_lang Either "mrgsolve" or "nonmem" (changes the prompt)
-#' @param deep_pdfscan Use Vision to extract image data (BI only)
-#' @param force_parse Force parsing (BI only)
+#' @param deep_pdfscan Use Vision to extract image data (internal deployment only)
+#' @param force_parse Force parsing (internal deployment only)
 #' @param mrgsolve_system_prompt String for mrgsolve system prompt
 #' @param mrgsolve_long_user_prompt String for mrgsolve long user prompt
 #' @param mrgsolve_short_user_prompt String for mrgsolve short user prompt
@@ -45,7 +45,7 @@
 #' @param rxode2_system_prompt String for rxode2 system prompt
 #' @param rxode2_long_user_prompt String for rxode2 long user prompt
 #' @param rxode2_short_user_prompt String for rxode2 short user prompt
-#' @param internal_version Logical. Only relevant for BI
+#' @param internal_version Logical. Only relevant for internal deployments
 #' @param max_tokens Numeric. Maximum output tokens.
 #' @param debug Displays debug messages and keeps the responses in MVPapp:::.mvp_state
 #'
@@ -368,13 +368,13 @@ translate_model_code <- function(ready_path,
 #' @param temperature Goes from 0 to 1, where 0 is deterministic, if not reusing context
 #' @param seed seed number for LLMs, if not reusing context
 #' @param attempt current attempt number
-#' @param deep_pdfscan Uses Vision to extract image data (BI only)
-#' @param force_parse Force reparsing (BI only)
+#' @param deep_pdfscan Uses Vision to extract image data (internal deployment only)
+#' @param force_parse Force reparsing (internal deployment only)
 #' @param system_prompt Character. System prompt
 #' @param long_user_prompt Character. Long user prompt
 #' @param short_user_prompt Character. Short user prompt
-#' @param internal_version Logical. Only relevant for BI
-#' @param feedback_success Logical. Only relevant for BI, and if reuse_context = TRUE
+#' @param internal_version Logical. Only relevant for internal deployments
+#' @param feedback_success Logical. Only relevant for internal deployments, and if reuse_context = TRUE
 #' @param max_tokens Numeric. Maximum output tokens.
 #' @param debug Displays debug messages and keeps the responses in MVPapp:::.mvp_state
 #'
@@ -732,7 +732,7 @@ extract_file_content <- function(file_path,
 #-------------------------------------------------------------------------------
 #' @name run_dify_chat
 #'
-#' @title Send a chat request to a Dify Workflow via httr2 (BI-only)
+#' @title Send a chat request to a Dify Workflow via httr2 (internal deployment only)
 #'
 #' @description
 #' Handles the full Dify API interaction: optionally uploads a file first,
@@ -897,7 +897,7 @@ run_dify_chat <- function(instruction_prompt,
 #' @param locally_parse_file If \code{TRUE}, sends text content in the prompt
 #'   directly rather than uploading the file to the provider
 #' @param chat_obj the ellmer chat object for context re-use, default NULL
-#' @param internal_version Logical. Changes base_url path, Only relevant for BI
+#' @param internal_version Logical. Changes base_url path, Only relevant for internal deployments
 #' @param debug If \code{TRUE}, prints progress messages and the chat object
 #'   summary to the console
 #'
@@ -1435,7 +1435,7 @@ get_api_key_name <- function(llm_service) {
 #' Requests a short-lived OAuth access token from the Axway gateway using
 #' client credentials. Requires \code{APOLLO_CLIENT_ID}, \code{APOLLO_CLIENT_SECRET},
 #' and \code{APOLLO_TOKEN_URL} to be set in \code{.Renviron}.
-#' Use \code{usethis::edit_r_environ()} to set them. Only relevant for BI.
+#' Use \code{usethis::edit_r_environ()} to set them. Only relevant for internal deployments.
 #' @noRd
 
 #'
@@ -1467,7 +1467,7 @@ get_apollo_token <- function() {
 #' Requests a short-lived OAuth access token from the Axway gateway using
 #' client credentials. Requires \code{APOLLO_CLIENT_ID}, \code{APOLLO_CLIENT_SECRET},
 #' and \code{APOLLO_TOKEN_URL} to be set in \code{.Renviron}.
-#' Use \code{usethis::edit_r_environ()} to set them. Only relevant for BI.
+#' Use \code{usethis::edit_r_environ()} to set them. Only relevant for internal deployments.
 #' @noRd
 
 #'

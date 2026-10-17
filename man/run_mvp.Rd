@@ -77,16 +77,16 @@ copy installed with MVPapp and rarely needs changing.}
 
 \item{internal_version}{Logical. Default TRUE. Set to FALSE when hosting the app on a server (e.g. AWS) where the working
 directory is not writable: NCA reports are then written to the session's temporary directory, and the help text for
-locked models points to GitHub instead. For BI users, it also selects the external Apollo endpoint.}
+locked models points to GitHub instead. For internal deployments, it also selects the external Apollo endpoint.}
 
 \item{pw_models_path}{Character. Default NA_character_. Path to an R file defining password-gated models
 (see \code{system.file("shiny/passworded_models_example.R", package = "MVPapp")} and \code{vignette("supply-passwords")}).}
 
 \item{llm_choices}{Character vector of LLM providers offered in the app; the first one is selected by default.
 Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek",
-"Azure OpenAI" and "AWS Bedrock". BI-internal providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.}
+"Azure OpenAI" and "AWS Bedrock". Internal-deployment providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.}
 
-\item{api_upload}{Character. Default NA_character_. API upload URL when using Dify-based workflows (BI-only)}
+\item{api_upload}{Character. Default NA_character_. API upload URL when using Dify-based workflows (internal deployment only)}
 
 \item{api_chat}{Character. Default NA_character_. API chat URL required when using OpenAI-Compatible providers}
 
@@ -106,7 +106,7 @@ Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter",
 
 \item{model_deepseek}{Character. Default deepseek-flash. Model for DeepSeek.}
 
-\item{model_apollo}{Character. Default claude_4_6_sonnet. Model for Apollo (BI-only).}
+\item{model_apollo}{Character. Default claude_4_6_sonnet. Model for Apollo (internal deployment only).}
 
 \item{model_azure}{Character. Default gpt-5.2. Model for Azure OpenAI.}
 

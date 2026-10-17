@@ -2457,7 +2457,7 @@ ui <- shiny::navbarPage(
            ),
            shinydashboard::box(width = 12,
                                title = 'Acknowledgements', status = 'primary', solidHeader = TRUE,
-                               p('The authors would like to acknowledge Nik Onufrak, Jan-George Wojtyniak, Hugo Maas, and the PMxT working group in Boehringer-Ingelheim for their support in this project.'),
+                               p('The authors would like to acknowledge Nik Onufrak, Jan-George Wojtyniak and Hugo Maas for their support in this project.'),
                                p('MVP is inspired by various open-source tools, in particular ', a(href = "https://github.com/PavanVaddady/modvizpop", "ModVizPop", target = "_blank"), ' by Pavan Vaddady.')
                                
                                
@@ -4232,7 +4232,7 @@ server <- function(input, output, session) {
       # textInput('api_upload_model_1',
       #           label = "API Upload URL",
       #           value = llm_settings_model_1$api_upload,
-      #           placeholder = "API Chat URL (BI-only)"
+      #           placeholder = "API Chat URL (internal deployment only)"
       # )
     }
   })
@@ -4416,7 +4416,7 @@ server <- function(input, output, session) {
     llm_settings_model_1$nonmem2mrgsolve         <- default_llm_settings$nonmem2mrgsolve
     llm_settings_model_1$nonmem2rx               <- default_llm_settings$nonmem2rx
     
-    # Update the modal input fields, BI-only
+    # Update the modal input fields, internal deployment only
     updateSelectInput(session, "llm_model_1",                    selected = default_llm_settings$llm_choices)
     updateSelectInput(session, "max_retries_model_1",            selected = default_llm_settings$max_retries)
     updateSelectInput(session, "model_lang_model_1",             selected = default_llm_settings$model_lang)
@@ -4472,7 +4472,7 @@ server <- function(input, output, session) {
     if(!is.null(input$nonmem2mrgsolve_model_1))         llm_settings_model_1$nonmem2mrgsolve         <- input$nonmem2mrgsolve_model_1
     if(!is.null(input$nonmem2rx_model_1))               llm_settings_model_1$nonmem2rx               <- input$nonmem2rx_model_1
     
-    # Update the modal input fields, BI-only
+    # Update the modal input fields, internal deployment only
     updateSelectInput(session, "llm_model_1",                    selected = llm_settings_model_1$llm_choices)
     updateSelectInput(session, "max_retries_model_1",            selected = llm_settings_model_1$max_retries)
     updateSelectInput(session, "model_lang_model_1",             selected = llm_settings_model_1$model_lang)
@@ -5002,7 +5002,7 @@ server <- function(input, output, session) {
       # textInput('api_upload_model_2',
       #           label = "API Upload URL",
       #           value = llm_settings_model_2$api_upload,
-      #           placeholder = "API Chat URL (BI-only)"
+      #           placeholder = "API Chat URL (internal deployment only)"
       # )
     }
   })
@@ -5186,7 +5186,7 @@ server <- function(input, output, session) {
     llm_settings_model_2$nonmem2mrgsolve         <- default_llm_settings$nonmem2mrgsolve
     llm_settings_model_2$nonmem2rx               <- default_llm_settings$nonmem2rx
     
-    # Update the modal input fields, BI-only
+    # Update the modal input fields, internal deployment only
     updateSelectInput(session, "llm_model_2",                    selected = default_llm_settings$llm_choices)
     updateSelectInput(session, "max_retries_model_2",            selected = default_llm_settings$max_retries)
     updateSelectInput(session, "model_lang_model_2",             selected = default_llm_settings$model_lang)
@@ -5242,7 +5242,7 @@ server <- function(input, output, session) {
     if(!is.null(input$nonmem2mrgsolve_model_2))         llm_settings_model_2$nonmem2mrgsolve         <- input$nonmem2mrgsolve_model_2
     if(!is.null(input$nonmem2rx_model_2))               llm_settings_model_2$nonmem2rx               <- input$nonmem2rx_model_2
     
-    # Update the modal input fields, BI-only
+    # Update the modal input fields, internal deployment only
     updateSelectInput(session, "llm_model_2",                    selected = llm_settings_model_2$llm_choices)
     updateSelectInput(session, "max_retries_model_2",            selected = llm_settings_model_2$max_retries)
     updateSelectInput(session, "model_lang_model_2",             selected = llm_settings_model_2$model_lang)

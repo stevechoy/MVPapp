@@ -5,7 +5,7 @@ First release prepared for CRAN.
 ## Breaking changes
 
 * Only `run_mvp()`, `mvp_app()` and the `%>%` re-export are exported; the helper functions, model templates and UI settings are now internal. They remain available by name inside the app, the in-app code editors and `pw_models_path` scripts.
-* The inactive `use_bi_styling` argument of `run_mvp()` was removed, together with the BI logo files and BI color names.
+* The inactive `use_bi_styling` argument of `run_mvp()` was removed, together with the old logo files and color names.
 * `nonmem2mrgsolve` is declared in Suggests via the `stevechoy.r-universe.dev` repository; `httr2`, `curl` and `mime` (only needed for AI translation) moved from Imports to Suggests.
 * License is now declared as `GPL (>= 3)`.
 
