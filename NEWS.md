@@ -26,6 +26,15 @@ First release prepared for CRAN.
 * Model 2 variability simulation failed when a covariate database was selected (#28)
 * Reproducible bundle downloads used the dosing events of whichever model was simulated last (#29)
 * Launching via `shiny::runGitHub()` failed unless shiny was attached (#30)
+* The LLM API key is no longer printed to the console during AI translation (#34)
+* AI translation: NONMEM to rxode2 (nonmem2rx) works again, uploads are checked against the selected provider's file types, and translated code containing backslashes or quotes is kept intact (#35)
+* Typing in the password box no longer resets the model dropdowns or erases edited model code (#36)
+* Session loading: a second load via the other "Load Session" button is no longer ignored, and all settings are restored correctly (#37)
+* NCA: the geometric mean is no longer biased low when values are NA or zero, and subject IDs containing quotes no longer break NCA (#38)
+* The '% CFB' value box read the Mean % CFB column (#39)
+* Variability: a clear message instead of duplicated subjects when too few database subjects match the filters, and clearing the Seed box no longer closes the session (#40)
+* Data Exploration: 'Flag Outliers' works with dosing rows present, text columns with NA no longer break plots, and ID/TIME are detected from PTNO/ATSD (#41)
+* Spider plots rank parameters by how much they change the metric (#42)
 
 # MVPapp 0.4.7 (2026-10-03)
 
