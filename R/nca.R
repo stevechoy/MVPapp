@@ -212,7 +212,11 @@ calc_summary_stats_as_list <- function(nca_df,
 #=============================================================================
 
 gm_mean = function(x, na.rm=TRUE){
-  exp(sum(log(x[x > 0]), na.rm=na.rm) / length(x))
+  # Same convention as gm_mean_cv(): NA, zero and negative values are excluded
+  # (previously they were still counted in the denominator, biasing it low)
+  x <- x[is.finite(x) & x > 0]
+  if (length(x) == 0) return(NA_real_)
+  exp(mean(log(x)))
 }
 
 #=============================================================================
@@ -495,19 +499,8 @@ tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colCon
   withProgress(message = "Calculating NCA", value = 0, {
     for (i in 1:nID) {
       if(show_progress) {setProgress(value = i / nID, detail = paste0("Subject ", i, "/", nID))}
-      strHeader = paste0(key[1], "=", IDs[i, 1])
-      strCond = paste0("concData[concData$", key[1], "=='",
-                       IDs[i, 1], "'")
-      if (nKey > 1) {
-        for (j in 2:nKey) {
-          strCond = paste0(strCond, " & concData$", key[j],
-                           "=='", IDs[i, j], "'")
-          strHeader = paste0(strHeader, ", ", key[j], "=",
-                             IDs[i, j])
-        }
-      }
-      strCond = paste0(strCond, ",]")
-      tData = eval(parse(text = strCond))
+      strHeader = paste(paste0(key, "=", vapply(IDs[i, , drop = FALSE], as.character, "")), collapse = ", ")
+      tData = nca_subset(concData, key, IDs[i, , drop = FALSE])
       if (nrow(tData) > 0) {
         tRes = NonCompart::sNCA(tData[, colTime], tData[, colConc], dose = dose[i],
                     adm = adm, dur = dur, doseUnit = doseUnit, timeUnit = timeUnit,
@@ -662,19 +655,8 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
     if(show_progress) {
       shiny::incProgress(1/nID, detail = paste("Subject ", i, "/", nID))
     }
-    strHeader = paste0(key[1], "=", IDs[i, 1])
-    strCond = paste0("concData[concData$", key[1], "=='",
-                     IDs[i, 1], "'")
-    if (nKey > 1) {
-      for (j in 2:nKey) {
-        strCond = paste0(strCond, " & concData$", key[j],
-                         "=='", IDs[i, j], "'")
-        strHeader = paste0(strHeader, ", ", key[j], "=",
-                           IDs[i, j])
-      }
-    }
-    strCond = paste0(strCond, ",]")
-    tData = eval(parse(text = strCond))
+    strHeader = paste(paste0(key, "=", vapply(IDs[i, , drop = FALSE], as.character, "")), collapse = ", ")
+    tData = nca_subset(concData, key, IDs[i, , drop = FALSE])
     if (nrow(tData) > 0) {
       x = tData[, colTime]
       y = tData[, colConc]
@@ -854,4 +836,27 @@ calculate_quantiles <- function(df, xvar, num_quantiles) {
   df %>%
     dplyr::select(starts_with("Q")) %>%
     dplyr::distinct()
+}
+
+#-------------------------------------------------------------------------------
+#' @name nca_subset
+#'
+#' @title Rows of an NCA dataset matching one combination of key values
+#'
+#' @description Replaces building and evaluating R code from the data values
+#'   (which failed for values containing quotes, e.g. "O'Neil", and could run
+#'   code embedded in the data).
+#'
+#' @param concData Concentration dataset.
+#' @param key Character vector of key column names.
+#' @param id_values One-row data frame of key values (in the order of `key`).
+#'
+#' @returns The matching rows of `concData`.
+#' @noRd
+#-------------------------------------------------------------------------------
+nca_subset <- function(concData, key, id_values) {
+  rows <- Reduce(`&`, lapply(seq_along(key), function(j) {
+    as.character(concData[[key[j]]]) == as.character(id_values[[j]])
+  }))
+  concData[rows, , drop = FALSE]
 }

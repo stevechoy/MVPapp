@@ -310,8 +310,9 @@ create_value_box <- function(input_dataset,
     NA_real_
   } else {
     input_dataset %>%
-      dplyr::select(dplyr::ends_with(name_ends_with)) %>%
-      dplyr::pull() %>%   # extracts the single column as a vector
+      # "_<METRIC>_ranged" so that e.g. CFBPCT does not also match MEANCFBPCT
+      dplyr::select(dplyr::ends_with(paste0("_", name_ends_with))) %>%
+      dplyr::pull(1) %>%   # extracts the single column as a vector
       unique()
   }
   

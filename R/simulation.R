@@ -267,7 +267,6 @@ sample_age_wt <- function(df_name     = "None",
   df.sexes <- df.sexes %>%
     dplyr::mutate(BMI = round(WT / (HT/100)^2,2)) # Check for non-sensible values
   
-  message(names(df.sexes))
 
   if(lower.wt == upper.wt) { # Allows singular weight
     df.sexes <- df.sexes %>%
@@ -285,13 +284,26 @@ sample_age_wt <- function(df_name     = "None",
       dplyr::filter(BMI >= lower.bmi, BMI < upper.bmi)
   }
 
+  # Without enough matching subjects, slice_sample() silently returns fewer rows,
+  # which previously led to duplicated subjects (or a cryptic error) below
+  n_male_needed   <- ceiling(nsubj * prop.male)
+  n_female_needed <- ceiling(nsubj * (1 - prop.male))
+  n_male_avail    <- sum(df.sexes$SEX == 0)
+  n_female_avail  <- sum(df.sexes$SEX == 1)
+  if (n_male_avail < n_male_needed || n_female_avail < n_female_needed) {
+    stop("Only ", n_male_avail, " males and ", n_female_avail, " females in the ", df_name,
+         " database match the selected age, weight and BMI ranges, but ", nsubj,
+         " subjects (", n_male_needed, " males, ", n_female_needed, " females) were requested. ",
+         "Please reduce the number of subjects or widen the ranges.", call. = FALSE)
+  }
+
   df.boys <- df.sexes %>%
     dplyr::filter(SEX == 0) %>%
-    dplyr::slice_sample(n = ceiling(nsubj * prop.male), replace = FALSE)
+    dplyr::slice_sample(n = n_male_needed, replace = FALSE)
 
   df.girls <- df.sexes %>%
     dplyr::filter(SEX == 1) %>%
-    dplyr::slice_sample(n = ceiling(nsubj * (1 - prop.male)), replace = FALSE)
+    dplyr::slice_sample(n = n_female_needed, replace = FALSE)
 
   df.combined <- rbind(df.boys, df.girls) %>%
     dplyr::slice_sample(n = nsubj, replace = FALSE) %>%
@@ -695,9 +707,9 @@ trim_columns <- function(data,
 #-------------------------------------------------------------------------------
 
 handle_blanks <- function(df, column_name) {
-  if (is.character(df[[column_name]]) && any(df[[column_name]] == "")) {
+  if (is.character(df[[column_name]]) && any(df[[column_name]] == "", na.rm = TRUE)) {
     shiny::showNotification(paste0("WARNING: Some ", column_name, " values are blank. Renamed to '.(blank)'."), type = "warning", duration = 10)
-    df <- df %>% dplyr::mutate(!!column_name := ifelse(!!dplyr::sym(column_name) == "", ".(blank)", !!dplyr::sym(column_name)))
+    df <- df %>% dplyr::mutate(!!column_name := ifelse(!is.na(!!dplyr::sym(column_name)) & !!dplyr::sym(column_name) == "", ".(blank)", !!dplyr::sym(column_name)))
   }
   return(df)
 }

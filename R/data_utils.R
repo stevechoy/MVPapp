@@ -66,7 +66,7 @@ search_id_col <- function(orig_df,
     }
   } # end of loop
 
-  return(orig_df) # if can't find any
+  return(df) # unchanged if none found (also covers a match on the last candidate)
 }
 
 #-------------------------------------------------------------------------------
@@ -102,5 +102,5 @@ search_time_col <- function(orig_df,
     }
   } # end of loop
 
-  return(orig_df) # if can't find any
+  return(df) # unchanged if none found (also covers a match on the last candidate)
 }

@@ -288,7 +288,7 @@ spider_plot <-  function(df,
   
   df2 <- df2 %>%
     dplyr::group_by(Parameter) %>%
-    dplyr::mutate(del = abs(max(Metric)) +  abs(min(Metric))) %>%
+    dplyr::mutate(del = max(Metric) - min(Metric)) %>% # spread = sensitivity
     dplyr::arrange(desc(del)) %>%
     dplyr::ungroup()
   

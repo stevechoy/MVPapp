@@ -1784,14 +1784,18 @@ categorize_outliers <- function(df,
   highlight_numeric <- as.numeric(gsub("%", "", highlight_range)) / 100
 
   if(!is.character(df[[y_axis]])) {
-    group_means <- df %>%
+    # Means are taken over observation records only (dosing rows usually have
+    # DV = NA or 0), ignoring missing values
+    df_obs <- if ("EVID" %in% names(df)) dplyr::filter(df, EVID == 0) else df
+
+    group_means <- df_obs %>%
       dplyr::group_by(!!dplyr::sym(strat_by)) %>%
-      dplyr::summarise(meanYVARGRP = mean(!!dplyr::sym(y_axis))) %>%
+      dplyr::summarise(meanYVARGRP = mean(!!dplyr::sym(y_axis), na.rm = TRUE)) %>%
       dplyr::ungroup()
 
-    id_means <- df %>%
+    id_means <- df_obs %>%
       dplyr::group_by(ID) %>%
-      dplyr::summarise(meanYVARID = mean(!!dplyr::sym(y_axis))) %>%
+      dplyr::summarise(meanYVARID = mean(!!dplyr::sym(y_axis), na.rm = TRUE)) %>%
       dplyr::ungroup()
 
     # Join it back to main df
@@ -1800,8 +1804,8 @@ categorize_outliers <- function(df,
 
     df <- df %>%
       dplyr::mutate(outlier_status = dplyr::case_when(
-        meanYVARID > (meanYVARGRP * (1 + highlight_numeric)) ~ "Above",
-        meanYVARID < (meanYVARGRP * (1 - highlight_numeric)) ~ "Below",
+        !is.na(meanYVARID) & meanYVARID > (meanYVARGRP * (1 + highlight_numeric)) ~ "Above",
+        !is.na(meanYVARID) & meanYVARID < (meanYVARGRP * (1 - highlight_numeric)) ~ "Below",
         TRUE                                                 ~ "Within")
       )
   } else { # Do nothing if Y-axis is of character type
