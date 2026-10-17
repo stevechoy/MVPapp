@@ -50,6 +50,7 @@ OpenRouter
 PARAM
 PBPK
 PKPD
+PMx
 PSA
 PSP
 Passworded
@@ -69,6 +70,7 @@ ShinyDemo
 TMDD
 Tmax
 Tmin
+toolkits
 UI
 USUBJID
 amt1

@@ -66,19 +66,25 @@ run_mvp(
 )
 }
 \arguments{
-\item{appDir}{the directory of the application to run.}
+\item{appDir}{Character. Directory containing the app's \code{app.R}. Defaults to the
+copy installed with MVPapp and rarely needs changing.}
 
-\item{insert_watermark}{Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.}
+\item{insert_watermark}{Logical. Default TRUE. Set to FALSE to remove the "For Internal Use Only" watermark from simulation plots and NCA reports.}
 
 \item{max_dataset_size}{Numeric. Default 200. Maximum upload dataset size in MB.}
 
 \item{authentication_code}{Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.}
 
-\item{internal_version}{Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.}
+\item{internal_version}{Logical. Default TRUE. Set to FALSE when hosting the app on a server (e.g. AWS) where the working
+directory is not writable: NCA reports are then written to the session's temporary directory, and the help text for
+locked models points to GitHub instead. For BI users, it also selects the external Apollo endpoint.}
 
-\item{pw_models_path}{Character. Default NA_character_. Provide a path to source password-gated models.}
+\item{pw_models_path}{Character. Default NA_character_. Path to an R file defining password-gated models
+(see \code{system.file("shiny/passworded_models_example.R", package = "MVPapp")} and \code{vignette("supply-passwords")}).}
 
-\item{llm_choices}{Character. Supported providers are "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "Deepseek", "Azure OpenAI", "AWS Bedrock"}
+\item{llm_choices}{Character vector of LLM providers offered in the app; the first one is selected by default.
+Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek",
+"Azure OpenAI" and "AWS Bedrock". BI-internal providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.}
 
 \item{api_upload}{Character. Default NA_character_. API upload URL when using Dify-based workflows (BI-only)}
 
@@ -100,19 +106,21 @@ run_mvp(
 
 \item{model_deepseek}{Character. Default deepseek-flash. Model for DeepSeek.}
 
-\item{model_apollo}{Character. Default gpt-5.2 (BI-only)}
+\item{model_apollo}{Character. Default claude_4_6_sonnet. Model for Apollo (BI-only).}
 
 \item{model_azure}{Character. Default gpt-5.2. Model for Azure OpenAI.}
 
 \item{model_aws}{Character. Default anthropic.claude-sonnet-5. Model for AWS Bedrock.}
 
-\item{temperature}{Numeric. Default 0, between 0 (more deterministic) to 1 (more creative) (not all models support this).}
+\item{temperature}{Numeric. Default 1. Between 0 (more deterministic) and 1 (more creative) (not all models support this).}
 
 \item{llm_seed}{Numeric. Default 42. Seed number for LLMs (not all models support this).}
 
-\item{model_lang}{Character. Default mrgsolve. Changes model translation language to "mrgsolve", "nonmem" (for testing only), "rxode2" (for testing only)}
+\item{model_lang}{Character. Default "mrgsolve" (the first element). Model translation language: "mrgsolve",
+"nonmem" (for testing only) or "rxode2" (for testing only).}
 
-\item{prompts_path}{Prompts file. See vignette ("automatic-translation") for more information.}
+\item{prompts_path}{Character. Path to an R file defining the LLM prompts. Defaults to the prompts installed with
+MVPapp. See \code{vignette("automatic-translation")} for more information.}
 
 \item{show_debugging_msg}{Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
 AI translation responses are then also kept for review (see Details).}
@@ -144,6 +152,7 @@ after the app is closed. List them with \code{ls(MVPapp:::.mvp_state)}:
 \item \code{last_ev_df$model_1}, \code{last_ev_df$model_2}: the dosing event tables used
 in each model's most recent simulation (also used for the reproducible
 bundle download).
+\item \code{deps_env}: an internal cache used to run the app; not useful for debugging.
 \item With \code{show_debugging_msg = TRUE}, AI translation responses: \code{llm_result}
 (initial translation), \code{llm_refine} (latest retry that still failed),
 \code{llm_success} (retry that compiled), \code{branch_model} / \code{branch_refine} (raw
@@ -168,8 +177,8 @@ if (interactive()) {
   # run_mvp(authentication_code = "some_password") # Password-lock the site,
   #                                                # could be useful in deployment
   # run_mvp(pw_models_path = "path/to/your/private/models.R") # see
-  #   "shiny/passworded_models_example.R" on how to set one up
-  # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6",
+  #   system.file("shiny/passworded_models_example.R", package = "MVPapp")
+  # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-5-5",
   #         temperature = 0) # Uses Claude only with reproducible results
 }
 

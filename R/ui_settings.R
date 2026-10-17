@@ -136,7 +136,7 @@ llm_max_retries_error <- paste0("\u274c Max retries reached. Model still contain
 ## Dosing Regimen
 placeholder_password  <- 'Optional password to unlock more model choices and changes default values.'
 bspop_password        <- 'Please contact the App maintainer if you would like your current project to be included as a passworded-model.<br><br>Note: This feature is intended for Project Pharmacometricians to facilitate internal discussions only.'
-bspop_password_github <- 'Please visit the <a href="https://github.com/Boehringer-Ingelheim/MVPapp" target="_blank">MVPapp GitHub</a> page to install MVP as a R package to use this feature locally.'
+bspop_password_github <- 'Please visit the <a href="https://github.com/stevechoy/MVPapp" target="_blank">MVPapp GitHub</a> page to install MVP as a R package to use this feature locally.'
 bspop_generate_model  <- "Please wait a few seconds after selecting models or editing code before clicking the Generate Model button."
 bspop_download_session <- "Download session settings as .rds file.<br><br>Note: Real-time changes to parameter values will not be recorded, i.e. the parameters will be saved according to what has been defined in the code editor."
 bspop_upload_session  <- "Restore previous session settings (.rds file). Please wait a few seconds during restoration.<br><br>If you used both models, please also navigate to the other model tab after restoring settings to have it re-populated."

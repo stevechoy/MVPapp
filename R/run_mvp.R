@@ -13,13 +13,19 @@
 #' search path is modified. Global options changed by the app are set when it
 #' starts and restored when it stops.
 #'
-#' @param appDir the directory of the application to run.
-#' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.
+#' @param appDir Character. Directory containing the app's `app.R`. Defaults to the
+#'   copy installed with MVPapp and rarely needs changing.
+#' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove the "For Internal Use Only" watermark from simulation plots and NCA reports.
 #' @param max_dataset_size Numeric. Default 200. Maximum upload dataset size in MB.
 #' @param authentication_code Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.
-#' @param internal_version Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.
-#' @param pw_models_path Character. Default NA_character_. Provide a path to source password-gated models.
-#' @param llm_choices Character. Supported providers are "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "Deepseek", "Azure OpenAI", "AWS Bedrock"
+#' @param internal_version Logical. Default TRUE. Set to FALSE when hosting the app on a server (e.g. AWS) where the working
+#'   directory is not writable: NCA reports are then written to the session's temporary directory, and the help text for
+#'   locked models points to GitHub instead. For BI users, it also selects the external Apollo endpoint.
+#' @param pw_models_path Character. Default NA_character_. Path to an R file defining password-gated models
+#'   (see `system.file("shiny/passworded_models_example.R", package = "MVPapp")` and `vignette("supply-passwords")`).
+#' @param llm_choices Character vector of LLM providers offered in the app; the first one is selected by default.
+#'   Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek",
+#'   "Azure OpenAI" and "AWS Bedrock". BI-internal providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.
 #' @param api_upload Character. Default NA_character_. API upload URL when using Dify-based workflows (BI-only)
 #' @param api_chat Character. Default NA_character_. API chat URL required when using OpenAI-Compatible providers
 #' @param user_id Character. Default MVP_user. User ID for LLMs
@@ -30,13 +36,15 @@
 #' @param model_openrouter Character. Default arcee-ai/trinity-large-preview:free. Model for OpenRouter.
 #' @param model_openai_compatible Character. Default gpt-5.2. Model for OpenAI-compatible providers.
 #' @param model_deepseek Character. Default deepseek-flash. Model for DeepSeek.
-#' @param model_apollo Character. Default gpt-5.2 (BI-only)
+#' @param model_apollo Character. Default claude_4_6_sonnet. Model for Apollo (BI-only).
 #' @param model_azure Character. Default gpt-5.2. Model for Azure OpenAI.
 #' @param model_aws Character. Default anthropic.claude-sonnet-5. Model for AWS Bedrock.
-#' @param temperature Numeric. Default 0, between 0 (more deterministic) to 1 (more creative) (not all models support this).
+#' @param temperature Numeric. Default 1. Between 0 (more deterministic) and 1 (more creative) (not all models support this).
 #' @param llm_seed Numeric. Default 42. Seed number for LLMs (not all models support this).
-#' @param model_lang Character. Default mrgsolve. Changes model translation language to "mrgsolve", "nonmem" (for testing only), "rxode2" (for testing only)
-#' @param prompts_path Prompts file. See vignette ("automatic-translation") for more information.
+#' @param model_lang Character. Default "mrgsolve" (the first element). Model translation language: "mrgsolve",
+#'   "nonmem" (for testing only) or "rxode2" (for testing only).
+#' @param prompts_path Character. Path to an R file defining the LLM prompts. Defaults to the prompts installed with
+#'   MVPapp. See `vignette("automatic-translation")` for more information.
 #' @param show_debugging_msg Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
 #'   AI translation responses are then also kept for review (see Details).
 #' @param ... For `run_mvp()`, [shiny::runApp()] arguments (e.g. `launch.browser`,
@@ -50,6 +58,7 @@
 #' * `last_ev_df$model_1`, `last_ev_df$model_2`: the dosing event tables used
 #'   in each model's most recent simulation (also used for the reproducible
 #'   bundle download).
+#' * `deps_env`: an internal cache used to run the app; not useful for debugging.
 #' * With `show_debugging_msg = TRUE`, AI translation responses: `llm_result`
 #'   (initial translation), `llm_refine` (latest retry that still failed),
 #'   `llm_success` (retry that compiled), `branch_model` / `branch_refine` (raw
@@ -74,8 +83,8 @@
 #'   # run_mvp(authentication_code = "some_password") # Password-lock the site,
 #'   #                                                # could be useful in deployment
 #'   # run_mvp(pw_models_path = "path/to/your/private/models.R") # see
-#'   #   "shiny/passworded_models_example.R" on how to set one up
-#'   # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6",
+#'   #   system.file("shiny/passworded_models_example.R", package = "MVPapp")
+#'   # run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-5-5",
 #'   #         temperature = 0) # Uses Claude only with reproducible results
 #' }
 #'
