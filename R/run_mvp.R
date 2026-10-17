@@ -15,7 +15,6 @@
 #' @param max_dataset_size Numeric. Default 200. Maximum upload dataset size in MB.
 #' @param authentication_code Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.
 #' @param internal_version Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.
-#' @param use_bi_styling Logical. Default FALSE. Set to TRUE to insert BI logo (deprecated - currently inactive).
 #' @param pw_models_path Character. Default NA_character_. Provide a path to source password-gated models.
 #' @param llm_choices Character. Supported providers are "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "Deepseek", "Azure OpenAI", "AWS Bedrock"
 #' @param api_upload Character. Default NA_character_. API upload URL when using Dify-based workflows (BI-only)
@@ -73,7 +72,6 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
                     max_dataset_size        = 200,
                     authentication_code     = NA_character_,
                     internal_version        = TRUE,
-                    use_bi_styling          = FALSE,
                     pw_models_path          = NA_character_,
                     llm_choices             = c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Azure OpenAI", "AWS Bedrock"),
                     api_upload              = NA_character_,
@@ -102,7 +100,6 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
     max_dataset_size        = max_dataset_size,
     authentication_code     = authentication_code,
     internal_version        = internal_version,
-    use_bi_styling          = use_bi_styling,
     pw_models_path          = pw_models_path,
     llm_choices             = llm_choices,
     api_upload              = api_upload,             

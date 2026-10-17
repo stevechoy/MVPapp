@@ -9,12 +9,7 @@ debounce_timer_slow   <- 900
 max_samples           <- 20000 # Max samples = max sampling time * frequency of samples
 
 # Colours
-bi_blue               <- "#003366" # BI blue color
-bi_lightblue          <- "#99CCFF"
-bi_darkgreen          <- "#08312A" # BI dark green
-bi_green              <- "#00E47C" # BI accent green
-bi_warmgray           <- "#E5E3DE"
-bi_lightgray          <- "#F6F5F3"
+mvp_navy               <- "#003366" # Navbar / loading-spinner colour
 slider_color          <- "#FFB600" # yellow
 model_1_color         <- "#F8766D" # Shade of red
 model_2_color         <- "#7570B3" # Shade of blue   
@@ -304,11 +299,6 @@ infoBox_width         <- 3
 font_size             <- 'font-size: 23px;'
 
 ## css formatting
-bi_logo <- htmltools::img(src = "BI_Logo_Green.png",
-                          style = "float:left; margin-top: -5px; padding-right:20px",
-                          width = 120
-)
-
 navbar_bg_color <-   htmltools::tags$head(
   htmltools::tags$style(
     htmltools::HTML('.navbar-static-top {background-color: #003366;}',

@@ -10,7 +10,6 @@ run_mvp(
   max_dataset_size = 200,
   authentication_code = NA_character_,
   internal_version = TRUE,
-  use_bi_styling = FALSE,
   pw_models_path = NA_character_,
   llm_choices = c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible",
     "DeepSeek", "Azure OpenAI", "AWS Bedrock"),
@@ -45,8 +44,6 @@ run_mvp(
 \item{authentication_code}{Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.}
 
 \item{internal_version}{Logical. Default TRUE. Setting to FALSE may allow generation of NCA reports when hosted on AWS with different access rights.}
-
-\item{use_bi_styling}{Logical. Default FALSE. Set to TRUE to insert BI logo (deprecated - currently inactive).}
 
 \item{pw_models_path}{Character. Default NA_character_. Provide a path to source password-gated models.}
 

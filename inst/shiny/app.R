@@ -55,7 +55,6 @@ if(standalone_mode) {
   authentication_code     = NA_character_
   internal_version        = TRUE
   pw_models_path          = NA_character_  # "passworded_models_example.R"
-  use_bi_styling          = FALSE # this option is inactive
   llm_choices             = c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Azure OpenAI", "AWS Bedrock")
   api_upload              = NA_character_  
   api_chat                = NA_character_ 
@@ -86,7 +85,6 @@ if(!exists("max_dataset_size"))        {max_dataset_size         <- 200}
 if(!exists("authentication_code"))     {authentication_code      <- NA_character_}
 if(!exists("internal_version"))        {internal_version         <- TRUE}
 if(!exists("pw_models_path"))          {pw_models_path           <- NA_character_}
-if(!exists("use_bi_styling"))          {use_bi_styling           <- TRUE}
 if(!exists("llm_choices"))             {llm_choices              <- c("Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Azure OpenAI", "AWS Bedrock")}
 if(!exists("api_upload"))              {api_upload               <- NA_character_}
 if(!exists("api_chat"))                {api_chat                 <- NA_character_}
@@ -108,11 +106,12 @@ if(!exists("model_lang"))              {model_lang               <- c("mrgsolve"
 if(!exists("prompts_path"))            {prompts_path             <- "https://github.com/stevechoy/MVPapp/raw/refs/heads/master/inst/shiny/prompts.R"} 
 if(!exists("show_debugging_msg"))      {show_debugging_msg       <- TRUE}
 
-if(!exists("bi_logo")) { # Check whether one of the objects in the app exists
+if(!exists("run_single_sim", mode = "function")) { # MVPapp helpers not loaded, i.e. not launched via run_mvp(): source them from the repo
   
   source("packages.R") # Check required packages and update if required
   
   # Loads some required packages when manually launching app with runGithub
+  library(shiny)
   library(magrittr)
   library(rlang)
   library(ggplot2)
@@ -332,7 +331,7 @@ ui <- shiny::navbarPage(
                                                         )
                                     )#, # end of box
                                   ), # end of fluidRow
-                                  uiOutput("descriptive_stats_summary") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                  uiOutput("descriptive_stats_summary") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                   downloadButton("download_descriptive_stats", "Download Individual Results"),
                                   downloadButton("download_nca_report", "Generate NCA Report", icon = icon("cog", class = "fa-spin"))
                          ), # end of tabPanel
@@ -572,7 +571,7 @@ ui <- shiny::navbarPage(
                                     shinydashboard::box(width = 12,
                                                         title = 'Data Exploration', status = 'primary', solidHeader = TRUE, collapsible = FALSE,
                                                         plotOutput('dataset_page_plot_corr', height = '600px') %>%
-                                                          shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                          shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                                         downloadButton("download_corr_plot", "Download Non-Interactive Plot")),
                                     shinydashboard::box(width = 12,
                                                         title = 'Plotting Options', status = 'primary', solidHeader = TRUE, collapsible = TRUE,
@@ -613,7 +612,7 @@ ui <- shiny::navbarPage(
                                     shinydashboard::box(width = 12,
                                                         title = 'Data Exploration', status = 'primary', solidHeader = TRUE, collapsible = FALSE,
                                                         plotOutput('dataset_page_plot_hist', height = '600px') %>%
-                                                          shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                          shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                                         downloadButton("download_hist_plot", "Download Non-Interactive Plot")),
                                     shinydashboard::box(width = 12,
                                                         title = 'Plotting Options', status = 'primary', solidHeader = TRUE, collapsible = TRUE,
@@ -685,7 +684,7 @@ ui <- shiny::navbarPage(
                                                                           id = "parameter_values_panel",
                                                                           tabPanel(title = "Model 1",
                                                                                    uiOutput('param_output_model_1') %>%
-                                                                                     shinycssloaders::withSpinner(type = 8, color = bi_blue, size = 0.5, proxy.height = '50px')
+                                                                                     shinycssloaders::withSpinner(type = 8, color = mvp_navy, size = 0.5, proxy.height = '50px')
                                                                           )
                                                       ),
                                                       shinydashboard::box(width = 12,
@@ -773,7 +772,7 @@ ui <- shiny::navbarPage(
                                                                           id = "parameter_values_panel_2",
                                                                           tabPanel(title = "Model 2",
                                                                                    uiOutput('param_output_model_2') %>%
-                                                                                     shinycssloaders::withSpinner(type = 8, color = bi_blue, size = 0.5, proxy.height = '50px')
+                                                                                     shinycssloaders::withSpinner(type = 8, color = mvp_navy, size = 0.5, proxy.height = '50px')
                                                                           )
                                                       ),
                                                       shinydashboard::box(width = 12,
@@ -2085,7 +2084,7 @@ ui <- shiny::navbarPage(
                                                              tabPanel(id = "px_db_info_model_1",
                                                                       title = "Summary Statistics",
                                                                       column(width = 12,
-                                                                             uiOutput("demog_info_model_1") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                                             uiOutput("demog_info_model_1") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                                                              downloadButton("download_demog_data_model_1", "Download Demographics"),
                                                                              shinyBS::bsPopover('download_demog_data_model_1', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover")
                                                                       )
@@ -2093,7 +2092,7 @@ ui <- shiny::navbarPage(
                                                              tabPanel(id = "px_db_plots_model_1",
                                                                       title = "Plots",
                                                                       column(width = 12,
-                                                                             uiOutput("demog_plots_model_1") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                                             uiOutput("demog_plots_model_1") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                                                              downloadButton("download_demog_plot_model_1", "Download Plot")
                                                                       )
                                                              )
@@ -2231,7 +2230,7 @@ ui <- shiny::navbarPage(
                                                                id = "px_db_info_model_2",
                                                                title = "Summary Statistics",
                                                                column(width = 12,
-                                                                      uiOutput("demog_info_model_2") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                                      uiOutput("demog_info_model_2") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                                                       downloadButton("download_demog_data_model_2", "Download Demographics"),
                                                                       shinyBS::bsPopover('download_demog_data_model_2', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover")
                                                                )
@@ -2240,7 +2239,7 @@ ui <- shiny::navbarPage(
                                                                id = "px_db_plots_model_2",
                                                                title = "Plots",
                                                                column(width = 12,
-                                                                      uiOutput("demog_plots_model_2") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue),
+                                                                      uiOutput("demog_plots_model_2") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy),
                                                                       downloadButton("download_demog_plot_model_2", "Download Plot")
                                                                )
                                                              )
@@ -3722,10 +3721,10 @@ server <- function(input, output, session) {
     div(style = "height:600px",
         if (input$do_data_plotly) {
           plotly::plotlyOutput("data_plotly", height = '600px') %>%
-            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
           plotOutput("data_ggplot", height = '600px') %>%
-            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -3889,10 +3888,10 @@ server <- function(input, output, session) {
     div(style = "height:600px",
         if (input$do_data_ind_plotly) {
           plotly::plotlyOutput("data_ind_plotly", height = '600px') %>%
-            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
           plotOutput("data_ind_ggplot", height = '600px') %>%
-            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -6716,10 +6715,10 @@ server <- function(input, output, session) {
         if (!is.null(simulation_page_plot())) {
           if (input$do_sim_plotly) {
             plotly::plotlyOutput("sim_plotly", height = '600px') %>%
-              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           } else {
             plotOutput("sim_ggplot", height = '600px') %>%
-              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           }
         }
     )
@@ -7131,10 +7130,10 @@ server <- function(input, output, session) {
         if(!is.null(psa_page_plot_model_1_final())) {
           if (input$do_psa_plotly_model_1) {
             plotly::plotlyOutput("psa_plotly_model_1", height = '600px') %>%
-              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           } else {
             plotOutput("psa_ggplot_model_1", height = '600px') %>%
-              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           }
         }
     )
@@ -7477,10 +7476,10 @@ server <- function(input, output, session) {
         if (!is.null(psa_page_plot_model_2_final())) {
           if (input$do_psa_plotly_model_2) {
             plotly::plotlyOutput("psa_plotly_model_2", height = '600px') %>%
-              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           } else {
             plotOutput("psa_ggplot_model_2", height = '600px') %>%
-              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+              shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           }
         }
     )
@@ -7716,9 +7715,9 @@ server <- function(input, output, session) {
   output$tor_plot_output_model_1 <- renderUI({
     div(style = "height:600px",
         if(input$do_tor_plotly_model_1) {
-          plotly::plotlyOutput("tor_plotly_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotly::plotlyOutput("tor_plotly_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
-          plotOutput("tor_ggplot_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotOutput("tor_ggplot_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -7802,9 +7801,9 @@ server <- function(input, output, session) {
   output$spi_plot_output_model_1 <- renderUI({
     div(style = "height:600px",
         if(input$do_tor_plotly_model_1) {
-          plotly::plotlyOutput("spi_plotly_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotly::plotlyOutput("spi_plotly_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
-          plotOutput("spi_ggplot_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotOutput("spi_ggplot_model_1", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -8051,9 +8050,9 @@ server <- function(input, output, session) {
   output$tor_plot_output_model_2 <- renderUI({
     div(style = "height:600px",
         if(input$do_tor_plotly_model_2) {
-          plotly::plotlyOutput("tor_plotly_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotly::plotlyOutput("tor_plotly_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
-          plotOutput("tor_ggplot_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotOutput("tor_ggplot_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -8137,9 +8136,9 @@ server <- function(input, output, session) {
   output$spi_plot_output_model_2 <- renderUI({
     div(style = "height:600px",
         if(input$do_tor_plotly_model_2) {
-          plotly::plotlyOutput("spi_plotly_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotly::plotlyOutput("spi_plotly_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
-          plotOutput("spi_ggplot_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+          plotOutput("spi_ggplot_model_2", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -8428,7 +8427,7 @@ server <- function(input, output, session) {
       if(ncol(rv_cov_1_model_1$df) > 1) {
         if(names(rv_cov_1_model_1$df[1]) != "") {
           column(width = 12,
-                 plotOutput("cov_1_plot_model_1", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+                 plotOutput("cov_1_plot_model_1", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           )
         }
       }
@@ -8543,7 +8542,7 @@ server <- function(input, output, session) {
       if(ncol(rv_cov_2_model_1$df) > 1) {
         if(names(rv_cov_2_model_1$df[1]) != "") {
           column(width = 12,
-                 plotOutput("cov_2_plot_model_1", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+                 plotOutput("cov_2_plot_model_1", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           )
         }
       }
@@ -8658,7 +8657,7 @@ server <- function(input, output, session) {
       if(ncol(rv_cov_3_model_1$df) > 1) {
         if(names(rv_cov_3_model_1$df[1]) != "") {
           column(width = 12,
-                 plotOutput("cov_3_plot_model_1", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+                 plotOutput("cov_3_plot_model_1", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           )
         }
       }
@@ -9268,7 +9267,7 @@ server <- function(input, output, session) {
       if(ncol(rv_cov_1_model_2$df) > 1) {
         if(names(rv_cov_1_model_2$df[1]) != "") {
           column(width = 12,
-                 plotOutput("cov_1_plot_model_2", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+                 plotOutput("cov_1_plot_model_2", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           )
         }
       }
@@ -9383,7 +9382,7 @@ server <- function(input, output, session) {
       if(ncol(rv_cov_2_model_2$df) > 1) {
         if(names(rv_cov_2_model_2$df[1]) != "") {
           column(width = 12,
-                 plotOutput("cov_2_plot_model_2", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+                 plotOutput("cov_2_plot_model_2", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           )
         }
       }
@@ -9498,7 +9497,7 @@ server <- function(input, output, session) {
       if(ncol(rv_cov_3_model_2$df) > 1) {
         if(names(rv_cov_3_model_2$df[1]) != "") {
           column(width = 12,
-                 plotOutput("cov_3_plot_model_2", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+                 plotOutput("cov_3_plot_model_2", height = "300px") %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           )
         }
       }
@@ -10019,10 +10018,10 @@ server <- function(input, output, session) {
     div(style = "height:600px",
         if (input$do_iiv_plotly) {
           plotly::plotlyOutput("iiv_plotly", height = '600px') %>%
-            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         } else {
           plotOutput("iiv_ggplot", height = '600px') %>%
-            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
         }
     )
   })
@@ -10333,9 +10332,9 @@ server <- function(input, output, session) {
     div(style = "height:600px",
         if (!is.null(iiv_exp_plot())) {
           if(input$do_exp_plotly) {
-            plotly::plotlyOutput("iiv_exp_plotly", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            plotly::plotlyOutput("iiv_exp_plotly", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           } else {
-            plotOutput("iiv_exp_ggplot", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = bi_blue)
+            plotOutput("iiv_exp_ggplot", height = '600px') %>% shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
           }
         }
     )
