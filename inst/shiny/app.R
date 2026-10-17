@@ -125,11 +125,11 @@ if(!exists("bi_logo")) { # Check whether one of the objects in the app exists
 }
 
 if(!is.na(pw_models_path)) {
-  source(pw_models_path)
+  source(pw_models_path, local = TRUE)
 }
 
 if(!is.na(prompts_path)) {
-  source(prompts_path)
+  source(prompts_path, local = TRUE)
 }
 
 ## Package checks
@@ -2981,14 +2981,15 @@ server <- function(input, output, session) {
         message("nmdata() is dataframe")
       }
       
-      nmdata_global     <<- nmdata() # globally assigned as shinyAce editor is not scoped to access this environment
-      parsed_text <- safely_parse(text = paste('nmdata_global <<- nmdata_global %>% ', input$codes))
+      code_env <- mvp_user_env() # dedicated environment for the code editor (no global assignment)
+      code_env$nmdata_global <- nmdata()
+      parsed_text <- safely_parse(text = paste('nmdata_global %>% ', input$codes))
       
       if (show_debugging_msg) {
         message(parsed_text$result)
       }
       
-      eval_text   <- safely_eval(parsed_text$result)
+      eval_text   <- safely_eval(parsed_text$result, envir = code_env)
       return(eval_text)
     } else {
       eval_text <- list()
@@ -5723,7 +5724,7 @@ server <- function(input, output, session) {
                                            iiv_simulation = FALSE)
   
   safely_inputted_model_1 <- reactive({
-    tmp <- safely_eval(parse(text = input$model_input))
+    tmp <- safely_eval(parse(text = input$model_input), envir = mvp_user_env())
     return(tmp)
   }, label = 'safely_inputted_model_1') %>% bindEvent(input$generate_model)
   
@@ -6104,7 +6105,7 @@ server <- function(input, output, session) {
                                            iiv_simulation = FALSE)
   
   safely_inputted_model_2 <- reactive({
-    tmp2 <- safely_eval(parse(text = input$model_input2))
+    tmp2 <- safely_eval(parse(text = input$model_input2), envir = mvp_user_env())
     return(tmp2)
   }, label = 'safely_inputted_model_2') %>% bindEvent(input$generate_model2)
   
@@ -6803,7 +6804,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_1(),
         event_data_orig    = dosing_regimen_model_1(),  # pre-transform ev(), straight from the reactive
-        event_data_post    = last_ev_df,
+        event_data_post    = .mvp_state$last_ev_df,
         sampling_times     = sampling_options(),
         custom_sampling_time = input$custom_sampling_time_cb,
         tend               = tend(),
@@ -6817,7 +6818,7 @@ server <- function(input, output, session) {
         model_dur          = model_duration_argument_model_1(),
         model_rate         = model_rate_argument_model_1(),
         pred_model         = model_1_is_pred(),
-        covariate_db       = if('ID' %in% names(last_ev_df)) database_model_1() else NULL,
+        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df)) database_model_1() else NULL,
         seed               = d_seed_number_model_1()
       )
     },
@@ -6841,7 +6842,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_2(),
         event_data_orig    = dosing_regimen_model_2(),  # pre-transform ev(), straight from the reactive
-        event_data_post    = last_ev_df,
+        event_data_post    = .mvp_state$last_ev_df,
         sampling_times     = sampling_options(),
         custom_sampling_time = input$custom_sampling_time_cb,
         tend               = tend(),
@@ -6855,7 +6856,7 @@ server <- function(input, output, session) {
         model_dur          = model_duration_argument_model_2(),
         model_rate         = model_rate_argument_model_2(),
         pred_model         = model_2_is_pred(),
-        covariate_db       = if('ID' %in% names(last_ev_df)) database_model_2() else NULL,
+        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df)) database_model_2() else NULL,
         seed               = d_seed_number_model_2()
       )
     },

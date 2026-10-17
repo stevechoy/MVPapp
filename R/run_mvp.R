@@ -5,11 +5,10 @@
 #'
 #' @description
 #' This function will launch MVP app and pass along arbitrary parameters through
-#' the \code{...} parameter to the application. This is done by modifying the
-#' global environment. This function will attempt to clean up any objects placed
-#' into the global environment on exit. If objects exist prior to calling this
-#' function (i.e. \code{exists(OBJECT)} returns TRUE) then the value will be reset
-#' to it's state prior to calling \code{run_mvp}.
+#' the \code{...} parameter to the application. The app is evaluated in its own
+#' environment (whose parent gives access to MVPapp and its key dependencies),
+#' so neither the global environment nor the search path is modified. Global
+#' options changed for the app are restored when it closes.
 #'
 #' @param appDir the directory of the application to run.
 #' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove "For Internal Use Only" text in simulated plots.
@@ -46,15 +45,18 @@
 #' which is located inside the folder of where the package was installed, and modify
 #' standalone_mode = TRUE (and setting these options there as required).
 #'
+#' @returns Called for its side effect of launching the Shiny app. Returns the
+#'   value returned by [shiny::runApp()] invisibly, after the app is closed.
+#'
 #' @examples
-#' \dontrun{
+#' if (interactive()) {
 #' run_mvp(insert_watermark = FALSE) # remove watermarks
 #' run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to shinyApp)
 #' run_mvp(authentication_code = "some_password") # Password-lock the site,
 #' # could be useful in deployment
 #' run_mvp(pw_models_path = "path/to/your/private/models.R") # see
 #' # "shiny/passworded_models_example.R" on how to set one up
-#' run_mvp(llm_service = "Claude", model_anthropic = "claude-sonnet-4-6", temperature = 0) # Uses Claude only with reproducible results
+#' run_mvp(llm_choices = "Claude", model_anthropic = "claude-sonnet-4-6", temperature = 0) # Uses Claude only with reproducible results
 #' }
 #' @note
 #' Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
@@ -120,86 +122,43 @@ run_mvp <- function(appDir                  = system.file("shiny", package = "MV
     show_debugging_msg      = show_debugging_msg
   )
 
-  shinyApp_args <- list()
-  runApp_args   <- list()
-
   # Handle additional parameters passed via ...
   additional_params <- list(...)
-  runApp_params <- names(formals(shiny::runApp))
-  shinyApp_params <- names(formals(shiny::shinyApp))
+  runApp_params     <- names(formals(shiny::runApp))
+  shinyApp_params   <- names(formals(shiny::shinyApp))
 
   runApp_args <- additional_params[names(additional_params) %in% runApp_params]
-  shinyApp_args <- additional_params[names(additional_params) %in% shinyApp_params]
-  app_args <- params[!names(params) %in% c(runApp_params, shinyApp_params)]
+  extra_app_args <- additional_params[!names(additional_params) %in% c(runApp_params, shinyApp_params)]
+  params <- c(params, extra_app_args[!names(extra_app_args) %in% names(params)])
 
-  # Set parameters in the global environment
-  reset_params <- list()
-  added_params <- character()  # Track which parameters are added to the global environment
+  # Evaluate the app in its own environment instead of the global environment.
+  # Its parent exposes MVPapp (including internal helpers), the package
+  # datasets, and the exports of shiny, shinyBS, dplyr, mrgsolve, ggplot2,
+  # rlang and magrittr, without attaching any packages.
+  app_env <- new.env(parent = mvp_deps_env())
   for (i in names(params)) {
     if (!is.null(params[[i]])) {
-      if (i %in% ls_all()) {
-        reset_params[[i]] <- get(i)
-      }
-      .GlobalEnv[[i]] <- params[[i]]
-      added_params <- c(added_params, i)  # Track added parameter
+      assign(i, params[[i]], envir = app_env)
     }
   }
 
-  # Ensure cleanup on exit
-  on.exit({
-    # Remove only the objects that were added
-    if (length(added_params) > 0) {
-      rm(list = added_params, envir = .GlobalEnv)
-    }
-    # Restore pre-existing objects
-    for (i in names(reset_params)) {
-      .GlobalEnv[[i]] <- reset_params[[i]]
-    }
-  }, add = TRUE)
+  # shinyBS registers its JS/CSS resource path when attached; register it
+  # explicitly so popovers work without calling library(shinyBS)
+  shiny::addResourcePath("sbs", system.file("www", package = "shinyBS"))
 
-  # Loading packages here to side-step JS compatibility issues
-  library(shiny) # 1.7.5.1
-  library(shinyBS) # 0.61.1 # this needs to be reloaded to make popovers work
-  library(dplyr) # 1.1.3 # required for data code editor
-  library(mrgsolve) # 1.5.2 # required for sim code editor
+  old_options <- options(
+    scipen = 3, # avoid scientific notation, good up until 3e-07 / 1e+08
+    DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = TRUE), # dataTable options
+    shiny.maxRequestSize = max_dataset_size * 1024^2 # Maximum file upload size
+  )
+  on.exit(options(old_options), add = TRUE)
 
-  default_options <- options()
-  options(scipen=3) # Set the penalty to a high value to avoid scientific notation, this value is good up until 3e-07 / 1e+08
-  options(DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = T)) # dataTable options
-  options(shiny.maxRequestSize = max_dataset_size*1024^2) # Maximum file upload size
-
-  runApp_args$appDir <- appDir
-  do.call(shiny::runApp, runApp_args)
-}
-
-#' List All Objects
-#'
-#' This function returns a character vector of all objects available. Unlike
-#' [ls()] this function will loop through all environments from the current
-#' environment to \code{.GlobalEnv}. This will also verify that the object
-#' is indeed available from the current environment using the [exists()]
-#' function call.
-#'
-#' @return a character vector with the name of all objects available.
-#' @note
-#' Copied from https://github.com/jbryer/ShinyDemo, R/ls_all.R
-ls_all <- function() {
-  objs <- character()
-  i <- 1
-  repeat {
-    local_objs <- ls(parent.frame(i))
-    # Confirm the object is available from the current environment
-    for(j in local_objs) {
-      if(exists(j)) {
-        objs <- c(objs, j)
-      }
-    }
-    if(identical(parent.frame(i), .GlobalEnv)) {
-      break
-    } else {
-      i <- i + 1
-    }
+  app_file <- file.path(appDir, "app.R")
+  if (!file.exists(app_file)) {
+    stop("Could not find app.R in appDir: ", appDir, call. = FALSE)
   }
-  return(objs)
-}
+  app <- eval(parse(file = app_file, keep.source = FALSE, encoding = "UTF-8"), envir = app_env)
 
+  runApp_args$appDir <- app
+  invisible(do.call(shiny::runApp, runApp_args))
+}

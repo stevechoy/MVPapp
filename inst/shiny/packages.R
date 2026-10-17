@@ -1,6 +1,7 @@
 required_packages <- list(
   bslib = "0.5.1",
   cowplot = NULL, 
+  curl = NULL,
   data.table = "1.14.2", 
   dplyr = NULL,
   DT = NULL, 
@@ -12,7 +13,9 @@ required_packages <- list(
   grid = NULL, 
   gridExtra = NULL, 
   htmltools = "0.5.5",
+  httr2 = NULL,
   magrittr = NULL,
+  mime = NULL,
   mrgsolve = "1.5.0",
   #nonmem2rx, # suggested, not required
   #pdftools, # suggested, not required
@@ -53,16 +56,14 @@ for (pkg in names(required_packages)) {
   }
 }
 
-# If not all packages are up to date
+# If not all packages are up to date, stop with instructions instead of
+# installing anything automatically
 if (length(packages_to_update) > 0) {
-  cat("The following packages are missing or outdated:\n")
-  print(packages_to_update)
-  update_choice <- readline(prompt = "Would you like to install/update them? [yes/no]: ")
-  
-  if (tolower(update_choice) != "yes") {
-    stop("Update process canceled by user. App not started")
-  }
-  
-  install.packages(packages_to_update, dependencies = TRUE)
+  stop(
+    "The following packages are missing or outdated: ",
+    paste(packages_to_update, collapse = ", "), "\n",
+    "Please install/update them before launching the app, e.g.:\n",
+    "install.packages(c(", paste0('"', packages_to_update, '"', collapse = ", "), "))",
+    call. = FALSE
+  )
 }
-

@@ -293,9 +293,9 @@ do_data_page_plot <- function(nmd,
       boxplot      <- TRUE
       can_quantize <- TRUE
       nmd_q  <- calculate_quantiles(df = nmd, xvar = x_axis_orig, num_quantiles = num_quantiles)
-      if (debug) print(knitr::kable(nmd_q))
+      if (debug) message(paste(utils::capture.output(print(nmd_q)), collapse = "\n"))
       nmd    <- categorize_xvar(df = nmd, quantiles_df = nmd_q, xvar = x_axis_orig)
-      if (debug) print(knitr::kable(dplyr::count(nmd, Quantile)))
+      if (debug) message(paste(utils::capture.output(print(dplyr::count(nmd, Quantile))), collapse = "\n"))
       x_label <- paste0(x_axis, " Quantiles")
       x_axis  <- "Quantile"
     } else {
@@ -1304,8 +1304,8 @@ run_single_sim <- function(input_model_object,
   
   ## Globally save simulation data for easy export
   #last_input_model_object <<- input_model_object
-  last_ev_df              <<- ev_df
-  last_ev_df_orig         <<- ev_df_orig
+  .mvp_state$last_ev_df      <- ev_df
+  .mvp_state$last_ev_df_orig <- ev_df_orig
   #last_sampling_times     <<- sampling_times
   #last_ext_db             <<- ext_db
   #last_seed               <<- seed
@@ -1901,7 +1901,7 @@ extract_matrix <- function(input_model_object,
   }
 
   if(debug) {
-    print(omsm_matrix)
+    message(paste(utils::capture.output(print(omsm_matrix)), collapse = "\n"))
   }
 
   if(remove_upper_tri) {
@@ -3781,6 +3781,7 @@ tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colCon
                              timeUnit = "h", concUnit = "ug/L", down = "Linear", R2ADJ = 0,
                              MW = 0, SS = FALSE, iAUC = "", excludeDelta = 1, show_progress = TRUE)
 {
+  rlang::check_installed(c("ncar", "NonCompart"), reason = "to use `tblNCA_progress()`.")
   class(concData) = "data.frame"
   nKey = length(key)
   for (i in 1:nKey) {
@@ -3850,6 +3851,7 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
                        excludeDelta = 1, watermark = TRUE, internal_version = TRUE, debug_msg = TRUE,
                        show_progress = TRUE)
 {
+  rlang::check_installed(c("ncar", "NonCompart"), reason = "to use `pdfNCA_wm()`.")
 
   if(debug_msg) {
     message(fileName)
@@ -3858,7 +3860,8 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
 
   if(!internal_version) { # Workaround for AWS hosting
     #fileName <- paste0("/tmp/", fileName) # didn't work
-    setwd("/tmp") # Trying setwd method
+    old_wd <- setwd(tempdir()) # Write to the session temp directory; restored on exit
+    on.exit(setwd(old_wd), add = TRUE)
   }
 
   if(debug_msg) {
@@ -3867,6 +3870,7 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
 
   class(concData) = "data.frame"
   defPar = par(no.readonly = TRUE)
+  on.exit(par(defPar), add = TRUE)
 
   if(debug_msg) {
     message("Trying to open pdf device")
@@ -4115,7 +4119,7 @@ generate_dosing_regimens <- function(amt1, delay_time1, cmt1, tinf1, total1, ii1
 
   if(debug) {
     message("Dosing regimen generated")
-    print(total_doses)
+    message(paste(utils::capture.output(print(total_doses)), collapse = "\n"))
   }
 
   return(total_doses)
@@ -5842,7 +5846,6 @@ safely_incProgress <- function(amount, detail = NULL) {
 #' @importFrom httr2 req_auth_bearer_token with_verbosity
 #' @importFrom curl form_file
 #' @importFrom mime guess_type
-#' @importFrom pdftools pdf_text
 #' @importFrom stats setNames
 #' @importFrom rlang %||%
 #' @export
@@ -5884,6 +5887,7 @@ translate_model_code <- function(ready_path,
                                  max_tokens = 128000,
                                  debug = TRUE
 ) {
+  rlang::check_installed("ellmer", reason = "to use `translate_model_code()`.")
 
   file_path <- ready_path
   file_name <- file_name %||% basename(ready_path)
@@ -5918,7 +5922,7 @@ translate_model_code <- function(ready_path,
                        "AWS Bedrock"       = model_aws)
   
   if(debug) {
-    print(paste0("translate_model_code: 0) model_name is: ", model_name))
+    message(paste0("translate_model_code: 0) model_name is: ", model_name))
   }
   
   ## Allow list to explicitly list some popular legacy models that supports temperature settings
@@ -5934,7 +5938,7 @@ translate_model_code <- function(ready_path,
   }
   
   if(debug) {
-    print("translate_model_code: 1) API key check")
+    message("translate_model_code: 1) API key check")
   }
   
   if(model_lang == "mrgsolve") {
@@ -5980,7 +5984,7 @@ translate_model_code <- function(ready_path,
   }
   
   if(debug) {
-    print("translate_model_code: 2) result tryCatch")
+    message("translate_model_code: 2) result tryCatch")
   }
   
   # --- Initialize output variables outside tryCatch for clarity ---
@@ -6015,7 +6019,7 @@ translate_model_code <- function(ready_path,
 
       branch_result <- if (service == "PROD" | service == "EXP" | service == "PMx Co-Modeler" | service == "Fast") {
         
-        if(debug) print("translate_model_code: 3) Dify branch")
+        if(debug) message("translate_model_code: 3) Dify branch")
         run_dify_chat(
           conversation_id    = NULL,
           instruction_prompt = instruction_prompt,
@@ -6033,7 +6037,7 @@ translate_model_code <- function(ready_path,
         )
       } else {
         
-        if(debug) print("translate_model_code: 3) Ellmer branch")
+        if(debug) message("translate_model_code: 3) Ellmer branch")
         run_ellmer_chat(
           chat_obj           = NULL,
           service            = service,
@@ -6050,11 +6054,11 @@ translate_model_code <- function(ready_path,
         )
       } # end BRANCH B
       
-      if(debug) {branch_model <<- branch_result}
+      if(debug) {.mvp_state$branch_model <- branch_result}
 
       elapsed <- round(as.numeric(difftime(Sys.time(), start_time, units = "secs")), 1)
       
-      if(debug) print(paste0("translate_model_code: raw answer: ", branch_result$answer)) # Raw answer before cleaning
+      if(debug) message(paste0("translate_model_code: raw answer: ", branch_result$answer)) # Raw answer before cleaning
       
       # Return EVERYTHING needed after the tryCatch as a named list
       list(
@@ -6113,7 +6117,7 @@ translate_model_code <- function(ready_path,
       chat_obj        = result$chat_obj
     )
     
-    if(debug) llm_result <<- list_of_output
+    if(debug) .mvp_state$llm_result <- list_of_output
     
     list_of_output$answer <- clean_llm_response(list_of_output$answer)
     
@@ -6208,6 +6212,7 @@ refine_model_code <- function(model_code,
                               max_tokens = 128000,
                               debug = TRUE
 ) {
+  rlang::check_installed("ellmer", reason = "to use `refine_model_code()`.")
   
   model_name <- switch(service,
                        "PROD"              = "[PROD model]",
@@ -6276,7 +6281,7 @@ refine_model_code <- function(model_code,
     }
   }
   
-  if(debug) {print(paste0("refine_model_code: 1) ", retry_prompt))}
+  if(debug) {message(paste0("refine_model_code: 1) ", retry_prompt))}
   
   result <- tryCatch({
     
@@ -6323,7 +6328,7 @@ refine_model_code <- function(model_code,
         )
       }
       
-      if(debug) {branch_refine <<- branch_result}
+      if(debug) {.mvp_state$branch_refine <- branch_result}
       
       if(!feedback_success) {
         safely_incProgress(segment_width * 0.33, detail = paste("Cleaning response..."))
@@ -6366,7 +6371,7 @@ refine_model_code <- function(model_code,
       round(usage_info$total / elapsed, 1)
     } else { "N/A" }
     
-    if(debug) print(paste0("refine_model_code: 4) conversation_id: ", result$conversation_id))
+    if(debug) message(paste0("refine_model_code: 4) conversation_id: ", result$conversation_id))
     
     if(display_info) {
       safely_showNotification(
@@ -6394,8 +6399,8 @@ refine_model_code <- function(model_code,
     )
     
     # Only assign globally during development
-    if(debug && !feedback_success) llm_refine <<- list_of_output
-    if(debug && feedback_success) llm_success <<- list_of_output
+    if(debug && !feedback_success) .mvp_state$llm_refine <- list_of_output
+    if(debug && feedback_success) .mvp_state$llm_success <- list_of_output
     
     list_of_output$answer <- clean_llm_response(list_of_output$answer)
     
@@ -6487,7 +6492,6 @@ clean_llm_response <- function(final_answer) {
 #'   \code{--- FILE CONTENT START ---} and \code{--- FILE CONTENT END ---}
 #'   delimiters
 #'
-#' @importFrom pdftools pdf_text
 #' @export
 #-------------------------------------------------------------------------------
 
@@ -6497,15 +6501,16 @@ extract_file_content <- function(file_path,
                                  instruction_prompt,
                                  debug = TRUE) {
   
-  if(debug) print("extract_file_content: parsing file locally")
+  if(debug) message("extract_file_content: parsing file locally")
   
   extracted_text <- if(detected_type == "application/pdf") {
+    rlang::check_installed("pdftools", reason = "to extract text from PDF files.")
     paste(pdftools::pdf_text(file_path), collapse = "\n\n")
   } else {
     paste(readLines(file_path, warn = FALSE), collapse = "\n")
   }
   
-  if(debug) print(paste0("Extracted text length: ", nchar(extracted_text), " characters"))
+  if(debug) message(paste0("Extracted text length: ", nchar(extracted_text), " characters"))
   
   return(extracted_text)
   # paste0(
@@ -6573,11 +6578,11 @@ run_dify_chat <- function(instruction_prompt,
   
   chat_body <- if(locally_parse_file) {
     
-    if(debug) print("run_dify_chat: locally_parse_file == TRUE")
+    if(debug) message("run_dify_chat: locally_parse_file == TRUE")
     
     if(!is.null(conversation_id)) {
       
-      if(debug) print("run_dify_chat: conversation_id is not NULL")
+      if(debug) message("run_dify_chat: conversation_id is not NULL")
       
       list(
         query = instruction_prompt,
@@ -6605,7 +6610,7 @@ run_dify_chat <- function(instruction_prompt,
       httr2::req_perform() %>%
       httr2::resp_body_json()
     
-    if(debug) print("run_dify_chat: upload_data formed")
+    if(debug) message("run_dify_chat: upload_data formed")
     
     list(
       inputs = list(
@@ -6628,7 +6633,7 @@ run_dify_chat <- function(instruction_prompt,
     )
   }
   
-  if(debug) print("run_dify_chat: sending request")
+  if(debug) message("run_dify_chat: sending request")
   
   chat_resp <- httr2::request(api_chat) %>%
     httr2::req_headers(
@@ -6640,7 +6645,7 @@ run_dify_chat <- function(instruction_prompt,
     httr2::req_perform() %>%
     httr2::resp_body_json()
   
-  if(debug) dify_chat_response <<- chat_resp
+  if(debug) .mvp_state$dify_chat_response <- chat_resp
   
   list(
     answer          = chat_resp$answer,
@@ -6710,6 +6715,7 @@ run_ellmer_chat <- function(service,
                             chat_obj            = NULL,   # NEW: for context reuse
                             internal_version    = TRUE,
                             debug = TRUE) {
+  rlang::check_installed("ellmer", reason = "to use `run_ellmer_chat()`.")
   
   apollo_url <- ifelse(internal_version, Sys.getenv("APOLLO_BASE_URL"), Sys.getenv("APOLLO_BASE_URL_EXT"))
   
@@ -6753,11 +6759,11 @@ run_ellmer_chat <- function(service,
   }
   
   final_answer <- if(locally_parse_file) {
-    if(debug) print(paste0("run_ellmer_chat: ", service, " text-only"))
+    if(debug) message(paste0("run_ellmer_chat: ", service, " text-only"))
     chat_obj$chat(instruction_prompt, echo = FALSE)
     
   } else {
-    if(debug) print(paste0("run_ellmer_chat: ", service, " with file upload"))
+    if(debug) message(paste0("run_ellmer_chat: ", service, " with file upload"))
     
     upload_file <- switch(service,
                           "Gemini"            = ellmer::content_pdf_file(file_path),
@@ -6774,14 +6780,14 @@ run_ellmer_chat <- function(service,
     )
     
     if(debug && service %in% c("Claude")) {
-      print(paste0("run_ellmer_chat: upload_file - ", upload_file@uri, ", type: ", upload_file@mime_type))
+      message(paste0("run_ellmer_chat: upload_file - ", upload_file@uri, ", type: ", upload_file@mime_type))
     }
     chat_obj$chat(instruction_prompt, upload_file, echo = FALSE)
   }
   
-  if(debug) { print("run_ellmer_chat: chat_obj:"); print(chat_obj) }
+  if(debug) { message("run_ellmer_chat: chat_obj:"); message(paste(utils::capture.output(print(chat_obj)), collapse = "\n")) }
   
-  if(debug) ellmer_chat_response <<- final_answer
+  if(debug) .mvp_state$ellmer_chat_response <- final_answer
   
   usage_df <- chat_obj$get_tokens()
   
@@ -7055,7 +7061,6 @@ prepare_uploaded_files <- function(files,
 #' \code{\link[shiny]{showNotification}} for the notification system,
 #' \code{\link[pdftools]{pdf_combine}} for the underlying PDF merge.
 #'
-#' @importFrom pdftools pdf_combine
 #' @importFrom shiny showNotification
 #'
 #' @export
@@ -7094,6 +7099,7 @@ combine_uploaded_files <- function(file_paths, file_names) {
   
   # ── PDF ──────────────────────────────────────────────────────────────────────
   if (ext == ".pdf") {
+    rlang::check_installed("pdftools", reason = "to combine PDF files.")
     output_path <- tempfile(fileext = ".pdf")
     pdftools::pdf_combine(file_paths, output = output_path)
     return(output_path)
