@@ -62,7 +62,15 @@ if (!exists("run_single_sim", mode = "function")) {
   library(mrgsolve)
 
   # Load MVPapp's functions and datasets into this app's environment
-  for (r_file in list.files(file.path(pkg_root, "R"), pattern = "\\.R$", full.names = TRUE)) {
+  .mvp_source_version <- read.dcf(file.path(pkg_root, "DESCRIPTION"), fields = "Version")[1, 1]
+  # (in the Collate order from DESCRIPTION, as when the package is installed)
+  r_files <- read.dcf(file.path(pkg_root, "DESCRIPTION"), fields = "Collate")[1, 1]
+  r_files <- if (is.na(r_files)) {
+    list.files(file.path(pkg_root, "R"), pattern = "\\.R$")
+  } else {
+    gsub("['\"]", "", scan(text = r_files, what = "", quiet = TRUE))
+  }
+  for (r_file in file.path(pkg_root, "R", r_files)) {
     sys.source(r_file, envir = environment())
   }
   for (rda_file in list.files(file.path(pkg_root, "data"), pattern = "\\.rda$", full.names = TRUE)) {

@@ -164,3 +164,22 @@ fct_relevel <- function(x, ...) {
   front <- intersect(unique(c(...)), levels(x))
   factor(x, levels = c(front, setdiff(levels(x), front)))
 }
+
+#-------------------------------------------------------------------------------
+#' @name mvp_version
+#'
+#' @title Version of the running MVPapp
+#'
+#' @description Returns the installed package version, or, when the app is
+#'   launched from source without installing MVPapp (e.g. via
+#'   `shiny::runGitHub()`), the version in that source's DESCRIPTION, which
+#'   `inst/shiny/app.R` stores as `.mvp_source_version`.
+#'
+#' @returns A character string, e.g. "1.0.0".
+#' @noRd
+#-------------------------------------------------------------------------------
+mvp_version <- function() {
+  v <- get0(".mvp_source_version", envir = environment(mvp_version), inherits = FALSE)
+  if (!is.null(v)) return(v)
+  tryCatch(as.character(utils::packageVersion("MVPapp")), error = function(e) "unknown")
+}

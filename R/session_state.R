@@ -21,7 +21,7 @@
 #' @noRd
 get_session_state <- function(input, rv, uploaded_data) {
   list(
-    version = "0.4.5",  # tag with app version for forward-compat checks
+    version = mvp_version(),  # tag with app version for forward-compat checks
     saved_at = Sys.time(),
     
     # --- Model code & settings ---

@@ -56,3 +56,7 @@ test_that("mvp_safely() returns result or error instead of throwing", {
   expect_s3_class(bad$error, "error")
   expect_identical(MVPapp:::safely_parse(text = "1 +")$result, NULL)
 })
+
+test_that("mvp_version() reports the installed version (used to tag saved sessions)", {
+  expect_identical(MVPapp:::mvp_version(), as.character(utils::packageVersion("MVPapp")))
+})
