@@ -2,7 +2,7 @@
 title: "Automatic Model Translation"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{automatic-translation}
+  %\VignetteIndexEntry{Automatic Model Translation}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

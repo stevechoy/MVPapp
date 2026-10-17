@@ -6,7 +6,6 @@
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
-^www$
 ^\.github$
 ^\.Rprofile$
 ^llm-eval$
@@ -15,3 +14,4 @@
 ^\.RData$
 ^\.Rhistory$
 ^LICENSE\.md$
+^man/figures/readme$

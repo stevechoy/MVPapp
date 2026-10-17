@@ -99,7 +99,7 @@ whenever they change certain aspects of the model. This page should be
 the **homepage** as other pages of the app inherit settings from this
 page (e.g. dosing and axis choices).
 
-![](www/simtab1.png)
+![](man/figures/readme/simtab1.png)
 
 1.  Navigate to the “Select Model 1” box on the left hand side and
     choose a template model from the drop-down list, or upload your own
@@ -148,7 +148,7 @@ page (e.g. dosing and axis choices).
       appearance. Click on the “+” icon on the right hand side to expand
       it.
 
-![](www/2models1.png)
+![](man/figures/readme/2models1.png)
 
 7.  In general, most plots can be interactive (using the `plotly`
     package), which allows zooming, panning, drawing etc, controlled
@@ -166,7 +166,7 @@ page (e.g. dosing and axis choices).
       with a simulation-ready R script for 100% reproducibility** if
       required.
 
-![](www/plotlytoolbar.png)
+![](man/figures/readme/plotlytoolbar.png)
 
 ### Uploading Datasets and Data Exploration
 
@@ -193,7 +193,7 @@ rename these columns using the code editor.
     Results and plots per subject can be downloaded by the buttons at
     the bottom of the page.
 
-![](www/ncaexample.png)
+![](man/figures/readme/ncaexample.png)
 
 4.  Quick data exploration are provided by the “General Plot”, “Ind.
     Plot”, “Corr. Plot”, and “Covariate Histograms” tabs (tip: clicking
@@ -204,7 +204,7 @@ General plots are flexible plots that can handle continuous/continuous,
 continuous/discrete (Box plot option), and discrete/discrete (Box plot
 option) types of data.
 
-![](www/facet_plot.png)
+![](man/figures/readme/facet_plot.png)
 
 Settings from General Plots will be carried over to the “Ind. Plot”,
 where users can explore individual profiles in more detail. Dosing
@@ -213,24 +213,24 @@ each plot when the Dose Column is provided. There are also options to
 highlight values and automatically identify potential outliers according
 to a stratification group. LLOQ information can also be inserted.
 
-![](www/ind_plot.png)
+![](man/figures/readme/ind_plot.png)
 
 Correlation plots are grouped by ID and are useful to explore potential
 correlations between covariates.
 
-![](www/corr_plot.png)
+![](man/figures/readme/corr_plot.png)
 
 Covariate histogram plots are a quick way to check for outliers in the
 datasets (plots are distinct by ID, which usually displays the
 baseline).
 
-![](www/hist.png)
+![](man/figures/readme/hist.png)
 
 **Note: once a dataset is uploaded, its display can be toggled on other
 pages by checking the “Overlay Dataset” checkbox in the “Plotting
 Options” in each respective page!**
 
-![](www/overlayexp.png)
+![](man/figures/readme/overlayexp.png)
 
 ### Parameter Sensitivity Analysis
 
@@ -262,7 +262,7 @@ previously defined model settings and making them available (i.e. in
 6.  Simulations of the middle profile, in addition to its derived
     metrics can be downloaded in the Table page.
 
-![](www/psaexample.png)
+![](man/figures/readme/psaexample.png)
 
 #### Assessing All Structural Parameters
 
@@ -301,7 +301,7 @@ to rank parameters of relative importance, e.g. PBPK or QSP models.
     - A new set of Batch Runs should be generated whenever the Batch Run
       Parameter Table is changed.
 
-![](www/tornado3.png)
+![](man/figures/readme/tornado3.png)
 
 For spider plots (right hand side tab), make sure that the “Gradients”
 option on the left hand side is checked. 6 additional simulations per
@@ -311,7 +311,7 @@ sensitivity. If the user has large ranges between the upper and lower
 bound, or has manually edited any parameter value, the “Normalize Fold
 Change” option may be used for improved visuals.
 
-![](www/spider.png)
+![](man/figures/readme/spider.png)
 
 ### Simulations with Variability
 
@@ -349,7 +349,7 @@ live)!
       simulations.  
     - Histogram of weight and age can be viewed in the “Plots” sub-tab.
 
-![](www/demog1.png)
+![](man/figures/readme/demog1.png)
 
 2.  Custom covariate distributions can be defined (e.g. `EGFR`) and
     inserted similarly together with the database shown in step 1). Up
@@ -376,7 +376,7 @@ live)!
       covariates which found a match in the model code (thus are
       replaced accordingly).
 
-![](www/egfrexample2.png)
+![](man/figures/readme/egfrexample2.png)
 
 #### Assessing Variability
 
@@ -399,7 +399,7 @@ matrices has reverted to its last known state.
     - By default, the last time is used. However this can be changed
       using the “At Time (Original Scale)” option.
 
-![](www/varplot.png)
+![](man/figures/readme/varplot.png)
 
 #### Comparing Exposure Differences
 
@@ -419,7 +419,7 @@ demographics. 
     available to further customize the plot, allowing great
     “off-the-shelf” graphics to be downloaded for presentations.
 
-![](www/expplot.png)
+![](man/figures/readme/expplot.png)
 
 #### Saving and Restoring Sessions
 
@@ -435,7 +435,7 @@ local execution to fully reproduce the simulations. A built-in R script
 is also provided for ease of transfer into the user’s preferred
 workflow, allowing it to be easily QC’d. 
 
-![](www/session.png)
+![](man/figures/readme/session.png)
 
 ## Extended Features and Vignettes
 
