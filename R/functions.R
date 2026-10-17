@@ -7,7 +7,7 @@
 #' today_numeric()
 #' }
 #' @importFrom magrittr %>% %<>% %T>% %$%
-#' @export
+#' @noRd
 today_numeric  <- function() {
   format(Sys.Date(), "%Y%m%d") %>% as.numeric()
 }
@@ -22,6 +22,7 @@ today_numeric  <- function() {
 #' @importFrom stats as.formula coef lm
 #' @returns A character string containing the expression of the R2 coefficient
 #' for use in ggplot labels or title
+#' @noRd
 #---------------------------------------------------------------------------
 
 lm_eqn_old <- function(df, x, y){
@@ -83,7 +84,7 @@ lm_eqn_old <- function(df, x, y){
 #' @returns A dataframe containing the column "label" containing the string
 #' formula of R2 coefficient for use in ggplot labels or title
 #' @importFrom dplyr group_by summarise if_else sym syms case_when n
-#' @export
+#' @noRd
 #---------------------------------------------------------------------------
 
 lm_eqn <- function(df, facet_name, x, y) {
@@ -154,7 +155,7 @@ lm_eqn <- function(df, facet_name, x, y) {
 #' @returns A ggplot object with the formula placed on the top
 #' @importFrom ggplot2 ggplot_build annotate
 #' @importFrom stats median
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 add_linear_regression_formula <- function(p) {
   data <- ggplot2::ggplot_build(p)$data[[1]]
@@ -179,7 +180,7 @@ add_linear_regression_formula <- function(p) {
 #' @param end the last exponent
 #'
 #' @returns a numeric
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 generate_log_breaks <- function(base_values, start, end) {
@@ -193,22 +194,22 @@ generate_log_breaks <- function(base_values, start, end) {
   return(breaks)
 }
 
-#' @keywords internal
+#' @noRd
 logbreaks_y <- generate_log_breaks(c(1,3), -10, 10) %>% signif(digits = 2)
-#' @keywords internal
+#' @noRd
 logbreaks_x <- logbreaks_y
-#' @keywords internal
+#' @noRd
 logbreaks_y_log10 <- generate_log_breaks(c(1), -10, 10) %>% signif(digits = 2)
-#' @keywords internal
+#' @noRd
 logbreaks_x_log10 <- logbreaks_y_log10
-#' @keywords internal
+#' @noRd
 logbreaks_y_minor <- generate_log_breaks(c(1:9), -10, 10) %>% signif(digits = 2)
-#' @keywords internal
+#' @noRd
 logbreaks_x_minor <- logbreaks_y_minor
 
-#' @keywords internal
+#' @noRd
 log10_axis_label <- rep("", length(logbreaks_y_minor))
-#' @keywords internal
+#' @noRd
 log10_axis_label[seq(1, length(logbreaks_y_minor), 9)] <- as.character(logbreaks_y_minor)[seq(1, length(logbreaks_y_minor), 9)] # every 9th tick is labelled
 
 
@@ -254,7 +255,7 @@ log10_axis_label[seq(1, length(logbreaks_y_minor), 9)] <- as.character(logbreaks
 #' @importFrom stats setNames time
 #' @importFrom dplyr filter distinct sym group_by summarise across all_of count ungroup mutate
 #' @importFrom tibble glimpse
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 do_data_page_plot <- function(nmd,
@@ -594,7 +595,7 @@ do_data_page_plot <- function(nmd,
 #' @importFrom tibble glimpse
 #' @importFrom forcats fct_inorder
 #' @importFrom purrr map_chr
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 do_data_page_ind_plot <- function(nmd,
@@ -1011,7 +1012,7 @@ do_data_page_ind_plot <- function(nmd,
 #' @param ... other parameters to pass onto geoms
 #'
 #' @returns a ggplot object
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 lowerFn <- function(data, mapping, method = "lm", ...) { ## Plots linear regression of the continuous
@@ -1042,7 +1043,7 @@ lowerFn <- function(data, mapping, method = "lm", ...) { ## Plots linear regress
 #' @importFrom dplyr distinct select all_of
 #' @importFrom GGally ggpairs wrap
 #' @importFrom ggplot2 theme_bw
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 draw_correlation_plot <- function(input_df,
@@ -1099,7 +1100,7 @@ draw_correlation_plot <- function(input_df,
 #' * `error`: The error that occurred, or `NULL` if no error occurred.
 #'
 #' @seealso `mrgsolve::qsim`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_qsim <- purrr::safely(mrgsolve::qsim)
@@ -1115,7 +1116,7 @@ safely_qsim <- purrr::safely(mrgsolve::qsim)
 #' * `error`: The error that occurred, or `NULL` if no error occurred.
 #'
 #' @seealso `mrgsolve::mrgsim_df`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_mrgsim_df <- purrr::safely(mrgsolve::mrgsim_df)
@@ -1131,7 +1132,7 @@ safely_mrgsim_df <- purrr::safely(mrgsolve::mrgsim_df)
 #' * `error`: The error that occurred, or `NULL` if no error occurred.
 #'
 #' @seealso `mrgsolve::mrgcode`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_mcode <- purrr::safely(mrgsolve::mcode)
@@ -1165,7 +1166,7 @@ safely_mcode <- purrr::safely(mrgsolve::mcode)
 #' @importFrom dplyr mutate select rename relocate
 #' @importFrom data.table merge.data.table fwrite fread
 #' @importFrom shiny showNotification
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 run_single_sim <- function(input_model_object,
@@ -1332,7 +1333,7 @@ run_single_sim <- function(input_model_object,
 #' @param seed.number    seed number
 #' @returns a dataframe with nsubj number of rows
 #' @importFrom dplyr slice_sample arrange filter
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 sample_age_wt <- function(df_name     = "None",
@@ -1441,7 +1442,7 @@ sample_age_wt <- function(df_name     = "None",
 #' @importFrom stats median quantile sd
 #' @importFrom purrr modify_if
 #' @importFrom data.table as.data.table setDT setcolorder
-#' @export
+#' @noRd
 #=============================================================================
 
 calc_summary_stats <- function(orig_data,
@@ -1556,7 +1557,7 @@ calc_summary_stats <- function(orig_data,
 #' @returns a list containing X number of dataframes for each unique value of group_by_name
 #' @importFrom dplyr mutate mutate_all distinct select sym rename one_of
 #' @importFrom tidyr everything pivot_longer pivot_wider
-#' @export
+#' @noRd
 #=============================================================================
 
 calc_summary_stats_as_list <- function(nca_df,
@@ -1628,7 +1629,7 @@ calc_summary_stats_as_list <- function(nca_df,
 #' @param na.rm Set to TRUE to remove NAs
 #'
 #' @returns A numeric
-#' @export
+#' @noRd
 #=============================================================================
 
 gm_mean = function(x, na.rm=TRUE){
@@ -1644,7 +1645,7 @@ gm_mean = function(x, na.rm=TRUE){
 #' @param na.rm Set to TRUE to remove NAs
 #'
 #' @returns A numeric
-#' @export
+#' @noRd
 #=============================================================================
 
 gm_mean_cv = function(x, na.rm = TRUE) {
@@ -1673,7 +1674,7 @@ gm_mean_cv = function(x, na.rm = TRUE) {
 #' @returns a cowplot ggplot object
 #' @importFrom dplyr case_when
 #' @importFrom cowplot get_legend plot_grid
-#' @export
+#' @noRd
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 print_demog_plots <- function(data) {
@@ -1766,7 +1767,7 @@ print_demog_plots <- function(data) {
 #' @param lo_percentile  Default 0.025, (2.5th percentile)
 #' @param hi_percentile  Default 0.975, (97.5th percentile)
 #' @returns a ggplot object
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 print_cov_plot <- function(data, lo_percentile = 0.025, hi_percentile = 0.975) {
@@ -1811,6 +1812,7 @@ print_cov_plot <- function(data, lo_percentile = 0.025, hi_percentile = 0.975) {
 #'
 #' @returns a ggplot object
 #' @importFrom dplyr case_when mutate filter
+#' @noRd
 #-------------------------------------------------------------------------------
 
 compare_dist_histogram <- function(df, variable_name, variable_label,
@@ -1870,7 +1872,7 @@ compare_dist_histogram <- function(df, variable_name, variable_label,
 #' @param debug               When TRUE, show debugging messages
 #'
 #' @returns a matrix
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 extract_matrix <- function(input_model_object,
@@ -1948,7 +1950,7 @@ extract_matrix <- function(input_model_object,
 #'        is created.
 #'
 #' @returns a list with each element containing a block matrix
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 reconstruct_matrices <- function(input_model_object,
@@ -2030,7 +2032,7 @@ reconstruct_matrices <- function(input_model_object,
 #' @param debug                When TRUE, show debugging messages
 #'
 #' @returns a mrgmod object
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 update_variability <- function(input_model_object,
@@ -2074,7 +2076,7 @@ update_variability <- function(input_model_object,
 #'
 #' @returns logical (TRUE/FALSE), where TRUE means pass (valid matrix)
 #' @importFrom stringr str_detect
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 check_matrix <- function(input_model_object,
@@ -2140,7 +2142,7 @@ check_matrix <- function(input_model_object,
 #'
 #' @returns a dataframe
 #' @importFrom dplyr group_by mutate ungroup
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 quantile_output <- function(iiv_sim_input,
@@ -2169,7 +2171,7 @@ quantile_output <- function(iiv_sim_input,
 #' * `error`: The error that occurred, or `NULL` if no error occurred.
 #'
 #' @seealso `eval`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_eval  <- purrr::safely(eval)
@@ -2185,7 +2187,7 @@ safely_eval  <- purrr::safely(eval)
 #' * `error`: The error that occurred, or `NULL` if no error occurred.
 #'
 #' @seealso `parse`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_parse <- purrr::safely(parse)
@@ -2200,7 +2202,7 @@ safely_parse <- purrr::safely(parse)
 #' @returns A list with two elements:
 #' * `result`: The result of `eval(parse(text))`, or `NULL` if an error occurred.
 #' * `error`: The error that occurred, or `NULL` if no error occurred.
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 eval_parse <- function(text) {
@@ -2220,7 +2222,7 @@ eval_parse <- function(text) {
 #'
 #' @returns a dataframe with additional columns of summary stats
 #' @importFrom dplyr mutate if_else ungroup select filter rename first
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 pknca_table <- function(input_simulated_table,
@@ -2350,7 +2352,7 @@ pknca_table <- function(input_simulated_table,
 
 #-------------------------------------------------------------------------------
 #' Exported from shinyBS:::buildTooltipOrPopoverOptionsList
-#' @keywords internal
+#' @noRd
 #-------------------------------------------------------------------------------
 MVPbuildTooltipOrPopoverOptionsList <- function (title, placement, trigger, options, content)
 {
@@ -2410,7 +2412,7 @@ MVPbuildTooltipOrPopoverOptionsList <- function (title, placement, trigger, opti
 #' The `shinyBSDep` object is marked as internal and is not exported. It is intended
 #' for use within the package to avoid reliance on unexported objects from `shinyBS`.
 #'
-#' @keywords internal
+#' @noRd
 MVPshinyBSDep <- list(
   name = "shinyBS",
   version = "0.61.1",
@@ -2437,7 +2439,7 @@ attr(MVPshinyBSDep, "class") <- "html_dependency"
 #' @inheritParams shinyBS::bsPopover
 #' @param options other options
 #' @returns A popover
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 update_resistant_popover <- function(id, title, content, placement = "bottom", trigger = "hover", options = NULL){
@@ -2471,7 +2473,7 @@ update_resistant_popover <- function(id, title, content, placement = "bottom", t
 #'
 #' @returns a ggplot object
 #' @importFrom scales pretty_breaks
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 smart_x_axis <- function(p1,
@@ -2567,7 +2569,7 @@ smart_x_axis <- function(p1,
 #' @returns a ggplot object
 #' @importFrom dplyr mutate
 #' @importFrom scales oob_squish_infinite
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 plot_data_with_nm <- function(
@@ -2731,7 +2733,7 @@ plot_data_with_nm <- function(
 #' @importFrom dplyr mutate filter bind_rows
 #' @importFrom forcats fct_inorder
 #' @importFrom ggplot2 theme
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 plot_three_data_with_nm <- function(
@@ -2915,7 +2917,7 @@ plot_three_data_with_nm <- function(
 #'
 #' @returns a ggplot object
 #' @importFrom dplyr select mutate all_of
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 plot_iiv_data_with_nm <- function(
@@ -3091,7 +3093,7 @@ plot_iiv_data_with_nm <- function(
 #' Should be a tibble of 2 columns and X rows where X = number of params
 #' @importFrom tidyr pivot_longer everything
 #' @rawNamespace import(mrgsolve, except = c(req))
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 extract_model_params <- function(input_model_object) {
@@ -3110,7 +3112,7 @@ extract_model_params <- function(input_model_object) {
 #' @param convert_colnames    When TRUE, rename input_new_df column names
 #'
 #' @returns a mrgsolve model object
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 update_model_object <- function(input_model_object, input_new_df, convert_colnames = FALSE) {
@@ -3142,7 +3144,7 @@ update_model_object <- function(input_model_object, input_new_df, convert_colnam
 #'
 #' @returns a plotly object
 #' @importFrom plotly ggplotly add_annotations config renderPlotly plotlyOutput
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 convert_to_plotly_watermark <- function(ggplot_object,
@@ -3209,7 +3211,7 @@ convert_to_plotly_watermark <- function(ggplot_object,
 #' @param x vector of values (e.g. x-axis)
 #' @param levels bins
 #' @param ... extra params to pass through to cut()
-#' @export
+#' @noRd
 #=============================================================================
 
 quantize <- function (x, levels, ...) {
@@ -3246,7 +3248,7 @@ quantize <- function (x, levels, ...) {
 #'                       returns 0 (if allow_zero = TRUE) or 1 (if allow_zero = FALSE)
 #' @param display_error  Displays showNotification message box
 #' @returns a numeric
-#' @export
+#' @noRd
 #=============================================================================
 
 sanitize_numeric_input <- function(numeric_input,
@@ -3357,7 +3359,7 @@ sanitize_numeric_input <- function(numeric_input,
 #' @param dp                  if TRUE, uses decimal rounding instead
 #' @returns a shinydashboard valueBox
 #' @importFrom shinydashboard valueBox box
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 create_value_box <- function(input_dataset,
@@ -3403,7 +3405,7 @@ create_value_box <- function(input_dataset,
 #'
 #' @returns a df
 #' @importFrom dplyr intersect full_join
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 check_and_combine_df <- function(model_1_is_valid,
@@ -3442,7 +3444,7 @@ check_and_combine_df <- function(model_1_is_valid,
 #' @returns a numeric (either as a proportion (from 0 to 1, where 0 means 0% and
 #'                    1 means 100%), or the actual number of IDs)
 #' @importFrom dplyr filter sym
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 pct_above_y_at_x <- function(model_is_valid = FALSE,
@@ -3485,7 +3487,7 @@ pct_above_y_at_x <- function(model_is_valid = FALSE,
 #' @param ppm_email      Email of Project Pharmacometrician
 #'
 #' @returns a shinyalert() popup
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 create_alert <- function(ppm_name = "Firstname Lastname",
@@ -3538,7 +3540,7 @@ create_alert <- function(ppm_name = "Firstname Lastname",
 #'
 #' @returns Attaches shinydashboard
 #'
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 useShinydashboardMVP <- function() {
   if (!requireNamespace(package = "shinydashboard"))
@@ -3558,7 +3560,7 @@ useShinydashboardMVP <- function() {
 #' @param text_description UI elements
 #'
 #' @returns a modal dialog
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 general_warning_modal <- function(title = "Warning", text_description = "Test") {
@@ -3582,7 +3584,7 @@ general_warning_modal <- function(title = "Warning", text_description = "Test") 
 #'
 #' @returns A list containing N data.frames. If N=1, then the original df
 #'         is returned unchanged
-#' @export
+#' @noRd
 #-----------------------------------------------------------------------------
 
 split_data_frame <- function(df, N = 4) {
@@ -3609,7 +3611,7 @@ split_data_frame <- function(df, N = 4) {
 #' @param catvalue2 numeric value for second category
 #'
 #' @returns a numeric vector
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 binary_cat_dist <- function(n = 20, percent = 50, catvalue1 = 1, catvalue2 = 0) {
 
@@ -3634,7 +3636,7 @@ binary_cat_dist <- function(n = 20, percent = 50, catvalue1 = 1, catvalue2 = 0) 
 #' @param list_of_reserved_strings  unavailable names
 #'
 #' @returns a string
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 check_cov_name <- function(orig_name, replaced_name = "DUMMY", list_of_reserved_strings = c("AGE", "AGEMO", "SEX", "WT", "BMI", "BSA")) {
@@ -3654,7 +3656,7 @@ check_cov_name <- function(orig_name, replaced_name = "DUMMY", list_of_reserved_
 #'
 #' @param current_id : id of current textInput
 #' @param all_ids    : list of ids for textInputs to check
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 check_cov_name_duplicate <- function(current_id, all_ids) {
@@ -3688,7 +3690,7 @@ check_cov_name_duplicate <- function(current_id, all_ids) {
 #' can also be given as vector of length 2, first horizontal, then vertical
 #' @import grid
 #' @importFrom gridExtra arrangeGrob grid.arrange marrangeGrob
-#' @export
+#' @noRd
 #------------------------------------------------------------------------------
 add_watermark <- function(watermark_toggle = TRUE,
                           lab = "For Internal Use Only",  # Text to be displayed
@@ -3724,6 +3726,7 @@ add_watermark <- function(watermark_toggle = TRUE,
 #' @param ... Other parameters passed on
 #' @import grid
 #' @export
+#' @noRd
 drawDetails.watermark <- function(x, ...) {
   plot_width_half  <- grid::convertUnit(
     grid::unit(1, "npc"),
@@ -3773,7 +3776,7 @@ drawDetails.watermark <- function(x, ...) {
 #'
 #' @inheritParams NonCompart::tblNCA
 #' @param show_progress display progress messages
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colConc = "conc",
@@ -3909,7 +3912,7 @@ nca_text_m <- function(MTxt, StartRow = 0, Cex = 0.8, Header1 = "", Header2 = ""
 #' @param show_progress display progress messages
 #' @inheritParams ncar::pdfNCA
 #' @importFrom graphics axis close.screen lines par points screen split.screen
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
@@ -4105,8 +4108,8 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
 #' @importFrom mrgsolve ev as.ev
 #' @importFrom dplyr arrange filter if_else
 #' @returns A mrgsolve::ev event object
+#' @noRd
 
-#' @export
 #-------------------------------------------------------------------------------
 
 generate_dosing_regimens <- function(amt1, delay_time1, cmt1, tinf1, total1, ii1,
@@ -4208,7 +4211,7 @@ generate_dosing_regimens <- function(amt1, delay_time1, cmt1, tinf1, total1, ii1
 #'
 #' @returns a dataframe
 #' @importFrom dplyr mutate select
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 search_id_col <- function(orig_df,
@@ -4244,7 +4247,7 @@ search_id_col <- function(orig_df,
 #'
 #' @returns a dataframe
 #' @importFrom dplyr mutate select
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 search_time_col <- function(orig_df,
@@ -4283,7 +4286,7 @@ search_time_col <- function(orig_df,
 #' @returns a dataframe
 #' @importFrom dplyr filter mutate arrange rename rowwise ungroup select bind_rows sym
 #' @importFrom tidyr unnest
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 expand_addl_ii <- function(data, x_axis, dose_col, debug = FALSE) {
@@ -4368,7 +4371,7 @@ expand_addl_ii <- function(data, x_axis, dose_col, debug = FALSE) {
 #'
 #' @returns a dataframe
 #' @importFrom dplyr select all_of filter mutate arrange rename rowwise ungroup
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 trim_columns <- function(data,
@@ -4473,7 +4476,7 @@ trim_columns <- function(data,
 #'
 #' @returns a dataframe with additional columns of summary stats
 #' @importFrom dplyr mutate if_else ungroup select filter rename first group_by distinct summarise any_of
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 exposures_table <- function(input_simulated_table,
@@ -4555,7 +4558,7 @@ exposures_table <- function(input_simulated_table,
 #' @importFrom dplyr select mutate all_of summarise
 #' @importFrom ggplot2 theme_bw geom_boxplot scale_fill_manual geom_text
 #' @importFrom forcats fct_inorder
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 plot_iiv_exp_data <- function(input_dataset,
@@ -4648,7 +4651,7 @@ plot_iiv_exp_data <- function(input_dataset,
 #'
 #' @returns a dataframe containing the quantile limits
 #' @importFrom dplyr select mutate distinct starts_with
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 calculate_quantiles <- function(df, xvar, num_quantiles) {
@@ -4676,7 +4679,7 @@ calculate_quantiles <- function(df, xvar, num_quantiles) {
 #' @param xvar            Name of x-axis variable to split by
 #'
 #' @returns a character string containing the quantile limits
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 quantile_ranges_name <- function(quantiles_df, df_orig, xvar) {
@@ -4704,7 +4707,7 @@ quantile_ranges_name <- function(quantiles_df, df_orig, xvar) {
 #' @importFrom dplyr case_when filter mutate sym syms summarise
 #' @importFrom forcats fct_relevel
 #' @returns a character string containing the quantile limits
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 categorize_xvar <- function(df, quantiles_df, xvar) {
@@ -4768,7 +4771,7 @@ categorize_xvar <- function(df, quantiles_df, xvar) {
 #' @importFrom dplyr group_by slice arrange syms rowwise mutate c_across all_of ungroup select
 #' @importFrom dplyr left_join filter
 #' @returns a dataframe with the new column called "facet_label"
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 create_facet_label <- function(df, sort_by) {
@@ -4820,7 +4823,7 @@ create_facet_label <- function(df, sort_by) {
 #'
 #' @importFrom dplyr group_by sym summarise ungroup left_join mutate case_when
 #' @returns a dataframe with the new column called "outlier_status", with three categories: "Above", "Below", "Within"
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 categorize_outliers <- function(df,
@@ -4886,7 +4889,7 @@ categorize_outliers <- function(df,
 #' @param relative_threshold relative threshold of lumping bins that are close together
 #'
 #' @returns a vector of unique bin times
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 get_bin_times <- function(dfcol, bin_num = 20, relative_threshold = 0.05) {
@@ -4924,7 +4927,7 @@ get_bin_times <- function(dfcol, bin_num = 20, relative_threshold = 0.05) {
 #'
 #' @importFrom dplyr mutate sym
 #' @returns a dataframe with the blank values converted into ".(blanks)
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 handle_blanks <- function(df, column_name) {
@@ -4953,7 +4956,7 @@ handle_blanks <- function(df, column_name) {
 #' @importFrom dplyr mutate select any_of sym
 #' @importFrom mrgsolve as.ev
 #' @returns a cleaned event dataframe
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 # Helper function to handle ev_df transformations
@@ -5029,7 +5032,7 @@ transform_ev_df <- function(mod, ev_df, model_dur, model_rate, pred_model, debug
 #' @importFrom dplyr mutate rename select bind_rows across rowwise ungroup 
 #' @importFrom shiny withProgress setProgress
 #' @returns a df mrgsolve output totaling 2 * params + 1 (reference) runs, or 8 * params + 1 if gradient option is used
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 iterate_batch_runs <- function(batch_run_df,
@@ -5224,7 +5227,7 @@ iterate_batch_runs <- function(batch_run_df,
 #'
 #' @importFrom dplyr mutate across everything
 #' @returns a df containing mrgsolve parameter names and values ("reference", "lower", "upper") as characters
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 update_batch_run_table <- function(param_df,
@@ -5288,7 +5291,7 @@ update_batch_run_table <- function(param_df,
 #' @param nice_values           Ticks should be multiples of these values
 #'
 #' @returns a numeric of optimal tick size
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 calculate_tick_size <- function(abs_y, max_ticks = 12, nice_values = c(1,2,5,10)) {
@@ -5328,7 +5331,7 @@ calculate_tick_size <- function(abs_y, max_ticks = 12, nice_values = c(1,2,5,10)
 #' @importFrom ggplot2 scale_y_continuous aes labs ggtitle
 #' @importFrom scales percent pretty_breaks
 #' @returns a ggplot object
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 tornado_plot <- function(df,
@@ -5527,7 +5530,7 @@ tornado_plot <- function(df,
 #' @param upper_bound           The upper bound to be used for splitting
 #'
 #' @returns a list of splits excluding reference value
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 split_reference_value <- function(reference_value, lower_bound, upper_bound) {
   # Generate 4 evenly spaced values between Lower and Reference (excluding Reference and the bound)
@@ -5564,7 +5567,7 @@ split_reference_value <- function(reference_value, lower_bound, upper_bound) {
 #' @importFrom ggplot2 scale_y_continuous aes labs ggtitle
 #' @importFrom scales percent pretty_breaks
 #' @returns a ggplot object
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 spider_plot <-  function(df,
@@ -5748,7 +5751,7 @@ spider_plot <-  function(df,
 #' @importFrom tidyr pivot_longer
 #' @importFrom ggplot2 theme_bw after_stat geom_histogram geom_density labs
 #' @importFrom ggplot2 facet_wrap aes
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 draw_histogram_plot <- function(input_df,
@@ -5803,7 +5806,7 @@ draw_histogram_plot <- function(input_df,
 #' @importFrom shiny isRunning showNotification
 #' @importFrom rlang %||%
 #' @seealso `parse`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_showNotification <- function(...) {
@@ -5827,7 +5830,7 @@ safely_showNotification <- function(...) {
 #' @returns A shiny withProgress bar or print to console
 #' @importFrom shiny isRunning withProgress
 #' @seealso `parse`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_withProgress <- function(message, value = 0, expr) {
@@ -5848,7 +5851,7 @@ safely_withProgress <- function(message, value = 0, expr) {
 #' @returns A shiny withProgress bar or print to console
 #' @importFrom shiny isRunning incProgress
 #' @seealso `parse`
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 safely_incProgress <- function(amount, detail = NULL) {
@@ -5918,7 +5921,7 @@ safely_incProgress <- function(amount, detail = NULL) {
 #' @importFrom mime guess_type
 #' @importFrom stats setNames
 #' @importFrom rlang %||%
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 translate_model_code <- function(ready_path,
@@ -6245,7 +6248,7 @@ translate_model_code <- function(ready_path,
 #' @returns a named list of "answer", "conversation_id", "chat_obj"
 #' @importFrom stats setNames
 #' @importFrom rlang %||%
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 refine_model_code <- function(model_code,
@@ -6502,7 +6505,7 @@ refine_model_code <- function(model_code,
 #'   quotes/backslashes escaped, and padded with a single newline at the 
 #'   start and end.
 #' @importFrom stringr str_replace_all str_replace fixed
-#' @export
+#' @noRd
 #------------------------------------------------------------------------------- 
 
 clean_llm_response <- function(final_answer) {
@@ -6562,7 +6565,7 @@ clean_llm_response <- function(final_answer) {
 #'   \code{--- FILE CONTENT START ---} and \code{--- FILE CONTENT END ---}
 #'   delimiters
 #'
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 extract_file_content <- function(file_path,
@@ -6629,7 +6632,7 @@ extract_file_content <- function(file_path,
 #'     token counts and \code{model} label}
 #' }
 #' @importFrom rlang %||%
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 run_dify_chat <- function(instruction_prompt,
@@ -6771,7 +6774,7 @@ run_dify_chat <- function(instruction_prompt,
 #'     token counts and \code{model} label}
 #' }
 #' @importFrom rlang %||%
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 run_ellmer_chat <- function(service,
                             model_name,
@@ -6950,7 +6953,7 @@ run_ellmer_chat <- function(service,
 #' @importFrom shiny showNotification req
 #' @importFrom tools file_ext
 #'
-#' @export
+#' @noRd
 prepare_uploaded_files <- function(files,
                                    llm_service,
                                    model_lang,
@@ -7133,7 +7136,7 @@ prepare_uploaded_files <- function(files,
 #'
 #' @importFrom shiny showNotification
 #'
-#' @export
+#' @noRd
 combine_uploaded_files <- function(file_paths, file_names) {
   
   # ── Validate inputs ──────────────────────────────────────────────────────────
@@ -7209,7 +7212,7 @@ combine_uploaded_files <- function(file_paths, file_names) {
 #' @return A character string containing the API key, or \code{""} if the
 #'   environment variable is not set.
 #'
-#' @export
+#' @noRd
 get_api_key <- function(llm_service) {
   switch(EXPR = llm_service, # edit with usethis::edit_r_environ()
          "PROD"              = Sys.getenv("DIFY_API_KEY"),
@@ -7241,7 +7244,7 @@ get_api_key <- function(llm_service) {
 #' 
 #' @return A character string containing the API key name
 #'
-#' @export
+#' @noRd
 get_api_key_name <- function(llm_service) {
   switch(EXPR = llm_service,
          "PROD"              = "DIFY_API_KEY",
@@ -7267,6 +7270,7 @@ get_api_key_name <- function(llm_service) {
 #' client credentials. Requires \code{APOLLO_CLIENT_ID}, \code{APOLLO_CLIENT_SECRET},
 #' and \code{APOLLO_TOKEN_URL} to be set in \code{.Renviron}.
 #' Use \code{usethis::edit_r_environ()} to set them. Only relevant for BI.
+#' @noRd
 
 #'
 #' @return A character string containing the Bearer access token.
@@ -7278,7 +7282,7 @@ get_api_key_name <- function(llm_service) {
 #' 
 #' @importFrom httr2 request req_body_form req_perform resp_body_json
 #' 
-#' @export
+#' @noRd
 get_apollo_token <- function() {
 
   response <- httr2::request(Sys.getenv("APOLLO_TOKEN_URL")) %>%
@@ -7298,6 +7302,7 @@ get_apollo_token <- function() {
 #' client credentials. Requires \code{APOLLO_CLIENT_ID}, \code{APOLLO_CLIENT_SECRET},
 #' and \code{APOLLO_TOKEN_URL} to be set in \code{.Renviron}.
 #' Use \code{usethis::edit_r_environ()} to set them. Only relevant for BI.
+#' @noRd
 
 #'
 #' @return A character string containing the Bearer access token.
@@ -7309,7 +7314,7 @@ get_apollo_token <- function() {
 #' 
 #' @importFrom httr2 request req_body_form req_perform resp_body_json
 #' 
-#' @export
+#' @noRd
 get_apollo_token_ext <- function() {
   
   response <- httr2::request(Sys.getenv("APOLLO_TOKEN_URL_EXT")) %>%
@@ -7341,7 +7346,7 @@ get_apollo_token_ext <- function() {
 #'
 #' @seealso \code{\link{restore_session_state}}
 #'
-#' @export
+#' @noRd
 get_session_state <- function(input, rv, uploaded_data) {
   list(
     version = "0.4.5",  # tag with app version for forward-compat checks
@@ -7723,7 +7728,7 @@ get_session_state <- function(input, rv, uploaded_data) {
 #'
 #' @seealso \code{\link{get_session_state}} for the complementary save function.
 #'
-#' @export
+#' @noRd
 restore_session_state <- function(state, input, session, rv, uploaded_data_override, show_note,
                                   selectize_choices = NULL) {
   
@@ -8135,7 +8140,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
 #' @importFrom mrgsolve mwrite_cpp mread zero_re data_set carry_out mrgsim_df ev_rep as.ev
 #' @importFrom dplyr left_join arrange
 #' @importFrom zip zip
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 build_repro_bundle <- function(zip_path,
@@ -8561,7 +8566,7 @@ build_repro_bundle <- function(zip_path,
 #' @param name  Name of the object to assign to in the generated code
 #'
 #' @returns A character vector of R code lines
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 repro_df_to_code <- function(df, name) {
@@ -8592,7 +8597,7 @@ repro_df_to_code <- function(df, name) {
 #' @param x A numeric vector
 #'
 #' @returns A character vector, one element per value
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 repro_num_txt <- function(x) {
@@ -8619,7 +8624,7 @@ repro_num_txt <- function(x) {
 #' @param name  Name of the object to assign to in the generated code
 #'
 #' @returns A character vector of R code lines
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 repro_vec_code <- function(x, name) {
@@ -8651,7 +8656,7 @@ repro_vec_code <- function(x, name) {
 #' @param tdelta  Optional. Equidistant step size as set in the app
 #'
 #' @returns list(from, tend, tdelta), or NULL if x is not a regular grid
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 
 repro_time_grid <- function(x, tend = NULL, tdelta = NULL) {
@@ -8696,7 +8701,7 @@ repro_time_grid <- function(x, tend = NULL, tdelta = NULL) {
 #'
 #' @return An `<i>` [htmltools::tag].
 #'
-#' @export
+#' @noRd
 #-------------------------------------------------------------------------------
 help_popover <- function(title, content, placement = "right", trigger = "hover") {
   htmltools::tags$i(
