@@ -71,6 +71,8 @@ safely_mcode <- purrr::safely(mrgsolve::mcode)
 #' @param show_matches          Default FALSE, shows a notification when external databases found a matching name with model parameters
 #' @param parallel_sim          Default TRUE, uses the future and mrgsim.parallel packages !Not implemented live!
 #' @param parallel_n            The number of subjects required before parallelization is used !Not implemented live!
+#' @param save_events_as        Optional label (e.g. "model_1"). When supplied, the event table used
+#'                              for this simulation is kept for that model's reproducible bundle download
 #'
 #' @returns a df
 #'
@@ -97,14 +99,13 @@ run_single_sim <- function(input_model_object,
                            ext_db          = NULL,
                            show_matches    = FALSE,
                            parallel_sim    = FALSE,
-                           parallel_n      = 200) {
+                           parallel_n      = 200,
+                           save_events_as  = NULL) {
   
   if (is.null(input_model_object)) {
     if (debug) message("input_model_object is NULL")
     return(NULL)
   }
-  
-  ev_df_orig <- ev_df # Pre-transformed ev() dataframe
   
   if (nsubj > 1 && !is.null(ext_db)) {
     
@@ -214,13 +215,10 @@ run_single_sim <- function(input_model_object,
     solved_output <- NULL
   }
   
-  ## Globally save simulation data for easy export
-  #last_input_model_object <<- input_model_object
-  .mvp_state$last_ev_df      <- ev_df
-  .mvp_state$last_ev_df_orig <- ev_df_orig
-  #last_sampling_times     <<- sampling_times
-  #last_ext_db             <<- ext_db
-  #last_seed               <<- seed
+  ## Keep the events used, per model, for that model's reproducible bundle download
+  if (!is.null(save_events_as)) {
+    .mvp_state$last_ev_df[[save_events_as]] <- ev_df
+  }
   
   return(solved_output)
 }

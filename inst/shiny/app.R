@@ -6065,6 +6065,7 @@ server <- function(input, output, session) {
           sim_output <-
             run_single_sim(
               input_model_object = changed_reacted_param_model_1(),
+              save_events_as     = "model_1", # kept for this model's bundle download
               wt_based_dosing    = input$wt_based_dosing_checkbox,
               wt_name            = input$wt_based_dosing_name,
               pred_model         = model_1_is_pred(),
@@ -6444,6 +6445,7 @@ server <- function(input, output, session) {
           sim_output <-
             run_single_sim(
               input_model_object = changed_reacted_param_model_2(),
+              save_events_as     = "model_2", # kept for this model's bundle download
               wt_based_dosing    = input$wt_based_dosing_checkbox_2,
               wt_name            = input$wt_based_dosing_name_2,
               pred_model         = model_2_is_pred(),
@@ -6807,7 +6809,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_1(),
         event_data_orig    = dosing_regimen_model_1(),  # pre-transform ev(), straight from the reactive
-        event_data_post    = .mvp_state$last_ev_df,
+        event_data_post    = .mvp_state$last_ev_df[["model_1"]],
         sampling_times     = sampling_options(),
         custom_sampling_time = input$custom_sampling_time_cb,
         tend               = tend(),
@@ -6821,7 +6823,7 @@ server <- function(input, output, session) {
         model_dur          = model_duration_argument_model_1(),
         model_rate         = model_rate_argument_model_1(),
         pred_model         = model_1_is_pred(),
-        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df)) database_model_1() else NULL,
+        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df[["model_1"]])) database_model_1() else NULL,
         seed               = d_seed_number_model_1()
       )
     },
@@ -6845,7 +6847,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_2(),
         event_data_orig    = dosing_regimen_model_2(),  # pre-transform ev(), straight from the reactive
-        event_data_post    = .mvp_state$last_ev_df,
+        event_data_post    = .mvp_state$last_ev_df[["model_2"]],
         sampling_times     = sampling_options(),
         custom_sampling_time = input$custom_sampling_time_cb,
         tend               = tend(),
@@ -6859,7 +6861,7 @@ server <- function(input, output, session) {
         model_dur          = model_duration_argument_model_2(),
         model_rate         = model_rate_argument_model_2(),
         pred_model         = model_2_is_pred(),
-        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df)) database_model_2() else NULL,
+        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df[["model_2"]])) database_model_2() else NULL,
         seed               = d_seed_number_model_2()
       )
     },
@@ -9040,6 +9042,7 @@ server <- function(input, output, session) {
       iiv_sim_output_model_1 <-
         run_single_sim(
           input_model_object = changed_matrix_model_1(),
+          save_events_as     = "model_1", # kept for this model's bundle download
           pred_model         = model_1_is_pred(),
           wt_based_dosing    = input$wt_based_dosing_checkbox,
           wt_name            = input$wt_based_dosing_name,
@@ -9884,6 +9887,7 @@ server <- function(input, output, session) {
       iiv_sim_output_model_2 <-
         run_single_sim(
           input_model_object = changed_matrix_model_2(),
+          save_events_as     = "model_2", # kept for this model's bundle download
           pred_model         = model_2_is_pred(),
           wt_based_dosing    = input$wt_based_dosing_checkbox_2,
           wt_name            = input$wt_based_dosing_name_2,
