@@ -14,3 +14,4 @@
 ^README\.Rmd$
 ^\.RData$
 ^\.Rhistory$
+^LICENSE\.md$
