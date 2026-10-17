@@ -37,7 +37,7 @@
 #'   <https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age>,
 #'   <https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age>.
 #'   WHO Growth Reference 5-19 years:
-#'   <https://www.who.int/growthref/who2007_height_for_age/en/>.
+#'   <https://www.who.int/toolkits/growth-reference-data-for-5to19-years/indicators/height-for-age>.
 #' @seealso [cdc.expand], [nhanes.filtered]
 "who.expand"
 

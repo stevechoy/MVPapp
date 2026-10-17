@@ -31,7 +31,7 @@ read_pre_baked_databases <- TRUE
 # Individual files are stacked together to create one overall dataframe 'who.ht'
 #
 # WHO length/height for age from birth to 5 yo in boys and girls (https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age)
-# WHO growth reference 5-19 yo in boys and girls (https://www.who.int/growthref/who2007_height_for_age/en/)
+# WHO growth reference 5-19 yo in boys and girls (https://www.who.int/toolkits/growth-reference-data-for-5to19-years/indicators/height-for-age)
 # Individual files are stacked together to create one overall dataframe 'who.ht'
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -172,7 +172,7 @@ if(read_pre_baked_databases) {
     
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # WHO length/height for age from birth to 5 yo in boys and girls (https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age)
-    # WHO growth reference 5-19 yo in boys and girls (https://www.who.int/growthref/who2007_height_for_age/en/)
+    # WHO growth reference 5-19 yo in boys and girls (https://www.who.int/toolkits/growth-reference-data-for-5to19-years/indicators/height-for-age)
     # Individual files are stacked together to create one overall dataframe 'who.ht'
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     

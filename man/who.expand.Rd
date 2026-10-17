@@ -20,7 +20,7 @@ WHO Child Growth Standards:
 \url{https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age},
 \url{https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age}.
 WHO Growth Reference 5-19 years:
-\url{https://www.who.int/growthref/who2007_height_for_age/en/}.
+\url{https://www.who.int/toolkits/growth-reference-data-for-5to19-years/indicators/height-for-age}.
 }
 \usage{
 who.expand
