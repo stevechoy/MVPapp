@@ -11,6 +11,12 @@ name: R-CMD-check.yaml
 
 permissions: read-all
 
+# Cancel superseded runs on the same branch (pushing several commits in a row
+# otherwise queues one full check per commit)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
@@ -34,7 +40,7 @@ jobs:
       _R_CHECK_FORCE_SUGGESTS_: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: r-lib/actions/setup-pandoc@v2
 
@@ -45,6 +51,12 @@ jobs:
           use-public-rspm: true
           # nonmem2mrgsolve (Suggests) is built on R-universe
           extra-repositories: https://stevechoy.r-universe.dev
+
+      # gdtools (needed by flextable) links to X11 libraries on macOS, which
+      # GitHub's macOS runners lack (CRAN's macOS machines have XQuartz)
+      - name: Install XQuartz (macOS)
+        if: runner.os == 'macOS'
+        run: brew install --cask xquartz
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
