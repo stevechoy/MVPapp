@@ -64,6 +64,24 @@ mvp_deps_env <- function() {
   e
 }
 
+#' Retrieve one of the package datasets (cdc.expand, who.expand, nhanes.filtered)
+#'
+#' Package functions cannot see lazy-loaded data unless the package is
+#' attached, so look it up explicitly. When the R files are sourced directly
+#' (runGitHub / standalone mode) the datasets are loaded into the global
+#' environment instead.
+#' @noRd
+mvp_dataset <- function(name) {
+  home <- mvp_home_env()
+  if (isNamespace(home)) {
+    lazydata <- getNamespaceInfo(home, "lazydata")
+    if (exists(name, envir = lazydata, inherits = FALSE)) {
+      return(get(name, envir = lazydata, inherits = FALSE))
+    }
+  }
+  get(name, envir = globalenv())
+}
+
 #' Fresh environment for evaluating code typed into the app (data filtering
 #' code, mrgsolve model code). Replaces relying on attached packages and on
 #' global assignment.

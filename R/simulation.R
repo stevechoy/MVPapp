@@ -264,10 +264,10 @@ sample_age_wt <- function(df_name     = "None",
     return(df.combined)
   }
 
-  df <- switch(df_name,
-               "CDC" = cdc.expand,
-               "WHO" = who.expand,
-               "NHANES" = nhanes.filtered
+  df <- switch(EXPR = df_name,
+               "CDC"    = mvp_dataset("cdc.expand"),
+               "WHO"    = mvp_dataset("who.expand"),
+               "NHANES" = mvp_dataset("nhanes.filtered")
   )
 
   if(upper.agemo > max(df$AGEMO)) {
