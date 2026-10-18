@@ -150,7 +150,9 @@ test_that("lm_eqn() fits once per group and labels the line", {
   out <- suppressWarnings(MVPapp:::lm_eqn(d, "g", "x", "y"))
   expect_equal(out$slope, c(2, 0), tolerance = 1e-10)
   expect_equal(out$intercept, c(0, 1), tolerance = 1e-10)
-  expect_match(out$label[1], "^y = .* \\+ 2\u00B7x, R\u00B2 = +1$") # values are formatted to a common width
+  # Only the shape of the label: the number formatting (e.g. 2 vs 2.0e+00) depends on
+  # floating-point noise in the fitted intercept, which differs between platforms
+  expect_match(out$label[1], "^y = .* \\+ .*\u00B7x, R\u00B2 = +1$")
   expect_equal(MVPapp:::lm_eqn(d, "", "x", "x")$rsq, 1)
 })
 
