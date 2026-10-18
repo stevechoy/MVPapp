@@ -23,51 +23,41 @@ extract_matrix <- function(input_model_object,
                            coerce_to_character = TRUE,
                            debug               = FALSE) {
 
-  if(debug) {
-    message("running extract_matrix() for ", name_of_matrix)
+  if (debug) message("running extract_matrix() for ", name_of_matrix)
+
+  # All blocks of the model combined into one matrix, with the labels of the
+  # individual blocks as column names (mrgsolve's own labels() / as.matrix() are
+  # needed: these are S4 objects)
+  if (name_of_matrix == "omega") {
+    labels      <- mrgsolve::labels(mrgsolve::omat(input_model_object))
+    omsm_matrix <- mrgsolve::as.matrix(mrgsolve::omat(mrgsolve::collapse_omega(input_model_object, name = "omega")))
+  } else {
+    labels      <- mrgsolve::labels(mrgsolve::smat(input_model_object))
+    omsm_matrix <- mrgsolve::as.matrix(mrgsolve::smat(mrgsolve::collapse_sigma(input_model_object, name = "sigma")))
   }
 
-  if(name_of_matrix == "omega") {
-    om <- mrgsolve::omat(input_model_object)
-    names_list <- as.list(unlist(mrgsolve::labels(om))) # must use mrgsolve::labels
-    omsm_matrix <- mrgsolve::collapse_omega(input_model_object, name = "omega") %>%
-      mrgsolve::omat() %>%
-      mrgsolve::as.matrix() # must use mrgsolve::as.matrix, S4
-  }
+  if (debug) message_object(omsm_matrix)
 
-  if(name_of_matrix == "sigma") {
-    sm <- mrgsolve::smat(input_model_object)
-    names_list <- as.list(unlist(mrgsolve::labels(sm))) # must use mrgsolve::labels
-    omsm_matrix <- mrgsolve::collapse_sigma(input_model_object, name = "sigma") %>%
-      mrgsolve::smat() %>%
-      mrgsolve::as.matrix() # must use mrgsolve::as.matrix, S4
+  if (remove_upper_tri) {
+    omsm_matrix[upper.tri(omsm_matrix)] <- NA_real_
   }
-
-  if(debug) {
-    message(paste(utils::capture.output(print(omsm_matrix)), collapse = "\n"))
-  }
-
-  if(remove_upper_tri) {
-    omsm_matrix[upper.tri(omsm_matrix, diag = FALSE)] <- NA_real_
-  }
-  if(remove_zero) {
-    diag_elements <- diag(omsm_matrix) # In case any of them are 0, don't replace the diagonals
+  if (remove_zero) {
+    # zero off-diagonal elements are shown as blanks (zero variances are kept)
+    diag_elements <- diag(omsm_matrix)
     omsm_matrix[omsm_matrix == 0] <- NA_real_
     diag(omsm_matrix) <- diag_elements
   }
 
-  if(coerce_to_character) {
-    omsm_matrix <- apply(omsm_matrix, c(1, 2), as.character) %>%
-      matrix(., nrow = nrow(.), ncol= ncol(.))
+  if (coerce_to_character) {
+    omsm_matrix <- unname(omsm_matrix)
+    storage.mode(omsm_matrix) <- "character"
   }
 
-  colnames(omsm_matrix) <- names_list
+  colnames(omsm_matrix) <- as.list(unlist(labels))
 
-  if(debug) {
-    message("finish extract_matrix()")
-  }
+  if (debug) message("finish extract_matrix()")
 
-  return(omsm_matrix)
+  omsm_matrix
 }
 
 #-------------------------------------------------------------------------------
@@ -100,71 +90,42 @@ reconstruct_matrices <- function(input_model_object,
                                  coerce_to_numeric = TRUE,
                                  debug             = FALSE) {
 
-  if(nrow(input_matrix) == 0) {
-    if(debug) {
-      message('no input matrix')
-    }
+  if (nrow(input_matrix) == 0) {
+    if (debug) message('no input matrix')
     return(input_matrix)
   }
 
-  if(debug) {
-    message('Reconstructing Matrix')
-  }
-
-  ## Store how many matrices there are from the model object
-  if(name_of_matrix == "omega") {
-    number_of_matrices <- length(input_model_object$omega)
-  }
-
-  if(name_of_matrix == "sigma") {
-    number_of_matrices <- length(input_model_object$sigma)
-  }
-
-  if(length(number_of_matrices) == 0 || number_of_matrices == 0) {
-    if(debug) {
-      message('model has no ', name_of_matrix, ' matrix')
-    }
+  # The model's blocks (input_model_object$omega or $sigma), whose sizes split
+  # the combined table back into one matrix per block
+  blocks <- input_model_object[[name_of_matrix]]
+  if (length(blocks) == 0) {
+    if (debug) message('model has no ', name_of_matrix, ' matrix')
     return(list())
   }
 
-  if(coerce_to_numeric) {
-    input_matrix <- apply(input_matrix, c(1, 2), as.numeric) %>%
-      matrix(., nrow = nrow(.), ncol= ncol(.))
+  if (coerce_to_numeric) {
+    input_matrix <- unname(input_matrix)
+    storage.mode(input_matrix) <- "numeric"
   }
 
-  result        <- list()
-  start_row_col <- 1
+  result <- list()
+  start  <- 1
+  for (n in seq_along(blocks)) {
+    end <- start + nrow(blocks[[n]]) - 1
+    if (debug) message("Current matrix: ", n, ", start row/col: ", start)
+    block <- as.matrix(input_matrix[start:end, start:end]) # as.matrix() keeps a 1x1 block a matrix
 
-  for(n in 1:number_of_matrices) {
+    # The table shows the lower triangle only: mirror it, and blank cells are 0
+    upper <- !lower.tri(block)
+    block[upper] <- t(block)[upper]
+    block[is.na(block)] <- 0
+    result[[n]] <- block
 
-    if(name_of_matrix == "omega") {
-      nrow_current_matrix <- nrow(input_model_object$omega[[n]])
-    }
-    if(name_of_matrix == "sigma") {
-      nrow_current_matrix <- nrow(input_model_object$sigma[[n]])
-    }
-
-    result[[n]] <- list()
-
-    end_row_col <- start_row_col + nrow_current_matrix - 1
-    if(debug) {
-      message("Current matrix: ", n, ", start row/col: ", start_row_col)
-    }
-    result[[n]] <- input_matrix[start_row_col:end_row_col, start_row_col:end_row_col]
-
-    # Mirror lower triangle to upper triangle
-    lower_triangle <- lower.tri(result[[n]])
-    result[[n]][!lower_triangle] <- t(result[[n]])[!lower_triangle]
-    result[[n]][is.na(result[[n]])] <- 0 # Required for omat() as NA's don't work
-    result[[n]] <- result[[n]] %>% as.matrix() # Required for 1x1 matrix otherwise it becomes a numeric
-
-    start_row_col <- start_row_col + nrow_current_matrix # advancing to new starting row/col for next matrix
-
-  } # end of number of matrix
-  if(debug) {
-    message('Matrix reconstruction complete')
+    start <- end + 1
   }
-  return(result)
+
+  if (debug) message('Matrix reconstruction complete')
+  result
 }
 
 #-------------------------------------------------------------------------------
@@ -277,7 +238,7 @@ check_matrix <- function(input_model_object,
     } # End of check eigenvalues
 
     if(check_symmetry) {
-      if (!all(identical(input_matrix[[i]], t(input_matrix[[i]])))) {
+      if (!identical(input_matrix[[i]], t(input_matrix[[i]]))) {
         return(FALSE)
       }
     } # End of check symmetry

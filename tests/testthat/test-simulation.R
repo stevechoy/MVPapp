@@ -4,7 +4,7 @@ test_that("Model 2 simulation with a covariate database has no missing covariate
   db  <- suppressMessages(MVPapp:::sample_age_wt(df_name = "NHANES", nsubj = 8))
   out <- suppressWarnings(MVPapp:::run_single_sim(
     mod, ev_df = mrgsolve::ev(amt = 100, ii = 12, addl = 2),
-    sampling_times = mrgsolve::tgrid(0, 36, 1), nsubj = 8, nsubj_offset = 20,
+    sampling_times = mrgsolve::tgrid(0, 36, 1), nsubj_offset = 20,
     append_id_text = "m2-", ext_db = db))
   expect_equal(sort(unique(out$ID)), 21:28)
   expect_false(anyNA(out$CP))

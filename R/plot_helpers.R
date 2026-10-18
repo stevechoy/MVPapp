@@ -16,66 +16,43 @@
 #---------------------------------------------------------------------------
 
 lm_eqn <- function(df, facet_name, x, y) {
-  if(!is.null(facet_name) && facet_name[1] != "") {
-    df_stats <- df %>%
-      dplyr::group_by(!!!dplyr::syms(facet_name))
-  } else {
-    df_stats <- df
+  if (!is.null(facet_name) && facet_name[1] != "") {
+    df <- dplyr::group_by(df, !!!dplyr::syms(facet_name))
   }
 
-  # Backticks so non-syntactic names such as "Conc (ng/mL)" work in the formula
-  string_name <- paste0("`", gsub("`", "\\`", y, fixed = TRUE), "` ~ `", gsub("`", "\\`", x, fixed = TRUE), "`")
-
-  if(x == y) { # workaround for when same variable is used for both y and x,
-    # which returns an NA slope. It seems summarise can't handle this well
-    df_stats <- df_stats %>%
-      dplyr::summarise(rsq = 1,
-                       slope = 1,
-                       intercept = 0)
-  } else {
-
-    df_stats <- df_stats %>%
-      dplyr::summarise(
-        rsq = if(any(!is.na(!!dplyr::sym(y)))) { # safeguard for when there are no valid y-values to calculate lm
-          summary(lm(as.formula(string_name)))$r.squared
-        } else {
-          NA_real_
-        },
-        slope = if(any(!is.na(!!dplyr::sym(y)))) {
-          coef(lm(as.formula(string_name)))[2]
-        } else {
-          NA_real_
-        },
-        intercept = if(any(!is.na(!!dplyr::sym(y)))) {
-          coef(lm(as.formula(string_name)))[1]
-        } else {
-          NA_real_
-        }
-      )
+  # One linear fit per group (one lm() call each)
+  line_stats <- function(xv, yv) {
+    if (identical(x, y)) { # lm() of a variable on itself gives an NA slope
+      return(data.frame(rsq = 1, slope = 1, intercept = 0))
+    }
+    if (all(is.na(yv))) {  # nothing to fit in this group
+      return(data.frame(rsq = NA_real_, slope = NA_real_, intercept = NA_real_))
+    }
+    fit <- stats::lm(yv ~ xv)
+    data.frame(rsq       = summary(fit)$r.squared,
+               slope     = unname(stats::coef(fit)[2]),
+               intercept = unname(stats::coef(fit)[1]))
   }
 
-  df_stats <- df_stats %>%
+  dplyr::summarise(df, line_stats(.data[[x]], .data[[y]])) %>%
     dplyr::mutate(slope_direction = dplyr::if_else(slope >= 0, " + ", " - "),
                   label = dplyr::case_when(
-                    is.na(intercept) ~ "", # this means no non-NA data in this group at all
+                    is.na(intercept) ~ "", # no data in this group at all
                     !is.na(slope) ~
                       paste0("y = ",
-                             format(unname(intercept), digits = 2),
+                             format(intercept, digits = 2),
                              slope_direction,
-                             format(unname(abs(slope)), digits = 2),
+                             format(abs(slope), digits = 2),
                              "\u00B7x, R\u00B2 = ",
-                             format(unname(rsq), digits = 3)),
-                    is.na(slope) ~ # if there's no slope, display only the intercept
-                      paste0("y = ", format(unname(intercept), digits = 2), " [mean]")
-                  )
-    )
-
-  return(df_stats)
+                             format(rsq, digits = 3)),
+                    is.na(slope) ~ # only one x value: the intercept is the mean
+                      paste0("y = ", format(intercept, digits = 2), " [mean]")
+                  ))
 }
 
 #-------------------------------------------------------------------------------
 #' @name generate_log_breaks
-#' @title Generating log breaks and axis labels, mainly for plotly
+#' @title Log axis breaks
 #'
 #' @param base_values the base value(s) to apply the exponent to
 #' @param start the starting exponent
@@ -86,38 +63,15 @@ lm_eqn <- function(df, facet_name, x, y) {
 #-------------------------------------------------------------------------------
 
 generate_log_breaks <- function(base_values, start, end) {
-  powers      <- seq(from = start, to = end)
-  breaks      <- rep(0, length(base_values) * length(powers))
-
-  for (i in seq_along(powers)) {
-    breaks[((i - 1) * length(base_values) + 1):(i * length(base_values))] <- base_values * 10^powers[i]
-  }
-
-  return(breaks)
+  # every base value times each power of 10, e.g. 1, 3, 10, 30, 100, ...
+  as.vector(outer(base_values, 10^seq(start, end)))
 }
 
 #' @noRd
-logbreaks_y <- generate_log_breaks(c(1,3), -10, 10) %>% signif(digits = 2)
+logbreaks_y <- signif(generate_log_breaks(c(1, 3), -10, 10), digits = 2)
 
 #' @noRd
 logbreaks_x <- logbreaks_y
-
-#' @noRd
-logbreaks_y_log10 <- generate_log_breaks(c(1), -10, 10) %>% signif(digits = 2)
-
-#' @noRd
-logbreaks_x_log10 <- logbreaks_y_log10
-
-#' @noRd
-logbreaks_y_minor <- generate_log_breaks(c(1:9), -10, 10) %>% signif(digits = 2)
-
-#' @noRd
-logbreaks_x_minor <- logbreaks_y_minor
-
-#' @noRd
-log10_axis_label <- rep("", length(logbreaks_y_minor))
-#' @noRd
-log10_axis_label[seq(1, length(logbreaks_y_minor), 9)] <- as.character(logbreaks_y_minor)[seq(1, length(logbreaks_y_minor), 9)] # every 9th tick is labelled
 
 #-------------------------------------------------------------------------------
 #' Largest finite value of a column across several data frames (NULLs ignored)

@@ -73,14 +73,10 @@ safely_mcode <- mvp_safely(mrgsolve::mcode)
 #' @param seed                  Seed number for RNG for reproducibility
 #' @param divide_by             Divide the TIME by this value, used for scaling x-axis
 #' @param debug                 Default FALSE, set to TRUE to show more messages in console
-#' @param nsubj                 Default 1. Without `ext_db`, a single subject is simulated with
-#'                              mrgsolve::zero_re() applied
 #' @param nsubj_offset          Default 0, uses this value +1 to start ID count
 #' @param append_id_text        A string prefix to be inserted for each ID to become their USUBJID
 #' @param ext_db                Default NULL, supply R object of external database
 #' @param show_matches          Default FALSE, shows a notification when external databases found a matching name with model parameters
-#' @param parallel_sim          Default TRUE, uses the future and mrgsim.parallel packages !Not implemented live!
-#' @param parallel_n            The number of subjects required before parallelization is used !Not implemented live!
 #' @param event_store           Optional environment. With `save_events_as`, the event table is also stored here
 #'                              (as `event_store[[save_events_as]]`), so each app session keeps its own copy
 #' @param save_events_as        Optional label (e.g. "model_1"). When supplied, the event table used
@@ -109,13 +105,10 @@ run_single_sim <- function(input_model_object,
                            seed            = 1000,
                            divide_by       = 1,
                            debug           = FALSE,
-                           nsubj           = 1,
                            nsubj_offset    = 0,
                            append_id_text  = "m1-",
                            ext_db          = NULL,
                            show_matches    = FALSE,
-                           parallel_sim    = FALSE,
-                           parallel_n      = 200,
                            save_events_as  = NULL,
                            event_store     = NULL,
                            keep_dose_records = FALSE) {
@@ -125,134 +118,45 @@ run_single_sim <- function(input_model_object,
     return(NULL)
   }
   
-  # Population branch whenever a covariate database is given, including a
-  # single subject (keeps variability and the sampled covariates)
-  if (!is.null(ext_db) && nrow(ext_db) > 0) {
+  # Population run whenever a covariate database is given (even for a single
+  # subject, which keeps variability and the sampled covariates)
+  use_db <- !is.null(ext_db) && nrow(ext_db) > 0
+  
+  if (use_db) {
+    # One copy of the dosing per subject, with that subject's covariates
+    ev_df <- data.table::merge.data.table(mrgsolve::ev_rep(ev_df, seq_len(nrow(ext_db))), ext_db, by = "ID", all.x = TRUE)
+  }
+  ev_df <- transform_ev_df(input_model_object, ev_df, model_dur, model_rate, pred_model, debug,
+                           wt_based_dosing = wt_based_dosing, wt_name = wt_name)
+  
+  if (use_db) {
+    ext_db <- dplyr::mutate(ext_db, ID = ID + nsubj_offset)
+    ev_df  <- dplyr::mutate(ev_df,  ID = ID + nsubj_offset)
     
-    ext_db_ev_prewt <- data.table::merge.data.table(
-      mrgsolve::ev_rep(ev_df, 1:nrow(ext_db)),
-      ext_db, by = "ID", all.x = TRUE
-    )
-    
-    ext_db_ev <- transform_ev_df(
-      input_model_object, ext_db_ev_prewt,
-      model_dur, model_rate, pred_model, debug,
-      wt_based_dosing = wt_based_dosing,
-      wt_name         = wt_name
-    )
-    
-    if(nsubj_offset > 0) {
-      ext_db <- ext_db %>%
-        mutate(ID = ID + nsubj_offset)
-      ext_db_ev <- ext_db_ev %>%
-        mutate(ID = ID + nsubj_offset)
-    }   
+    if (show_matches) {
+      matching_names <- intersect(names(mrgsolve::param(input_model_object)), names(ext_db))
+      if (length(matching_names) > 0) {
+        shiny::showNotification(paste0(paste(matching_names, collapse = ", "),
+                                       " from the model are replaced by the custom distributions."),
+                                type = "message", duration = 10)
+      }
+    }
     
     input_model_object <- mrgsolve::update(input_model_object, digits = 5)
-    
-    if(show_matches) {
-      
-      mod_param_names <- names(mrgsolve::param(input_model_object))
-      ext_db_names    <- names(ext_db)
-      matching_names  <- intersect(mod_param_names, ext_db_names)
-      
-      if (length(matching_names) > 0) {
-        
-        shiny::showNotification(
-          paste0(
-            paste(matching_names, collapse = ", "),
-            " from the model are replaced by the custom distributions."
-          ),
-          type = "message",
-          duration = 10
-        )
-      }
-    }
-    
+    sim_data <- realize_dose_records(ev_df)
     set.seed(seed)
-    
-    solved_output <- input_model_object %>%
-      mrgsolve::data_set(realize_dose_records(ext_db_ev)) %>%
-      mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
-      safely_mrgsim_df(#events = ev_df,
-        tgrid  = sampling_times,
-        tad    = TRUE)
-    
-    if (is.null(solved_output$error)) {
-      # Only add covariates the model doesn't already output (e.g. via
-      # $CAPTURE WT); merging both would give WT.x / WT.y
-      ext_db_new <- dplyr::select(ext_db, dplyr::all_of(
-        c("ID", setdiff(names(ext_db), names(solved_output$result)))
-      ))
-      if (ncol(ext_db_new) > 1) {
-        solved_output$result <- data.table::merge.data.table(
-          data.table::as.data.table(solved_output$result), ext_db_new, by = c("ID"), all.x = TRUE
-        )
-      }
-    }
-    
-    ev_df <- ext_db_ev
-    
   } else {
-    # No covariate database: single-subject simulation without variability ──
-    if (nsubj > 1 && is.null(ext_db)) {
-      if (debug) message("nsubj > 1 but ext_db is NULL - falling back to single-subject sim")
-    }
-    
-    ev_df <- transform_ev_df(
-      input_model_object, ev_df,
-      model_dur, model_rate, pred_model, debug,
-      wt_based_dosing = wt_based_dosing,
-      wt_name         = wt_name
-    )
-    
-    id_num <- dplyr::case_when(append_id_text == "m1-"  ~ 1 + nsubj_offset,
-                               append_id_text == "m2-"  ~ 2 + nsubj_offset,
-                               TRUE                     ~ 1 + nsubj_offset) # handles iterate_batch_runs()
-    
-    solved_output <- input_model_object %>%
-      mrgsolve::data_set(realize_dose_records(ev_df) %>% dplyr::mutate(ID = id_num)) %>%
-      mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
-      #mrgsolve::obsonly() %>%
-      mrgsolve::zero_re() %>%
-      safely_mrgsim_df(#events = ev_df,
-                       tgrid  = sampling_times,
-                       tad    = TRUE)
+    # Single typical subject (no variability). Model 2 uses ID 2, and offsets
+    # (batch runs) keep the IDs of several runs apart
+    input_model_object <- mrgsolve::zero_re(input_model_object)
+    id <- if (append_id_text == "m2-") 2 else 1
+    sim_data <- dplyr::mutate(realize_dose_records(ev_df), ID = id + nsubj_offset)
   }
   
-  # ── Shared post-processing ────────────────────────────────────────────────
-  if (is.null(solved_output$error)) {
-    solved_output <- solved_output$result %>%
-      dplyr::rename(TIME    = time) %>%
-      dplyr::mutate(TIMEADJ = TIME / divide_by,
-                    USUBJID = as.factor(paste0(append_id_text, ID))) %>%
-      dplyr::relocate(USUBJID, .before = ID)
-    
-    # Plots and metrics use observation records only. Dose records are kept
-    # (keep_dose_records = TRUE) just for the downloadable simulated data, and
-    # only at sampled times: records written out by realize_dose_records() can
-    # fall after the last sampling time (e.g. 12 doses q12h with a 72 h
-    # maximum) and would extend the time range with values never sampled
-    if ("evid" %in% names(solved_output)) {
-      if (isTRUE(keep_dose_records)) {
-        t_samp <- tryCatch(as.numeric(mrgsolve::stime(sampling_times)),
-                           error = function(e) suppressWarnings(as.numeric(sampling_times)))
-        t_samp <- t_samp[is.finite(t_samp)]
-        if (length(t_samp) > 0) {
-          solved_output <- dplyr::filter(
-            solved_output,
-            .data$evid == 0 | round(.data$TIME, 6) %in% round(!!t_samp, 6))
-        }
-      } else {
-        solved_output <- dplyr::filter(solved_output, .data$evid == 0)
-      }
-    }
-  } else {
-    shiny::showNotification(
-      paste0(solved_output$error, " Potentially due to non-sensible parameter values."),
-      type = "error", duration = 10)
-    solved_output <- NULL
-  }
+  solved_output <- input_model_object %>%
+    mrgsolve::data_set(sim_data) %>%
+    mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
+    safely_mrgsim_df(tgrid = sampling_times, tad = TRUE)
   
   ## Keep the events used, per model, for that model's reproducible bundle download
   if (!is.null(save_events_as)) {
@@ -262,7 +166,41 @@ run_single_sim <- function(input_model_object,
     }
   }
   
-  return(solved_output)
+  if (!is.null(solved_output$error)) {
+    shiny::showNotification(
+      paste0(solved_output$error, " Potentially due to non-sensible parameter values."),
+      type = "error", duration = 10)
+    return(NULL)
+  }
+  out <- solved_output$result
+  
+  if (use_db) {
+    # Add the covariates the model doesn't already output (e.g. via $CAPTURE WT;
+    # merging both would give WT.x / WT.y)
+    new_cols <- c("ID", setdiff(names(ext_db), names(out)))
+    if (length(new_cols) > 1) {
+      out <- data.table::merge.data.table(data.table::as.data.table(out), dplyr::select(ext_db, dplyr::all_of(new_cols)),
+                                          by = "ID", all.x = TRUE)
+    }
+  }
+  
+  out <- out %>%
+    dplyr::rename(TIME = time) %>%
+    dplyr::mutate(TIMEADJ = TIME / divide_by,
+                  USUBJID = as.factor(paste0(append_id_text, ID))) %>%
+    dplyr::relocate(USUBJID, .before = ID)
+  
+  # Plots and metrics use observation records only. Dose records are kept
+  # (keep_dose_records = TRUE) just for the downloadable simulated data, and
+  # only at sampled times: records written out by realize_dose_records() can
+  # fall after the last sampling time (e.g. 12 doses q12h with a 72 h
+  # maximum) and would extend the time range with values never sampled
+  if (keep_dose_records) {
+    t_samp <- round(mrgsolve::stime(sampling_times), 6)
+    dplyr::filter(out, .data$evid == 0 | round(.data$TIME, 6) %in% t_samp)
+  } else {
+    dplyr::filter(out, .data$evid == 0)
+  }
 }
 
 #-------------------------------------------------------------------------------
@@ -441,36 +379,8 @@ update_model_object <- function(input_model_object, input_new_df, convert_colnam
 #' object is created to supply a dose of 0 to be used for simulations. Note that
 #' weight-based dosing is handled later inside transform_ev_df()
 #'
-#' @param amt1 Dose Amount Regimen 1
-#' @param delay_time1 Delay Time Regimen 1
-#' @param cmt1 Input CMT Regimen 1
-#' @param tinf1 Infusion Time Regimen 1
-#' @param total1 Total Doses Regimen 1
-#' @param ii1 Interdose Interval Regimen 1
-#' @param amt2 Dose Amount Regimen 2
-#' @param delay_time2 Delay Time Regimen 2
-#' @param cmt2 Input CMT Regimen 2
-#' @param tinf2 Infusion Time Regimen 2
-#' @param total2 Total Doses Regimen 2
-#' @param ii2 Interdose Interval Regimen 2
-#' @param amt3 Dose Amount Regimen 3
-#' @param delay_time3 Delay Time Regimen 3
-#' @param cmt3 Input CMT Regimen 3
-#' @param tinf3 Infusion Time Regimen 3
-#' @param total3 Total Doses Regimen 3
-#' @param ii3 Interdose Interval Regimen 3
-#' @param amt4 Dose Amount Regimen 4
-#' @param delay_time4 Delay Time Regimen 4
-#' @param cmt4 Input CMT Regimen 4
-#' @param tinf4 Infusion Time Regimen 4
-#' @param total4 Total Doses Regimen 4
-#' @param ii4 Interdose Interval Regimen 4
-#' @param amt5 Dose Amount Regimen 5
-#' @param delay_time5 Delay Time Regimen 5
-#' @param cmt5 Input CMT Regimen 5
-#' @param tinf5 Infusion Time Regimen 5
-#' @param total5 Total Doses Regimen 5
-#' @param ii5 Interdose Interval Regimen 5
+#' @param regimens         list of dosing regimens, each a list with amt, delay_time, cmt,
+#'                        tinf, total and ii (see dosing_regimens_from_input())
 #' @param mw_conversion MW conversion value
 #' @param create_dummy_ev Default TRUE, to create dummy ev if there are no valid
 #' dose amounts, set to FALSE to not create one
@@ -483,90 +393,64 @@ update_model_object <- function(input_model_object, input_new_df, convert_colnam
 
 #-------------------------------------------------------------------------------
 
-generate_dosing_regimens <- function(amt1, delay_time1, cmt1, tinf1, total1, ii1,
-                                     amt2, delay_time2, cmt2, tinf2, total2, ii2,
-                                     amt3, delay_time3, cmt3, tinf3, total3, ii3,
-                                     amt4, delay_time4, cmt4, tinf4, total4, ii4,
-                                     amt5, delay_time5, cmt5, tinf5, total5, ii5,
-                                     mw_conversion = 1,
+generate_dosing_regimens <- function(regimens,
+                                     mw_conversion   = 1,
                                      create_dummy_ev = TRUE,
-                                     debug = FALSE
-) {
+                                     debug           = FALSE) {
 
-  # Special handling of amt to treat a user-input of dose number 0 to insert a dummy amount of 0,
-  # As mrgsolve::ev does not allow zero doses
+  one_regimen <- function(r) {
+    total <- sanitize_numeric_input(r$total, allow_zero = TRUE, as_integer = TRUE)
+    # mrgsolve::ev() does not allow 0 doses: these become one dose of amount 0,
+    # which is dropped below
+    mrgsolve::ev(amt   = if (total <= 0) 0 else sanitize_numeric_input(r$amt) * mw_conversion,
+                 time  = sanitize_numeric_input(r$delay_time),
+                 cmt   = r$cmt,
+                 tinf  = sanitize_numeric_input(r$tinf),
+                 total = sanitize_numeric_input(r$total, allow_zero = FALSE, as_integer = TRUE),
+                 ii    = sanitize_numeric_input(r$ii, allow_zero = FALSE))
+  }
 
-  dosing_scheme_1 <- mrgsolve::ev(amt     =  dplyr::if_else(sanitize_numeric_input(total1, allow_zero = TRUE, as_integer = TRUE) <= 0,
-                                                            0,
-                                                            sanitize_numeric_input(amt1) * mw_conversion),
-                                  time    =  sanitize_numeric_input(delay_time1),
-                                  cmt     =  cmt1,
-                                  tinf    =  sanitize_numeric_input(tinf1),
-                                  total   =  sanitize_numeric_input(total1, allow_zero = FALSE, as_integer = TRUE),
-                                  ii      =  sanitize_numeric_input(ii1, allow_zero = FALSE)
-  )
-  dosing_scheme_2 <- mrgsolve::ev(amt     =  dplyr::if_else(sanitize_numeric_input(total2, allow_zero = TRUE, as_integer = TRUE) <= 0,
-                                                            0,
-                                                            sanitize_numeric_input(amt2) * mw_conversion),
-                                  time    =  sanitize_numeric_input(delay_time2),
-                                  cmt     =  cmt2,
-                                  tinf    =  sanitize_numeric_input(tinf2),
-                                  total   =  sanitize_numeric_input(total2, allow_zero = FALSE, as_integer = TRUE),
-                                  ii      =  sanitize_numeric_input(ii2, allow_zero = FALSE)
-  )
-  dosing_scheme_3 <- mrgsolve::ev(amt     =  dplyr::if_else(sanitize_numeric_input(total3, allow_zero = TRUE, as_integer = TRUE) <= 0,
-                                                            0,
-                                                            sanitize_numeric_input(amt3) * mw_conversion),
-                                  time    =  sanitize_numeric_input(delay_time3),
-                                  cmt     =  cmt3,
-                                  tinf    =  sanitize_numeric_input(tinf3),
-                                  total   =  sanitize_numeric_input(total3, allow_zero = FALSE, as_integer = TRUE),
-                                  ii      =  sanitize_numeric_input(ii3, allow_zero = FALSE)
-  )
-  dosing_scheme_4 <- mrgsolve::ev(amt     =  dplyr::if_else(sanitize_numeric_input(total4, allow_zero = TRUE, as_integer = TRUE) <= 0,
-                                                            0,
-                                                            sanitize_numeric_input(amt4) * mw_conversion),
-                                  time    =  sanitize_numeric_input(delay_time4),
-                                  cmt     =  cmt4,
-                                  tinf    =  sanitize_numeric_input(tinf4),
-                                  total   =  sanitize_numeric_input(total4, allow_zero = FALSE, as_integer = TRUE),
-                                  ii      =  sanitize_numeric_input(ii4, allow_zero = FALSE)
-  )
-  dosing_scheme_5 <- mrgsolve::ev(amt     =  dplyr::if_else(sanitize_numeric_input(total5, allow_zero = TRUE, as_integer = TRUE) <= 0,
-                                                            0,
-                                                            sanitize_numeric_input(amt5) * mw_conversion),
-                                  time    =  sanitize_numeric_input(delay_time5),
-                                  cmt     =  cmt5,
-                                  tinf    =  sanitize_numeric_input(tinf5),
-                                  total   =  sanitize_numeric_input(total5, allow_zero = FALSE, as_integer = TRUE),
-                                  ii      =  sanitize_numeric_input(ii5, allow_zero = FALSE)
-  )
-
-  total_doses <- c(dosing_scheme_1, dosing_scheme_2, dosing_scheme_3,
-                   dosing_scheme_4, dosing_scheme_5) %>%
+  total_doses <- do.call(c, lapply(regimens, one_regimen)) %>%
     as.data.frame() %>%
     dplyr::arrange(time) %>%
     dplyr::filter(amt > 0) %>%
     mrgsolve::as.ev()
 
-  if(create_dummy_ev) {
-    if(nrow(total_doses) == 0) {
-      total_doses <- mrgsolve::ev(amt   = 0,
-                                  time  = 0,
-                                  cmt   = cmt1,
-                                  tinf  = 0,
-                                  total = 1,
-                                  ii    = 0)
-
-    }
+  # No dose at all: a dose of 0 so that the model can still be simulated
+  if (create_dummy_ev && nrow(total_doses) == 0) {
+    total_doses <- mrgsolve::ev(amt = 0, time = 0, cmt = regimens[[1]]$cmt, tinf = 0, total = 1, ii = 0)
   }
 
-  if(debug) {
+  if (debug) {
     message("Dosing regimen generated")
-    message(paste(utils::capture.output(print(total_doses)), collapse = "\n"))
+    message_object(total_doses)
   }
 
-  return(total_doses)
+  total_doses
+}
+
+#-------------------------------------------------------------------------------
+#' @name dosing_regimens_from_input
+#'
+#' @title The five dosing regimen rows of a model, read from the app inputs
+#'
+#' @param input  Shiny input
+#' @param model  1 or 2. Model 2's input ids end in "_2" (e.g. amt1_2)
+#'
+#' @returns a list of 5 lists (amt, delay_time, cmt, tinf, total, ii), for
+#'   generate_dosing_regimens()
+#' @noRd
+#-------------------------------------------------------------------------------
+dosing_regimens_from_input <- function(input, model = 1) {
+  sfx <- if (model == 2) "_2" else ""
+  lapply(1:5, function(i) {
+    list(amt        = input[[paste0("amt", i, sfx)]],
+         delay_time = input[[paste0("delay_time", i, sfx)]],
+         cmt        = input[[paste0("cmt", i, "_model_", model)]],
+         tinf       = input[[paste0("tinf", i, sfx)]],
+         total      = input[[paste0("total", i, sfx)]],
+         ii         = input[[paste0("ii", i, sfx)]])
+  })
 }
 
 #-------------------------------------------------------------------------------
@@ -583,68 +467,40 @@ generate_dosing_regimens <- function(amt1, delay_time1, cmt1, tinf1, total1, ii1
 #' @param debug Show debugging messages
 #'
 #' @returns a dataframe
-#' @importFrom dplyr filter mutate arrange rename rowwise ungroup select bind_rows sym
-#' @importFrom tidyr unnest
+#' @importFrom dplyr arrange select all_of
 #' @noRd
 #-------------------------------------------------------------------------------
 
 expand_addl_ii <- function(data, x_axis, dose_col, debug = FALSE) {
-  
-  data$DOSETIME <- as.numeric(as.character(data[[x_axis]])) # Still create DOSETIME if no ADDL II is found
-  
-  # Check if necessary columns are present
+
+  data$DOSETIME <- as.numeric(as.character(data[[x_axis]])) # also created when there is no ADDL / II
+
   if (all(c("ADDL", "II", "EVID", x_axis, dose_col) %in% colnames(data))) {
-    
-    data$ADDL <- as.integer(data$ADDL) # number of additional doses must be whole numbers
-    data$II   <- as.numeric(data$II)
-    
-    # Treat missing ADDL as a single dose so these rows are never dropped by the split below
-    data$ADDL[is.na(data$ADDL)] <- 0L
-    
-    # Split data into rows with ADDL > 0 and others
-    # (ADDL has no NAs at this point, so the two filters are exact complements)
-    addl_rows     <- dplyr::filter(data, ADDL > 0 & !is.na(II))
-    non_addl_rows <- dplyr::filter(data, !(ADDL > 0 & !is.na(II)))
-    
-    if (debug) {
-      message("nrow(addl_rows): ", nrow(addl_rows))
-      message("nrow(non_addl_rows): ", nrow(non_addl_rows))
-    }
-    
-    # Process addl_rows to expand
-    if (nrow(addl_rows) > 0) { # Edge case where entire dataset has ADDL == 0
-      expanded_addl <- addl_rows %>%
-        dplyr::rowwise() %>%
-        dplyr::mutate(
-          # Generate a sequence of times including original and additional doses
-          DOSETIME = list(DOSETIME + II * 0:ADDL)
-        ) %>%
-        tidyr::unnest(cols = c(DOSETIME)) %>%
-        dplyr::ungroup()
-    } else {
-      expanded_addl <- NULL
-    }
-    
-    # Combine with non_addl_rows and arrange by ID and TIME
-    df <- dplyr::bind_rows(expanded_addl, non_addl_rows) %>%
-      dplyr::mutate(ADDL = NA, II = NA) %>% # Clean up for clarity
-      dplyr::arrange(ID, DOSETIME)
-  } else {
-    df <- data
+    addl <- as.integer(data$ADDL)
+    ii   <- as.numeric(data$II)
+
+    # Each dosing row is repeated 1 + ADDL times (missing ADDL or II: a single
+    # dose), the k-th copy given k intervals after the first
+    n_copies <- 1L + ifelse(!is.na(addl) & addl > 0 & !is.na(ii), addl, 0L)
+    rows     <- rep(seq_len(nrow(data)), n_copies)
+    k        <- sequence(n_copies) - 1L
+
+    data <- data[rows, , drop = FALSE]
+    data$DOSETIME <- data$DOSETIME + k * ifelse(is.na(ii[rows]), 0, ii[rows])
+    data$ADDL <- NA
+    data$II   <- NA
+    data <- dplyr::arrange(data, ID, DOSETIME)
+    if (debug) message("expand_addl_ii: ", nrow(data), " dosing rows after expansion")
   }
-  
+
   # NAMT, SAMT, min_yvar are previously calculated
   keep_cols <- c("ID", "facet_label", "DOSETIME", x_axis, dose_col, "NAMT", "SAMT", "min_yvar")
-  
-  if ("RATE" %in% colnames(df)) {
-    # Use df (the expanded data), not data (the original), so lengths and row order match
-    df$RATE   <- as.numeric(as.character(df$RATE))
+  if ("RATE" %in% colnames(data)) {
+    data$RATE <- as.numeric(as.character(data$RATE))
     keep_cols <- c(keep_cols, "RATE")
   }
-  
-  df <- dplyr::select(df, dplyr::all_of(unique(keep_cols)))
-  
-  return(df)
+
+  dplyr::select(data, dplyr::all_of(unique(keep_cols)))
 }
 
 #-------------------------------------------------------------------------------
@@ -809,46 +665,32 @@ transform_ev_df <- function(mod, ev_df, model_dur, model_rate, pred_model, debug
                             wt_based_dosing = FALSE, wt_name = "WT") {
 
   if (wt_based_dosing && wt_name %in% names(mrgsolve::param(mod))) {
-    if(wt_name %in% names(ev_df)) { # Use external database weights when available
-      ev_df <- ev_df %>%
-        as.data.frame() %>%
-        dplyr::mutate(amt = amt * !!dplyr::sym(wt_name)) %>%
-        mrgsolve::as.ev()
-    } else {
-      wt_multiplication_value <- mrgsolve::param(mod)[[wt_name]]
-      ev_df <- ev_df %>%
-        as.data.frame() %>%
-        dplyr::mutate(amt = amt * wt_multiplication_value) %>%
-        mrgsolve::as.ev()
-    }
+    ev_df <- as.data.frame(ev_df)
+    # Each subject's own weight when the events carry it (covariate database),
+    # otherwise the model's parameter value
+    wt <- if (wt_name %in% names(ev_df)) ev_df[[wt_name]] else mrgsolve::param(mod)[[wt_name]]
+    ev_df$amt <- ev_df$amt * wt
+    ev_df <- mrgsolve::as.ev(ev_df)
   }
 
-  if (model_dur) { # modeling duration, it cannot coexist with tinf
-    if(debug) {message("Applying model_dur transformation")}
-    ev_df <- ev_df %>%
-      as.data.frame() %>%
-      dplyr::mutate(rate = -2) %>%
-      dplyr::select(-tinf) %>%
-      mrgsolve::as.ev()
+  # Infusion duration (rate = -2) or rate (rate = -1) set in the model code;
+  # either replaces tinf
+  if (model_dur || model_rate) {
+    if (debug) message("Applying ", if (model_dur) "model_dur" else "model_rate", " transformation")
+    ev_df <- as.data.frame(ev_df)
+    ev_df$rate <- if (model_dur) -2 else -1
+    ev_df$tinf <- NULL
+    ev_df <- mrgsolve::as.ev(ev_df)
   }
 
-  if (model_rate) {
-    if(debug) {message("Applying model_rate transformation")}
-    ev_df <- ev_df %>%
-      as.data.frame() %>%
-      dplyr::mutate(rate = -1) %>%
-      dplyr::select(-tinf) %>%
-      mrgsolve::as.ev()
-  }
-
-  if (pred_model) { # set all CMTs to zero as that is required for PRED models
-    if(debug) {message("Applying pred_model transformation")}
+  if (pred_model) { # $PRED models need all CMTs set to 0
+    if (debug) message("Applying pred_model transformation")
     ev_df <- ev_df %>%
       dplyr::mutate(cmt = 0) %>%
       dplyr::select(-dplyr::any_of(c("tinf", "rate")))
   }
 
-  return(ev_df)
+  ev_df
 }
 
 #-------------------------------------------------------------------------------
@@ -867,12 +709,8 @@ transform_ev_df <- function(mod, ev_df, model_dur, model_rate, pred_model, debug
 #' @param sampling_times        A vector of sampling times (note: not a tgrid object)
 #' @param divide_by             Divide the TIME by this value, used for scaling x-axis
 #' @param debug                 Default FALSE, set to TRUE to show more messages in console
-#' @param append_id_text        A string prefix to be inserted for each ID
 #' @param show_progress         When TRUE, shows shiny progress messages
-#' @param debug                 When TRUE, outputs debugging messages
 #' @param gradient              When TRUE, perform gradient runs in between lower/upper
-#' @param parallel_sim          Default FALSE, uses the future and mrgsim.parallel packages !Not implemented live!
-#' @param parallel_n            The number of subjects required before parallelization is used !Not implemented live!
 #'
 #' @importFrom dplyr mutate rename select bind_rows across rowwise ungroup 
 #' @importFrom shiny withProgress setProgress
@@ -891,141 +729,63 @@ iterate_batch_runs <- function(batch_run_df,
                                sampling_times,
                                divide_by          = 1,
                                debug              = FALSE,
-                               append_id_text     = "m1-",
                                show_progress      = TRUE,
-                               gradient           = FALSE,
-                               nsubj_offset       = 0,
-                               parallel_sim       = FALSE,
-                               parallel_n         = 200#,
-) {
+                               gradient           = FALSE) {
   
   if (nrow(batch_run_df) == 0) return(NULL)
   
-  # ── Coerce all non-name columns to numeric ────────────────────────────────────
-  batch_run_df <- batch_run_df %>%
-    dplyr::mutate(dplyr::across(-Name, as.numeric))
+  batch_run_df <- dplyr::mutate(batch_run_df, dplyr::across(-Name, as.numeric))
   
-  # ── Optionally expand with gradient quantile columns ─────────────────────────
+  # With gradient = TRUE, three values evenly spaced between each bound and the
+  # reference are also run (columns LowerQ1-3 and UpperQ1-3)
   if (gradient) {
-    splits       <- lapply(seq_len(nrow(batch_run_df)), function(i) {
-      split_reference_value(
-        batch_run_df$Reference[i],
-        batch_run_df$Lower[i],
-        batch_run_df$Upper[i]
-      )
-    })
-    batch_run_df <- batch_run_df %>%
-      dplyr::mutate(
-        LowerQ1 = sapply(splits, function(s) s$lower_splits[1]),
-        LowerQ2 = sapply(splits, function(s) s$lower_splits[2]),
-        LowerQ3 = sapply(splits, function(s) s$lower_splits[3]),
-        UpperQ1 = sapply(splits, function(s) s$upper_splits[1]),
-        UpperQ2 = sapply(splits, function(s) s$upper_splits[2]),
-        UpperQ3 = sapply(splits, function(s) s$upper_splits[3])
-      ) %>%
-      dplyr::select(Name, Reference, Lower,
-                    LowerQ1, LowerQ2, LowerQ3,
-                    UpperQ1, UpperQ2, UpperQ3,
-                    Upper)
+    splits <- Map(split_reference_value, batch_run_df$Reference, batch_run_df$Lower, batch_run_df$Upper)
+    for (q in 1:3) {
+      batch_run_df[[paste0("LowerQ", q)]] <- vapply(splits, function(s) s$lower_splits[q], numeric(1))
+      batch_run_df[[paste0("UpperQ", q)]] <- vapply(splits, function(s) s$upper_splits[q], numeric(1))
+    }
+  }
+  bound_cols <- if (gradient) {
+    c("Lower", "LowerQ1", "LowerQ2", "LowerQ3", "UpperQ1", "UpperQ2", "UpperQ3", "Upper")
+  } else {
+    c("Lower", "Upper")
   }
   
-  # ── Pre-compute loop invariants ───────────────────────────────────────────────
-  n_params      <- nrow(batch_run_df)
-  ref_values    <- stats::setNames(batch_run_df$Reference, batch_run_df$Name)
-  
-  # Determine which bound columns to iterate over, in order
-  lower_cols <- if (gradient) c("Lower", "LowerQ1", "LowerQ2", "LowerQ3") else "Lower"
-  upper_cols <- if (gradient) c("UpperQ1", "UpperQ2", "UpperQ3", "Upper") else "Upper"
-  bound_cols <- c(lower_cols, upper_cols)
-  
-  # ── Build run schedule upfront ────────────────────────────────────────────────
-  # Each row describes one simulation: which param, which bound value, display names
-  make_suffix_good <- function(suffix) {
-    if (suffix == "") "" else paste0(" (", suffix, ")")
-  }
-  
-  schedule_rows <- vector("list", length(bound_cols) * n_params)
-  k <- 0L
+  # One run per parameter and bound, after the reference run. Each run changes
+  # a single parameter and has its own ID (offset), so that the runs can be
+  # combined into one table
+  base_params <- dplyr::select(batch_run_df, Name, Reference)
+  runs <- list(list(desc = "Reference", cat = "Reference", param = "Reference", value = -99, ratio = 1,
+                    id_text = "ref", params = base_params))
   for (col in bound_cols) {
-    # Derive display suffix from column name (e.g. "LowerQ1" -> "Q1", "Lower" -> "")
-    direction  <- ifelse(grepl("^Lower", col) | col == "Lower", "lower", "upper")
-    raw_suffix <- sub("^Lower|^Upper", "", col)   # "" | "Q1" | "Q2" | "Q3"
-    suffix_good <- make_suffix_good(raw_suffix)
-    cat_label   <- paste0(
-      ifelse(direction == "lower", "Lower", "Upper"),
-      suffix_good
-    )
-    
-    for (i in seq_len(n_params)) {
-      k <- k + 1L
-      schedule_rows[[k]] <- list(
-        row_idx         = i,
-        param_name      = batch_run_df$Name[i],
-        bound_value     = batch_run_df[[col]][i],
-        reference_value = ref_values[batch_run_df$Name[i]],
-        run_name        = paste0(direction, batch_run_df$Name[i], raw_suffix),
-        run_name_good   = paste0(direction, " ", batch_run_df$Name[i], suffix_good),
-        cat_name        = cat_label
-      )
+    direction <- if (startsWith(col, "Lower")) "lower" else "upper"
+    suffix    <- sub("^Lower|^Upper", "", col) # "" or "Q1" - "Q3"
+    shown     <- if (suffix == "") "" else paste0(" (", suffix, ")")
+    for (i in seq_len(nrow(batch_run_df))) {
+      name   <- batch_run_df$Name[i]
+      value  <- batch_run_df[[col]][i]
+      ref    <- batch_run_df$Reference[i]
+      params <- base_params
+      params$Reference[i] <- value
+      runs[[length(runs) + 1]] <- list(
+        desc    = paste0(direction, " ", name, shown),
+        cat     = paste0(tools::toTitleCase(direction), shown),
+        param   = name,
+        value   = value,
+        ratio   = if (isTRUE(ref != 0)) value / ref else NA_real_, # undefined for a reference of 0 (L54)
+        id_text = paste0(direction, name, suffix),
+        params  = params)
     }
   }
   
-  # Pre-select columns needed for update_model_object to avoid repeated select()
-  base_param_df <- batch_run_df %>% dplyr::select(Name, Reference)
-  
-  n_runs      <- length(schedule_rows) + 1L   # +1 for reference
-  list_of_runs <- vector("list", n_runs)
-  
-  # ── Simulation loop ───────────────────────────────────────────────────────────
   run_all <- function() {
-    
-    # -- Reference run (i = 1) --
-    if (show_progress) shiny::setProgress(value = 1 / n_runs, detail = paste0("1/", n_runs))
-    if (debug) message("Trying Batch run: Reference")
-    
-    tmp <- run_single_sim(
-      input_model_object = update_model_object(input_model_object, base_param_df,
-                                               convert_colnames = TRUE),
-      wt_based_dosing    = wt_based_dosing,
-      wt_name            = wt_name,
-      pred_model         = pred_model,
-      ev_df              = ev_df,
-      model_dur          = model_dur,
-      model_rate         = model_rate,
-      sampling_times     = sampling_times,
-      divide_by          = divide_by,
-      debug              = debug,
-      append_id_text     = "ref",
-      #nsubj_offset       = 0,
-      parallel_sim       = parallel_sim,
-      parallel_n         = parallel_n
-    )
-    
-    if (!is.null(tmp) && is.data.frame(tmp)) {
-      tmp$.desc      <- "Reference"
-      tmp$.cat       <- "Reference"
-      tmp$.paramname <- "Reference"
-      tmp$.value     <- -99
-      tmp$.ratio     <- 1
-      list_of_runs[[1]] <- tmp
-    }
-    
-    # -- Bound runs (i = 2 .. n_runs) --
-    for (i in seq_along(schedule_rows)) {
-      s      <- schedule_rows[[i]]
-      run_i  <- i + 1L
+    lapply(seq_along(runs), function(k) {
+      r <- runs[[k]]
+      if (show_progress) shiny::setProgress(value = k / length(runs), detail = paste0(k, "/", length(runs)))
+      if (debug) message("Trying Batch run: ", r$desc)
       
-      if (show_progress) shiny::setProgress(value = run_i / n_runs,
-                                            detail = paste0(run_i, "/", n_runs))
-      if (debug) message("Trying Batch run: ", s$run_name_good)
-      
-      # Modify only the single reference value that changes — no full df copy
-      param_df_i <- base_param_df
-      param_df_i$Reference[s$row_idx] <- s$bound_value
-      
-      tmp <- run_single_sim(
-        input_model_object = update_model_object(input_model_object, param_df_i,
-                                                 convert_colnames = TRUE),
+      out <- run_single_sim(
+        input_model_object = update_model_object(input_model_object, r$params, convert_colnames = TRUE),
         wt_based_dosing    = wt_based_dosing,
         wt_name            = wt_name,
         pred_model         = pred_model,
@@ -1035,29 +795,23 @@ iterate_batch_runs <- function(batch_run_df,
         sampling_times     = sampling_times,
         divide_by          = divide_by,
         debug              = debug,
-        append_id_text     = s$run_name,
-        nsubj_offset       = run_i - 1L,
-        parallel_sim       = parallel_sim,
-        parallel_n         = parallel_n
+        append_id_text     = r$id_text,
+        nsubj_offset       = k - 1
       )
+      if (!is.data.frame(out)) return(NULL)
       
-      if (!is.null(tmp) && is.data.frame(tmp)) {
-        tmp$.desc         <- s$run_name_good
-        tmp$.cat          <- s$cat_name
-        tmp$.paramname    <- s$param_name
-        tmp$.value        <- s$bound_value
-        tmp$.ratio        <- if (isTRUE(s$reference_value != 0)) s$bound_value / s$reference_value else NA_real_ # undefined for a reference of 0 (L54)
-        list_of_runs[[run_i]] <- tmp
-      }
-    }
-    
-    list_of_runs
-  } # end run_all
+      out$.desc      <- r$desc
+      out$.cat       <- r$cat
+      out$.paramname <- r$param
+      out$.value     <- r$value
+      out$.ratio     <- r$ratio
+      out
+    })
+  }
   
   # withProgress() needs a running Shiny session, so only use it when asked to
-  list_of_runs <- if (show_progress) shiny::withProgress(message = "Batch Run", value = 0, run_all()) else run_all()
-  
-  dplyr::bind_rows(list_of_runs)
+  results <- if (show_progress) shiny::withProgress(message = "Batch Run", value = 0, run_all()) else run_all()
+  dplyr::bind_rows(results)
 }
 
 #-------------------------------------------------------------------------------
@@ -1085,45 +839,27 @@ update_batch_run_table <- function(param_df,
                                    length_upper_change   = 0
 ) {
 
-  # # Coerce all columns except "Name" to numeric
-  starting_table <- param_df %>%
-    dplyr::mutate(dplyr::across(-Name, as.numeric))
-
-  if(any(is.na(starting_table))) {
-    return(starting_table)
+  table <- dplyr::mutate(param_df, dplyr::across(-Name, as.numeric))
+  if (anyNA(table)) {
+    return(table)
   }
 
-  # Default case is changing entire table
-  # A limitation is that changing lower bound and then modifying upper multiplier will update entire table (same goes for changing upper -> modifying lower multiplier)
-  # A workaround is not found, perhaps due to circular logic?
-  all_params_table <- starting_table %>%
-    dplyr::mutate(
-      Lower = Reference * sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.5, display_error = TRUE),
-      Upper = Reference * sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)
-    )
-
-  # If last change was on a reference value. Only the corresponding upper/lower bounds should be updated
-  # Switching models could introduce more than one last_change_ref_model_1() so we're also checking against that
-  if(length(last_change_ref_index) == 1 && last_change_ref_index > 0) {
-    all_params_table <- starting_table
-    all_params_table$Lower[last_change_ref_index] <- all_params_table$Reference[last_change_ref_index] * sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)
-    all_params_table$Upper[last_change_ref_index] <- all_params_table$Reference[last_change_ref_index] * sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)
+  # A bound edited by hand is kept as it is. Otherwise the bounds are
+  # Reference x multiplier: for the edited row only after a Reference edit, and
+  # for every row after a multiplier change. (A multiplier change therefore
+  # also resets bounds edited earlier, so bounds are best edited last.)
+  bound_edited <- (length_lower_change == 1 && length_upper_change == 0) ||
+                  (length_lower_change == 0 && length_upper_change == 1)
+  if (!bound_edited) {
+    lower <- sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)
+    upper <- sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)
+    # (switching models can give more than one index; then all rows are updated)
+    rows  <- if (length(last_change_ref_index) == 1 && last_change_ref_index > 0) last_change_ref_index else seq_len(nrow(table))
+    table$Lower[rows] <- table$Reference[rows] * lower
+    table$Upper[rows] <- table$Reference[rows] * upper
   }
 
-  # If last change was on a bound, don't update the entire table, however updating the table has some weird circular logic interaction
-  # The compromise is either 1) Multipliers stop working after changing reference value, or
-  # 2) When multipliers are changed, entire table gets updated. I think having 2) is more user-friendly if there is a reminder to ask users to edit bounds last
-  # 3) - directly updating the tor_tab_new_model_1() reactive seems to have worked well such that changing bounds and then going back and changing reference does not update entire table
-
-  if((length_lower_change == 1 & length_upper_change == 0) |
-     (length_lower_change == 0 & length_upper_change == 1)){
-    #message("no change")
-    all_params_table <- starting_table
-  }
-
-  # Coerce entire df to character before displaying, this is needed to always trigger the type change in tor_tab_model_1()
-  all_params_table <- all_params_table %>%
-    dplyr::mutate(dplyr::across(dplyr::everything(), as.character))
-
-  return(all_params_table)
+  # Character columns, so that every update is a type change that re-triggers
+  # the table's reactive in the app
+  dplyr::mutate(table, dplyr::across(dplyr::everything(), as.character))
 }

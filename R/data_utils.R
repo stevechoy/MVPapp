@@ -51,22 +51,7 @@ check_and_combine_df <- function(model_1_is_valid,
 
 search_id_col <- function(orig_df,
                           names_of_id_cols = c("SUBJIDN", "SUBJID", "USUBJID", "PTNO")) {
-
-  df <- orig_df
-
-  for(i in seq_along(names_of_id_cols)) {
-    if('ID' %in% names(df)) {
-      return(df)
-    } else {
-      if(names_of_id_cols[i] %in% names(df)) {
-        df <- df %>% dplyr::mutate(ID = !!dplyr::sym(names_of_id_cols[i])) %>%
-          dplyr::select(ID, dplyr::everything())
-        shiny::showNotification(paste0("ID column has been created from '", names_of_id_cols[i], "' column."), type = "message", duration = 10)
-      }
-    }
-  } # end of loop
-
-  return(df) # unchanged if none found (also covers a match on the last candidate)
+  derive_column(orig_df, "ID", names_of_id_cols, first = TRUE)
 }
 
 #-------------------------------------------------------------------------------
@@ -87,20 +72,29 @@ search_id_col <- function(orig_df,
 
 search_time_col <- function(orig_df,
                             names_of_time_cols = c("TAFD", "TSFD", "ATFD", "ATSD")) {
+  derive_column(orig_df, "TIME", names_of_time_cols)
+}
 
-  df <- orig_df
+#-------------------------------------------------------------------------------
+#' @name derive_column
+#'
+#' @title Create a missing column from the first available alternative column
+#'
+#' @param df          dataset
+#' @param target      column to create, e.g. "ID"
+#' @param candidates  columns to copy it from, in order of preference
+#' @param first       move the new column to the front
+#'
+#' @returns df, unchanged when `target` exists or no candidate is found
+#' @noRd
+#-------------------------------------------------------------------------------
+derive_column <- function(df, target, candidates, first = FALSE) {
+  source <- intersect(candidates, names(df))[1]
+  if (target %in% names(df) || is.na(source)) return(df)
 
-  for(i in seq_along(names_of_time_cols)) {
-    if('TIME' %in% names(df)) {
-      return(df)
-    } else {
-      if(names_of_time_cols[i] %in% names(df)) {
-        df <- df %>% dplyr::mutate(TIME = !!dplyr::sym(names_of_time_cols[i])) #%>%
-        #dplyr::select(ID, dplyr::everything())
-        shiny::showNotification(paste0("TIME column has been created from '", names_of_time_cols[i], "' column."), type = "message", duration = 10)
-      }
-    }
-  } # end of loop
-
-  return(df) # unchanged if none found (also covers a match on the last candidate)
+  df <- dplyr::mutate(df, !!target := .data[[source]])
+  if (first) df <- dplyr::relocate(df, dplyr::all_of(target))
+  shiny::showNotification(paste0(target, " column has been created from '", source, "' column."),
+                          type = "message", duration = 10)
+  df
 }

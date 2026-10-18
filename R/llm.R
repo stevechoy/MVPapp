@@ -20,31 +20,17 @@
 #' @param api_upload API URL for uploading of files (Dify requires a 2-step process)
 #' @param api_chat API URL for chat messages, required when using OpenAI-compatible API
 #' @param user_id user id for the request (internal deployment only)
-#' @param model_gemini Model to be used when calling Gemini API
-#' @param model_openai Model to be used when calling OpenAI API
-#' @param model_anthropic Model to be used when calling Anthropic API
-#' @param model_openrouter Model to be used when calling OpenRouter
-#' @param model_openai_compatible Model to be used when calling OpenAI-compatible API
-#' @param model_deepseek Model to be used when calling DeepSeek
-#' @param model_apollo Model to be used when calling Apollo (internal deployment only)
-#' @param model_azure Model to be used when calling Azure OpenAI
-#' @param model_aws Model to be used when calling AWS Bedrock
+#' @param models Named list of the model to use per service (`model_gemini`,
+#'   `model_openai`, `model_anthropic`, ... as in [mvp_app()]); see llm_model_name()
 #' @param display_info Set to TRUE to show how much time/tokens in Shiny UI when job is finished
 #' @param temperature Goes from 0 to 1, where 0 is deterministic
 #' @param seed seed number for LLMs
 #' @param locally_parse_file if TRUE, extracts text locally and includes in prompt instead of uploading file
-#' @param model_lang Either "mrgsolve" or "nonmem" (changes the prompt)
+#' @param model_lang "mrgsolve", "nonmem" or "rxode2" (shown in the progress message)
 #' @param deep_pdfscan Use Vision to extract image data (internal deployment only)
 #' @param force_parse Force parsing (internal deployment only)
-#' @param mrgsolve_system_prompt String for mrgsolve system prompt
-#' @param mrgsolve_long_user_prompt String for mrgsolve long user prompt
-#' @param mrgsolve_short_user_prompt String for mrgsolve short user prompt
-#' @param nonmem_system_prompt String for nonmem system prompt
-#' @param nonmem_long_user_prompt String for nonmem long user prompt
-#' @param nonmem_short_user_prompt String for nonmem short user prompt
-#' @param rxode2_system_prompt String for rxode2 system prompt
-#' @param rxode2_long_user_prompt String for rxode2 long user prompt
-#' @param rxode2_short_user_prompt String for rxode2 short user prompt
+#' @param prompts The prompts for this language, from llm_prompts(): a list of
+#'   `system`, `long` and `short` (user prompt for Dify services)
 #' @param internal_version Logical. Only relevant for internal deployments
 #' @param max_tokens Numeric. Maximum output tokens.
 #' @param debug Displays debug messages and keeps the responses in MVPapp:::.mvp_state
@@ -64,15 +50,7 @@ translate_model_code <- function(ready_path,
                                  api_upload = NULL,
                                  api_chat = NULL,
                                  user_id = "mrgsolve_translator",
-                                 model_gemini = "gemini-3.8-flash",
-                                 model_openai = "gpt-5-mini",
-                                 model_anthropic = "claude-haiku-4-5-20251001",
-                                 model_openrouter = "arcee-ai/trinity-large-preview:free",
-                                 model_openai_compatible = "gpt-5-mini",
-                                 model_deepseek = "deepseek-flash",
-                                 model_apollo = "gpt-5.6-terra",
-                                 model_azure = "gpt-5.6-terra",
-                                 model_aws = "anthropic.claude-sonnet-5",
+                                 models,
                                  display_info = TRUE,
                                  temperature = 0.1,
                                  seed = 42,
@@ -80,15 +58,7 @@ translate_model_code <- function(ready_path,
                                  model_lang = "mrgsolve",
                                  deep_pdfscan = FALSE,
                                  force_parse = FALSE,
-                                 mrgsolve_system_prompt,
-                                 mrgsolve_long_user_prompt,
-                                 mrgsolve_short_user_prompt,
-                                 nonmem_system_prompt,
-                                 nonmem_long_user_prompt,
-                                 nonmem_short_user_prompt,
-                                 rxode2_system_prompt,
-                                 rxode2_long_user_prompt,
-                                 rxode2_short_user_prompt,                                 
+                                 prompts,
                                  internal_version = TRUE,
                                  max_tokens = 128000,
                                  debug = TRUE
@@ -98,9 +68,8 @@ translate_model_code <- function(ready_path,
   file_path <- ready_path
   file_name <- file_name %||% basename(ready_path)
 
-  is_text_file <- grepl("\\.(txt|mod|ctl|cpp|lst)$", file_name, ignore.case = TRUE)
-  
-  if(is_text_file) {
+  # Text files are sent as text inside the prompt (from a .txt copy)
+  if (grepl("\\.(txt|mod|ctl|cpp|lst)$", file_name, ignore.case = TRUE)) {
     detected_type <- "text/plain"
     new_path <- paste0(file_path, ".txt")
     file.copy(file_path, new_path)
@@ -112,232 +81,73 @@ translate_model_code <- function(ready_path,
     detected_type <- mime::guess_type(file_name)
   }
 
-  model_name <- switch(EXPR = service,
-                       "PROD"              = "[PROD model]",
-                       "PMx Co-Modeler"    = "[Apollo model]",
-                       "EXP"               = "[EXP model]",
-                       "Fast"              = "[Apollo model]",
-                       "Gemini"            = model_gemini,
-                       "OpenAI"            = model_openai,
-                       "Claude"            = model_anthropic,
-                       "OpenRouter"        = model_openrouter,
-                       "OpenAI-Compatible" = model_openai_compatible,
-                       "DeepSeek"          = model_deepseek,
-                       "Apollo"            = model_apollo,
-                       "Test Provider"     = model_apollo,
-                       "Azure OpenAI"      = model_azure,
-                       "AWS Bedrock"       = model_aws)
-  
-  if(debug) {
-    message(paste0("translate_model_code: 0) model_name is: ", model_name))
-  }
-  
-  ## Allow list to explicitly list some popular legacy models that supports temperature settings
-  models_yes_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
-                              "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
-                              "gpt-5.2")
-  
-  if(model_name %in% models_yes_temperature) {
-    optimal_params <- ellmer::params(temperature = temperature, seed = seed, max_tokens = max_tokens)
-  } else {
-    safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
-    optimal_params <- ellmer::params(seed = seed, max_tokens = max_tokens)
-  }
-  
-  if(debug) {
-    message("translate_model_code: 1) API key check")
-  }
-  
-  if(model_lang == "mrgsolve") {
-    system_prompt     <- mrgsolve_system_prompt
-    long_user_prompt  <- mrgsolve_long_user_prompt
-    short_user_prompt <- mrgsolve_short_user_prompt
-  }
-  
-  if(model_lang == "nonmem") {
-    system_prompt     <- nonmem_system_prompt
-    long_user_prompt  <- nonmem_long_user_prompt
-    short_user_prompt <- nonmem_short_user_prompt
-  }
-  
-  if(model_lang == "rxode2") {
-    system_prompt     <- rxode2_system_prompt
-    long_user_prompt  <- rxode2_long_user_prompt
-    short_user_prompt <- rxode2_short_user_prompt    
-  }
-  
-  if(service %in% dify_services) {
-    instruction_prompt <- short_user_prompt
-  } else {
-    instruction_prompt <- long_user_prompt
-  }
-  
+  model_name <- llm_model_name(service, models)
+  if (debug) message(paste0("translate_model_code: 0) model_name is: ", model_name))
+  params <- llm_params(model_name, temperature, seed, max_tokens, warn = TRUE)
+
+  # Dify workflows take the short user prompt, the other services the long one
+  instruction_prompt <- if (service %in% dify_services) prompts$short else prompts$long
+
   # ── Service-level format guard (still relevant for single-file non-PDF/text uploads) ──
   if (service %in% c("DeepSeek", "Apollo", "Test Provider")) {
-    safely_showNotification(
-      paste0(service, " currently only supports local parsing."),
-      type = "warning"
-    )
+    safely_showNotification(paste0(service, " currently only supports local parsing."), type = "warning")
     locally_parse_file <- TRUE
   }
-  
+
   if (service %in% c("OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek", "Apollo", "Test Provider") &&
       !detected_type %in% c("application/pdf", "text/plain")) {
-    safely_showNotification(
-      paste0(service, " currently only supports PDF or plain text format."),
-      type = "error"
-    )
+    safely_showNotification(paste0(service, " currently only supports PDF or plain text format."), type = "error")
     return(NULL)
   }
-  
-  if(debug) {
-    message("translate_model_code: 2) result tryCatch")
-  }
-  
-  # --- Initialize output variables outside tryCatch for clarity ---
-  usage_info      <- list(input = 0, output = 0, total = 0, model = "unknown")
-  conversation_id <- ""
-  chat_obj        <- NULL
-  elapsed         <- NA
-  tokens_per_sec  <- "N/A"
-  
+
   result <- tryCatch({
-    
     safely_withProgress(message = 'Processing...', value = 0, {
-      
-      # --- Local file parsing ---
-      if(locally_parse_file) {
-        
+
+      if (locally_parse_file) {
         safely_incProgress(0.1, detail = paste("Parsing", file_name, "locally..."))
-        
         instruction_prompt <- paste0(
           instruction_prompt,
           "\n\n--- FILE CONTENT START ---\n",
           extract_file_content(file_path, file_name, detected_type, debug),
           "\n--- FILE CONTENT END ---"
         )
-        
       } else {
         safely_incProgress(0.1, detail = paste("Uploading", file_name, "..."))
       }
-      
-      start_time <- Sys.time()
+
       safely_incProgress(0.3, detail = paste0("Generating ", model_lang, " code using ", model_name, " (please be patient, takes ~1 min)..."))
+      llm_chat(service, model_name, instruction_prompt,
+               system_prompt      = prompts$system,
+               params             = params,
+               api_key            = api_key,
+               api_upload         = api_upload,
+               api_chat           = api_chat,
+               user_id            = user_id,
+               file_path          = file_path,
+               detected_type      = detected_type,
+               locally_parse_file = locally_parse_file,
+               deep_pdfscan       = deep_pdfscan,
+               force_parse        = force_parse,
+               internal_version   = internal_version,
+               debug              = debug)
+    })
+  }, error = function(e) llm_failed("Translation", e, debug))
 
-      branch_result <- if (service %in% dify_services) {
-        
-        if(debug) message("translate_model_code: 3) Dify branch")
-        run_dify_chat(
-          conversation_id    = NULL,
-          instruction_prompt = instruction_prompt,
-          api_key            = api_key,
-          api_upload         = api_upload,
-          api_chat           = api_chat,
-          user_id            = user_id,
-          file_path          = file_path,
-          detected_type      = detected_type,
-          locally_parse_file = locally_parse_file,
-          deep_pdfscan       = deep_pdfscan,
-          force_parse        = force_parse,
-          model_name         = model_name,
-          debug              = debug
-        )
-      } else {
-        
-        if(debug) message("translate_model_code: 3) Ellmer branch")
-        run_ellmer_chat(
-          chat_obj           = NULL,
-          service            = service,
-          model_name         = model_name,
-          system_prompt      = system_prompt,
-          optimal_params     = optimal_params,
-          api_chat           = api_chat,
-          instruction_prompt = instruction_prompt,
-          file_path          = file_path,
-          detected_type      = detected_type,
-          locally_parse_file = locally_parse_file,
-          internal_version   = internal_version,
-          debug              = debug
-        )
-      } # end BRANCH B
-      
-      if(debug) {.mvp_state$branch_model <- branch_result}
+  if (is.null(result)) return(NULL)
+  if (debug) .mvp_state$branch_model <- result
 
-      elapsed <- round(as.numeric(difftime(Sys.time(), start_time, units = "secs")), 1)
-      
-      if(debug) message(paste0("translate_model_code: raw answer: ", branch_result$answer)) # Raw answer before cleaning
-      
-      # Return EVERYTHING needed after the tryCatch as a named list
-      list(
-        answer          = branch_result$answer,
-        conversation_id = branch_result$conversation_id %||% "",
-        chat_obj        = branch_result$chat_obj,
-        elapsed         = elapsed,
-        usage_info      = branch_result$usage_info
-      )
-      
-    }) # end of withProgress
-    
-  }, error = function(e) {
-    msg <- llm_error_message(e)
-    if(debug) message("--- TRANSLATION ERROR ---\n", msg)
-    safely_showNotification(paste("Translation Failed:", msg), type = "error", duration = NULL)
-    return(NULL)
-  })
-  
-  # Unpack cleanly after tryCatch
-  if(!is.null(result)) {
-    
-    elapsed        <- result$elapsed
-    usage_info     <- result$usage_info
-    tokens_per_sec <- if(is.numeric(usage_info$total) && usage_info$total > 0) {
-      round(usage_info$total / elapsed, 1)
-    } else { "N/A" }
-    
-    if(display_info) {
-      safely_showNotification(
-        ui = shiny::tagList(
-          shiny::tags$div(
-            style = "font-size: 14px;",
-            shiny::tags$b("Translation Complete"),
-            shiny::tags$hr(style = "margin: 5px 0;"),
-            shiny::tags$p(paste0("\u23f1 Time: ", elapsed, " seconds")),
-            shiny::tags$p(paste0("\U0001f916 Model: ", usage_info$model)),
-            shiny::tags$p(paste0("\U0001f39f Tokens: ", usage_info$total, " (", tokens_per_sec, " t/s)")),
-            shiny::tags$p(style = "font-size: 11px; color: #666;",
-                          paste0("In: ", usage_info$input, " | Out: ", usage_info$output))
-          )
-        ),
-        type     = "message",
-        duration = 25
-      )
-    }
-    
-    list_of_output <- list(
-      answer          = result$answer,
-      conversation_id = result$conversation_id,
-      chat_obj        = result$chat_obj
-    )
-    
-    if(debug) .mvp_state$llm_result <- list_of_output
-    
-    list_of_output$answer <- clean_llm_response(list_of_output$answer)
-    
-    return(list_of_output)
-    
-  } else {
-    return(NULL)
-  }
+  if (display_info) show_llm_usage("Translation Complete", result)
+
+  out <- list(answer = result$answer, conversation_id = result$conversation_id, chat_obj = result$chat_obj)
+  if (debug) .mvp_state$llm_result <- out
+  out$answer <- clean_llm_response(out$answer)
+  out
 }
 
 #-------------------------------------------------------------------------------
 #' @name refine_model_code
 #'
-#' @title Provide a model code string and its compile error message to be refined
-#'
-#' @description
-#' Sends a string containing model code and error message to a Dify Workflow or
-#' LLM API for correction.
+#' @title Ask the LLM to fix model code that failed to compile
 #'
 #' @param model_code Input model code
 #' @param error_message Input compilation error message
@@ -346,267 +156,321 @@ translate_model_code <- function(ready_path,
 #' @param service Choice of "PROD", "EXP", "Gemini", "OpenAI", "Claude", "OpenRouter",
 #'  "OpenAI-Compatible", "DeepSeek", "Apollo", "Azure OpenAI", "AWS Bedrock"
 #' @param api_key API Key, recommended to store it as env var called "ANTHROPIC_API_KEY" etc (Dify only)
-#' @param api_upload API URL for uploading of files (Dify requires a 2-step process)
 #' @param api_chat API URL for chat messages, required for OpenAI-compatible
 #' @param user_id user id for the request
-#' @param model_gemini Model to be used when calling Gemini API
-#' @param model_openai Model to be used when calling OpenAI API
-#' @param model_anthropic Model to be used when calling Anthropic API
-#' @param model_openrouter Model to be used when calling OpenRouter
-#' @param model_openai_compatible Model to be used when calling OpenAI-compatible API
-#' @param model_deepseek Model to be used when calling DeepSeek
-#' @param model_apollo Model to be used when calling Apollo LLM
-#' @param model_azure Model to be used when calling Azure OpenAI
-#' @param model_aws Model to be used when calling AWS Bedrock
+#' @param models Named list of the model to use per service, as in translate_model_code()
 #' @param progress_bar Starting point of Shiny progress bar, relevant for 2nd try
 #' @param max_retries Required to calculate a more accurate progress bar
 #' @param display_info Set to TRUE to show how much time/tokens in Shiny UI when job is finished
 #' @param temperature Goes from 0 to 1, where 0 is deterministic, if not reusing context
 #' @param seed seed number for LLMs, if not reusing context
 #' @param attempt current attempt number
-#' @param deep_pdfscan Uses Vision to extract image data (internal deployment only)
-#' @param force_parse Force reparsing (internal deployment only)
-#' @param system_prompt Character. System prompt
-#' @param long_user_prompt Character. Long user prompt
-#' @param short_user_prompt Character. Short user prompt
+#' @param prompts The refinement prompts, from llm_prompts(): a list of `system`, `long` and `short`
 #' @param internal_version Logical. Only relevant for internal deployments
-#' @param feedback_success Logical. Only relevant for internal deployments, and if reuse_context = TRUE
 #' @param max_tokens Numeric. Maximum output tokens.
 #' @param debug Displays debug messages and keeps the responses in MVPapp:::.mvp_state
 #'
-#' @returns a named list of "answer", "conversation_id", "chat_obj"
+#' @returns a named list of "answer", "conversation_id", "chat_obj", or NULL on failure
 #' @importFrom stats setNames
 #' @importFrom rlang %||%
 #' @noRd
 #-------------------------------------------------------------------------------
-
 refine_model_code <- function(model_code,
                               error_message,
-                              context = NULL, # New argument to hold chat_obj or conversation_id
+                              context = NULL,
                               reuse_context = FALSE,
                               service,
                               api_key,
-                              api_upload = NULL,
                               api_chat = NULL,
                               user_id = "mrgsolve_translator",
-                              model_gemini = "gemini-3.8-flash",
-                              model_openai = "gpt-5-mini",
-                              model_anthropic = "claude-haiku-4-5-20251001",
-                              model_openrouter = "arcee-ai/trinity-large-preview:free",
-                              model_openai_compatible = "gpt-5-mini",
-                              model_deepseek = "deepseek-flash",
-                              model_apollo = "gpt-5.6-terra",
-                              model_azure = "gpt-5.6-terra",
-                              model_aws = "anthropic.claude-sonnet-5",
+                              models,
                               progress_bar = 0.4,
                               max_retries = 2,
                               display_info = TRUE,
                               temperature = 0,
                               seed = 42,
                               attempt = 1,
-                              deep_pdfscan = FALSE,
-                              force_parse = FALSE,
-                              system_prompt,
-                              long_user_prompt,
-                              short_user_prompt,
-                              internal_version,
-                              feedback_success = FALSE,
+                              prompts,
+                              internal_version = TRUE,
                               max_tokens = 128000,
                               debug = TRUE
 ) {
   rlang::check_installed(c("ellmer", "httr2"), reason = "to use `refine_model_code()`.")
-  
-  model_name <- switch(EXPR = service,
-                       "PROD"              = "[PROD model]",
-                       "PMx Co-Modeler"    = "[Apollo model]",
-                       "EXP"               = "[EXP model]",
-                       "Fast"              = "[Apollo model]",
-                       "Gemini"            = model_gemini,
-                       "OpenAI"            = model_openai,
-                       "Claude"            = model_anthropic,
-                       "OpenRouter"        = model_openrouter,
-                       "OpenAI-Compatible" = model_openai_compatible,
-                       "DeepSeek"          = model_deepseek,
-                       "Apollo"            = model_apollo,
-                       "Test Provider"     = model_apollo,
-                       "Azure OpenAI"      = model_azure,
-                       "AWS Bedrock"       = model_aws)
-  
-  ## Allow list to explicitly list some popular legacy models that supports temperature settings
-  models_yes_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
-                              "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
-                              "gpt-5.2")
-  
-  if(model_name %in% models_yes_temperature) {
-    optimal_params <- ellmer::params(temperature = temperature, seed = seed, max_tokens = max_tokens)
-  } else {
-    #safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
-    optimal_params <- ellmer::params(seed = seed, max_tokens = max_tokens)
+
+  model_name <- llm_model_name(service, models)
+  params     <- llm_params(model_name, temperature, seed, max_tokens)
+
+  # Progress bar: translation ends at 40%, the retries share the remaining 60%
+  segment_width <- (1 - 0.4) / max_retries
+
+  # The error can come as several lines (e.g. compiler output)
+  error_message <- paste(error_message, collapse = "\n")
+  retry_prompt <- paste0(
+    if (service %in% dify_services) prompts$short else prompts$long,
+    "\n\n",
+    "<model_code>\n", model_code, "\n", "</model_code>\n\n",
+    "<error_message>\n", error_message, "\n", "</error_message>"
+  )
+
+  if (reuse_context) safely_showNotification("Keeping same conversation to improve results...")
+  if (debug) message(paste0("refine_model_code: 1) ", retry_prompt))
+
+  result <- tryCatch({
+    safely_withProgress(message = "Processing...", value = progress_bar, {
+      safely_incProgress(segment_width * 0.33, detail = paste("Re-iterating after failed compilation..."))
+      res <- llm_chat(service, model_name, retry_prompt,
+                      system_prompt    = prompts$system,
+                      params           = params,
+                      api_key          = api_key,
+                      api_chat         = api_chat,
+                      user_id          = user_id,
+                      context          = if (reuse_context) context,
+                      internal_version = internal_version,
+                      debug            = debug)
+      safely_incProgress(segment_width * 0.33, detail = paste("Cleaning response..."))
+      res
+    })
+  }, error = function(e) llm_failed("Refinement", e, debug))
+
+  if (is.null(result)) return(NULL)
+  if (debug) .mvp_state$branch_refine <- result
+  if (debug) message(paste0("refine_model_code: 4) conversation_id: ", result$conversation_id))
+
+  if (display_info) show_llm_usage(paste0("Retry Complete (#", attempt, ")"), result)
+
+  out <- list(answer = result$answer, conversation_id = result$conversation_id, chat_obj = result$chat_obj)
+  if (debug) .mvp_state$llm_refine <- out # kept for review (see ?run_mvp, "Objects kept for debugging")
+  out$answer <- clean_llm_response(out$answer)
+  out
+}
+
+#-------------------------------------------------------------------------------
+#' @name relay_llm_success
+#'
+#' @title Tell a Dify workflow that its code compiled
+#'
+#' @description
+#' With `reuse_context`, a Dify conversation is told that the last code
+#' compiled, so that the workflow (and its cache) keeps that context. Only the
+#' side effect matters; nothing is returned.
+#'
+#' @param context          the translation / refinement result holding `conversation_id`
+#' @param service          a Dify service (see `dify_services`)
+#' @param api_key,api_chat,user_id as in refine_model_code()
+#' @param debug            keeps the response in MVPapp:::.mvp_state$llm_success
+#'
+#' @returns NULL, invisibly
+#' @noRd
+#-------------------------------------------------------------------------------
+relay_llm_success <- function(context, service, api_key, api_chat, user_id, debug = FALSE) {
+  message_text <- "Model compiled successfully!"
+  safely_showNotification(paste0(message_text, " Feeding back to ", service, "."))
+
+  result <- tryCatch(
+    safely_withProgress(message = "Relaying success...", value = 0, {
+      run_dify_chat(instruction_prompt = message_text,
+                    api_key            = api_key,
+                    api_chat           = api_chat,
+                    user_id            = user_id,
+                    conversation_id    = context$conversation_id,
+                    model_name         = llm_model_name(service, list()),
+                    debug              = debug)
+    }),
+    error = function(e) llm_failed("Refinement", e, debug))
+
+  if (debug && !is.null(result)) .mvp_state$llm_success <- result
+  invisible(NULL)
+}
+
+#-------------------------------------------------------------------------------
+#' @name llm_prompts
+#'
+#' @title The system, long and short user prompts of one task, from prompts.R
+#'
+#' @param prefix  e.g. "mrgsolve_translation" or "mrgsolve_refine"
+#' @param env     environment holding the prompts (the app's)
+#'
+#' @returns a list of `system`, `long` and `short` (NULL when a prompt is not defined;
+#'   the nonmem and rxode2 prompts are optional)
+#' @noRd
+#-------------------------------------------------------------------------------
+llm_prompts <- function(prefix, env) {
+  get_prompt <- function(type) get0(paste0(prefix, "_", type), envir = env)
+  list(system = get_prompt("system_prompt"),
+       long   = get_prompt("long_user_prompt"),
+       short  = get_prompt("short_user_prompt"))
+}
+
+#-------------------------------------------------------------------------------
+#' @name llm_model_name
+#'
+#' @title Model used for a service
+#'
+#' @param service  LLM service, e.g. "Claude"
+#' @param models   named list with `model_gemini`, `model_openai`, `model_anthropic`,
+#'   `model_openrouter`, `model_openai_compatible`, `model_deepseek`,
+#'   `model_apollo`, `model_azure` and `model_aws`
+#'
+#' @returns the model name (a placeholder for Dify services, whose workflow picks the model)
+#' @noRd
+#-------------------------------------------------------------------------------
+llm_model_name <- function(service, models) {
+  switch(EXPR = service,
+         "PROD"              = "[PROD model]",
+         "PMx Co-Modeler"    = "[Apollo model]",
+         "EXP"               = "[EXP model]",
+         "Fast"              = "[Apollo model]",
+         "Gemini"            = models$model_gemini,
+         "OpenAI"            = models$model_openai,
+         "Claude"            = models$model_anthropic,
+         "OpenRouter"        = models$model_openrouter,
+         "OpenAI-Compatible" = models$model_openai_compatible,
+         "DeepSeek"          = models$model_deepseek,
+         "Apollo"            = ,
+         "Test Provider"     = models$model_apollo,
+         "Azure OpenAI"      = models$model_azure,
+         "AWS Bedrock"       = models$model_aws)
+}
+
+#-------------------------------------------------------------------------------
+#' @name llm_params
+#'
+#' @title Request parameters for ellmer
+#'
+#' @description
+#' Only the models listed accept a temperature (newer reasoning models reject
+#' it); the others get the seed and maximum number of tokens only.
+#'
+#' @param model_name   model name
+#' @param temperature  temperature
+#' @param seed         seed
+#' @param max_tokens   maximum output tokens
+#' @param warn         notify when the temperature is not used
+#'
+#' @returns an ellmer::params() object
+#' @noRd
+#-------------------------------------------------------------------------------
+llm_params <- function(model_name, temperature, seed, max_tokens, warn = FALSE) {
+  models_with_temperature <- c("claude-sonnet-4-6", "claude-opus-4-6", "claude-haiku-4-5", "claude-haiku-4-5-20251001",
+                               "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
+                               "gpt-5.2")
+  if (model_name %in% models_with_temperature) {
+    return(ellmer::params(temperature = temperature, seed = seed, max_tokens = max_tokens))
   }
-  
-  # Calculate the width of one retry segment (e.g., 0.2 if max_retries is 3)
-  if(!feedback_success) {
-    segment_width <- (1 - 0.4) / max_retries 
+  if (warn) safely_showNotification(paste0(model_name, " does not support temperature setting."), type = "warning")
+  ellmer::params(seed = seed, max_tokens = max_tokens)
+}
+
+#-------------------------------------------------------------------------------
+#' @name llm_chat
+#'
+#' @title Send one prompt to a Dify workflow or, through ellmer, to an LLM API
+#'
+#' @param service,model_name,params,api_key,api_upload,api_chat,user_id,file_path,detected_type,locally_parse_file,deep_pdfscan,force_parse,internal_version,debug
+#'   see run_dify_chat() and run_ellmer_chat()
+#' @param prompt         the user prompt
+#' @param system_prompt  system prompt (not used by Dify workflows)
+#' @param context        NULL for a new conversation, or an earlier result
+#'   (its `conversation_id` / `chat_obj`) to continue that one
+#'
+#' @returns a list of `answer`, `conversation_id` ("" for ellmer), `chat_obj`
+#'   (NULL for Dify), `usage_info` and `elapsed` (seconds)
+#' @noRd
+#-------------------------------------------------------------------------------
+llm_chat <- function(service, model_name, prompt, system_prompt, params,
+                     api_key, api_upload = NULL, api_chat = NULL, user_id,
+                     file_path = NULL, detected_type = NULL, locally_parse_file = TRUE,
+                     deep_pdfscan = FALSE, force_parse = FALSE,
+                     context = NULL, internal_version = TRUE, debug = FALSE) {
+  start_time <- Sys.time()
+
+  result <- if (service %in% dify_services) {
+    if (debug) message("llm_chat: Dify branch")
+    run_dify_chat(instruction_prompt = prompt,
+                  api_key            = api_key,
+                  api_upload         = api_upload,
+                  api_chat           = api_chat,
+                  user_id            = user_id,
+                  file_path          = file_path,
+                  detected_type      = detected_type,
+                  locally_parse_file = locally_parse_file,
+                  conversation_id    = context$conversation_id,
+                  deep_pdfscan       = deep_pdfscan,
+                  force_parse        = force_parse,
+                  model_name         = model_name,
+                  debug              = debug)
   } else {
-    segment_width <- 0 # Setting progress bar to 0 when relaying success messages
+    if (debug) message("llm_chat: ellmer branch")
+    run_ellmer_chat(service            = service,
+                    model_name         = model_name,
+                    system_prompt      = system_prompt,
+                    optimal_params     = params,
+                    api_chat           = api_chat,
+                    instruction_prompt = prompt,
+                    file_path          = file_path,
+                    detected_type      = detected_type,
+                    locally_parse_file = locally_parse_file,
+                    chat_obj           = context$chat_obj,
+                    internal_version   = internal_version,
+                    debug              = debug)
   }
 
-  if(service %in% dify_services) {
-    instruction_prompt <- short_user_prompt
-  } else {
-    instruction_prompt <- long_user_prompt
-  }
-  
-  # Ensure error_message is a single string, not a vector of lines (i.e. if error comes from out$stderr)
-  if (is.character(error_message) && length(error_message) > 1) {
-    error_message <- paste(error_message, collapse = "\n")
-  }
-  
-  retry_prompt <- paste0(
-    instruction_prompt,
-    "\n\n",
-    "<model_code>\n",
-    model_code, "\n",
-    "</model_code>\n\n",
-    "<error_message>\n",
-    error_message, "\n",
-    "</error_message>"
+  if (debug) message(paste0("llm_chat: raw answer: ", result$answer)) # before cleaning
+  result$conversation_id <- result$conversation_id %||% ""
+  result$elapsed         <- round(as.numeric(difftime(Sys.time(), start_time, units = "secs")), 1)
+  result
+}
+
+#-------------------------------------------------------------------------------
+#' @name show_llm_usage
+#'
+#' @title Notification with the time, model and tokens of an LLM request
+#'
+#' @param title   first line, e.g. "Translation Complete"
+#' @param result  result of llm_chat()
+#'
+#' @returns NULL, invisibly
+#' @noRd
+#-------------------------------------------------------------------------------
+show_llm_usage <- function(title, result) {
+  usage <- result$usage_info
+  tokens_per_sec <- if (is.numeric(usage$total) && usage$total > 0) round(usage$total / result$elapsed, 1) else "N/A"
+  safely_showNotification(
+    ui = shiny::tagList(
+      shiny::tags$div(
+        style = "font-size: 14px;",
+        shiny::tags$b(title),
+        shiny::tags$hr(style = "margin: 5px 0;"),
+        shiny::tags$p(paste0("\u23f1 Time: ", result$elapsed, " seconds")),
+        shiny::tags$p(paste0("\U0001f916 Model: ", usage$model)),
+        shiny::tags$p(paste0("\U0001f39f Tokens: ", usage$total, " (", tokens_per_sec, " t/s)")),
+        shiny::tags$p(style = "font-size: 11px; color: #666;",
+                      paste0("In: ", usage$input, " | Out: ", usage$output))
+      )
+    ),
+    type     = "message",
+    duration = 25
   )
-  
-  if(reuse_context) {
-    safely_showNotification("Keeping same conversation to improve results...")
-    if(feedback_success) {
-      retry_prompt <- paste0(
-        "Model compiled successfully!"
-      )
-      safely_showNotification(paste0(retry_prompt, " Feeding back to ", service, "."))
-    }
-  }
-  
-  if(debug) {message(paste0("refine_model_code: 1) ", retry_prompt))}
-  
-  result <- tryCatch({
-    
-    if(feedback_success) {
-      process_msg <- "Relaying success..."
-    } else {
-      process_msg <- "Processing..."
-    }
-    
-    safely_withProgress(message = process_msg, value = progress_bar, {
-      
-      if(!feedback_success) {
-        safely_incProgress(segment_width * 0.33, detail = paste("Re-iterating after failed compilation..."))
-      }
-      
-      start_time <- Sys.time()
-      
-      # --- BRANCH A: DIFY (Manual httr2 Logic) ---
-      branch_result <- if(service %in% dify_services) {
-        run_dify_chat(
-          conversation_id    = if(reuse_context) context$conversation_id else NULL,
-          instruction_prompt = retry_prompt,
-          api_key            = api_key,
-          api_chat           = api_chat,
-          user_id            = user_id,
-          locally_parse_file = TRUE,
-          model_name         = model_name,
-          deep_pdfscan       = FALSE,
-          force_parse        = FALSE,
-          debug              = debug
-        )
-      } else {
-        run_ellmer_chat(
-          chat_obj           = if(reuse_context) context$chat_obj else NULL,
-          system_prompt      = system_prompt,
-          instruction_prompt = retry_prompt,
-          api_chat           = api_chat,
-          locally_parse_file = TRUE,
-          optimal_params     = optimal_params,
-          service            = service,
-          model_name         = model_name,
-          internal_version   = internal_version,
-          debug              = debug
-        )
-      }
-      
-      if(debug) {.mvp_state$branch_refine <- branch_result}
-      
-      if(!feedback_success) {
-        safely_incProgress(segment_width * 0.33, detail = paste("Cleaning response..."))
-      }
-      
-      # Return everything needed after tryCatch as a named list
-      list(
-        answer          = branch_result$answer,
-        conversation_id = branch_result$conversation_id %||% "",
-        chat_obj        = branch_result$chat_obj,
-        elapsed         = round(as.numeric(difftime(Sys.time(), start_time, units = "secs")), 1),
-        usage_info      = branch_result$usage_info
-      )
-      
-    }) # end of withProgress
-    
-  }, error = function(e) {
-    # Single unified error handler
-    msg <- llm_error_message(e)
-    
-    if(debug) message("--- REFINEMENT ERROR ---\n", msg)
-    safely_showNotification(paste("Refinement Failed:", msg), type = "error", duration = NULL)
-    return(NULL)  # Graceful failure
-  })
-  
-  # Unpack and display notification outside tryCatch
-  if(!is.null(result)) {
-    
-    elapsed        <- result$elapsed
-    usage_info     <- result$usage_info
-    tokens_per_sec <- if(is.numeric(usage_info$total) && usage_info$total > 0) {
-      round(usage_info$total / elapsed, 1)
-    } else { "N/A" }
-    
-    if(debug) message(paste0("refine_model_code: 4) conversation_id: ", result$conversation_id))
-    
-    if(display_info) {
-      safely_showNotification(
-        ui = shiny::tagList(
-          shiny::tags$div(
-            style = "font-size: 14px;",
-            shiny::tags$b(paste0("Retry Complete (#", attempt, ")")),
-            shiny::tags$hr(style = "margin: 5px 0;"),
-            shiny::tags$p(paste0("\u23f1 Time: ", elapsed, " seconds")),
-            shiny::tags$p(paste0("\U0001f916 Model: ", usage_info$model)),
-            shiny::tags$p(paste0("\U0001f39f Tokens: ", usage_info$total, " (", tokens_per_sec, " t/s)")),
-            shiny::tags$p(style = "font-size: 11px; color: #666;",
-                          paste0("In: ", usage_info$input, " | Out: ", usage_info$output))
-          )
-        ),
-        type     = "message",
-        duration = 25
-      )
-    }
-  
-    list_of_output <- list(
-      answer          = result$answer,
-      conversation_id = result$conversation_id,
-      chat_obj        = result$chat_obj
-    )
-    
-    # Keep responses for review when debugging (see ?run_mvp, "Objects kept for debugging")
-    if(debug && !feedback_success) .mvp_state$llm_refine <- list_of_output
-    if(debug && feedback_success) .mvp_state$llm_success <- list_of_output
-    
-    list_of_output$answer <- clean_llm_response(list_of_output$answer)
-    
-    if(feedback_success) {
-      return(model_code) ## Not that it matters, since we're calling this function for its side effect when relaying success
-    } else {
-      return(list_of_output)      
-    }
-    
-  } else {
-    return(NULL)
-  }
+  invisible(NULL)
+}
+
+#-------------------------------------------------------------------------------
+#' @name llm_failed
+#'
+#' @title Report a failed LLM request
+#'
+#' @param what   "Translation" or "Refinement"
+#' @param e      the error
+#' @param debug  also print it to the console
+#'
+#' @returns NULL
+#' @noRd
+#-------------------------------------------------------------------------------
+llm_failed <- function(what, e, debug = FALSE) {
+  msg <- llm_error_message(e)
+  if (debug) message("--- ", toupper(what), " ERROR ---\n", msg)
+  safely_showNotification(paste(what, "Failed:", msg), type = "error", duration = NULL)
+  NULL
 }
 
 #-------------------------------------------------------------------------------
@@ -764,37 +628,24 @@ run_dify_chat <- function(instruction_prompt,
                           file_path          = NULL, 
                           detected_type      = NULL,
                           locally_parse_file = TRUE,
-                          conversation_id    = NULL,   # NEW: for context reuse
+                          conversation_id    = NULL,
                           deep_pdfscan       = FALSE,
                           force_parse        = FALSE,
                           model_name,
                           debug = TRUE) {
   rlang::check_installed(c("httr2", "curl"), reason = "to use `run_dify_chat()`.")
   
-  chat_body <- if(locally_parse_file) {
-    
-    if(debug) message("run_dify_chat: locally_parse_file == TRUE")
-    
-    if(!is.null(conversation_id)) {
-      
-      if(debug) message("run_dify_chat: conversation_id is not NULL")
-      
-      list(
-        query = instruction_prompt,
-        response_mode = "blocking",
-        user = user_id,
-        conversation_id = conversation_id, # USE CONTEXT HERE
-        inputs = setNames(list(), character(0)) # Force an empty dictionary {} instead of an empty array []
-      )
-    } else {
-      list(
-        query = instruction_prompt,
-        response_mode = "blocking",
-        user = user_id,
-        inputs = setNames(list(), character(0)) # Force an empty dictionary {} instead of an empty array []
-      )
-    }
+  chat_body <- if (locally_parse_file) {
+    # The file's text is already in the prompt
+    Filter(Negate(is.null), list(
+      query           = instruction_prompt,
+      response_mode   = "blocking",
+      user            = user_id,
+      conversation_id = conversation_id,        # NULL (dropped) starts a new conversation
+      inputs          = setNames(list(), character(0)) # an empty JSON object {}, not an empty array []
+    ))
   } else {
+    # Dify needs the file uploaded first; the chat then refers to its id
     upload_data <- httr2::request(api_upload) %>%
       httr2::req_headers(Authorization = paste("Bearer", api_key)) %>%
       httr2::req_body_multipart(
@@ -842,14 +693,15 @@ run_dify_chat <- function(instruction_prompt,
   
   if(debug) .mvp_state$dify_chat_response <- chat_resp
   
+  usage <- chat_resp$metadata$usage
   list(
     answer          = chat_resp$answer,
     conversation_id = chat_resp$conversation_id,
     usage_info      = list(
-      input  = chat_resp$metadata$usage$prompt_tokens     %||% "N/A",
-      output = chat_resp$metadata$usage$completion_tokens %||% "N/A",
-      total  = chat_resp$metadata$usage$total_tokens      %||% "N/A",
-      model  = chat_resp$metadata$usage$model             %||% model_name
+      input  = usage$prompt_tokens     %||% "N/A",
+      output = usage$completion_tokens %||% "N/A",
+      total  = usage$total_tokens      %||% "N/A",
+      model  = usage$model             %||% model_name
     )
   )
 }
@@ -919,21 +771,19 @@ run_ellmer_chat <- function(service,
                             file_path           = NULL,
                             detected_type       = NULL,
                             locally_parse_file  = TRUE,
-                            chat_obj            = NULL,   # NEW: for context reuse
+                            chat_obj            = NULL,
                             internal_version    = TRUE,
                             debug = TRUE) {
   rlang::check_installed("ellmer", reason = "to use `run_ellmer_chat()`.")
   
-  apollo_url <- ifelse(internal_version, Sys.getenv("APOLLO_BASE_URL"), Sys.getenv("APOLLO_BASE_URL_EXT"))
-  
-  # Reuse existing chat object if provided, otherwise create a new one
-  chat_obj <- if(!is.null(chat_obj)) {
-    chat_obj
-  } else {
-    switch(EXPR = service,
+  # Continue the given conversation, or start a new one
+  if (is.null(chat_obj)) {
+    apollo_url <- Sys.getenv(if (internal_version) "APOLLO_BASE_URL" else "APOLLO_BASE_URL_EXT")
+    chat_obj <- switch(EXPR = service,
            "Gemini"            = ellmer::chat_google_gemini(model = model_name, system = system_prompt, params = optimal_params),
            "OpenAI"            = ellmer::chat_openai(model = model_name, system = system_prompt, params = optimal_params),
-           "Claude"            = if(!locally_parse_file) {
+           # uploading a file to Claude uses its Files API (beta)
+           "Claude"            = if (!locally_parse_file) {
              ellmer::chat_claude(model = model_name, system = system_prompt, params = optimal_params,
                                  beta_headers = "files-api-2025-04-14")
            } else {
@@ -945,62 +795,37 @@ run_ellmer_chat <- function(service,
                                                                  credentials = function() Sys.getenv("OPENAI_COMPATIBLE_API_KEY"),
                                                                  model = model_name, system = system_prompt, params = optimal_params),
            "DeepSeek"          = ellmer::chat_deepseek(model = model_name, system = system_prompt, params = optimal_params),
-           "Apollo"            = if(internal_version) {
-             ellmer::chat_openai_compatible(base_url = paste0(apollo_url, "/llm-api"),
-                                            credentials = get_apollo_token, # zero-argument function
-                                            model = model_name, system = system_prompt, params = optimal_params)
-           } else {
-             ellmer::chat_openai_compatible(base_url = paste0(apollo_url, "/llm-api"),
-                                            credentials = get_apollo_token_ext, # zero-argument function
-                                            model = model_name, system = system_prompt, params = optimal_params)             
-           },
-           "Test Provider"      = if(internal_version) {
-             ellmer::chat_openai_compatible(base_url = paste0(apollo_url, "/llm-api"),
-                                            credentials = get_apollo_token, # zero-argument function
-                                            model = model_name, system = system_prompt, params = optimal_params)
-           } else {
-             ellmer::chat_openai_compatible(base_url = paste0(apollo_url, "/llm-api"),
-                                            credentials = get_apollo_token_ext, # zero-argument function
-                                            model = model_name, system = system_prompt, params = optimal_params)             
-           },
+           "Apollo"            = ,
+           "Test Provider"     = ellmer::chat_openai_compatible(base_url = paste0(apollo_url, "/llm-api"),
+                                                                 credentials = function() get_apollo_token(external = !internal_version),
+                                                                 model = model_name, system = system_prompt, params = optimal_params),
            "Azure OpenAI"      = ellmer::chat_azure_openai(model = model_name, system = system_prompt, params = optimal_params),
            "AWS Bedrock"       = ellmer::chat_aws_bedrock(model = model_name, system = system_prompt, params = optimal_params)
     )
   }
   
-  final_answer <- if(locally_parse_file) {
-    if(debug) message(paste0("run_ellmer_chat: ", service, " text-only"))
+  final_answer <- if (locally_parse_file) {
+    if (debug) message(paste0("run_ellmer_chat: ", service, " text-only"))
     chat_obj$chat(instruction_prompt, echo = FALSE)
-    
   } else {
-    if(debug) message(paste0("run_ellmer_chat: ", service, " with file upload"))
-    
-    upload_file <- switch(EXPR = service,
-                          "Gemini"            = ellmer::content_pdf_file(file_path),
-                          #"Gemini"            = ellmer::google_upload(path = file_path, mime_type = detected_type), # seems not work as nice as content_pdf_file
-                          "Claude"            = ellmer::claude_file_upload(path = file_path, beta_headers = "files-api-2025-04-14"),
-                          "OpenAI"            = ellmer::content_pdf_file(file_path),
-                          "OpenRouter"        = ellmer::content_pdf_file(file_path),
-                          "OpenAI-Compatible" = ellmer::content_pdf_file(file_path),
-                          "DeepSeek"          = ellmer::content_pdf_file(file_path),  # DeepSeek does not support file upload, the logic to guard against this happens in translate_model_code
-                          "Apollo"            = ellmer::content_pdf_file(file_path),  # Does not support file upload
-                          "Test Provider"     = ellmer::content_pdf_file(file_path),  # Does not support file upload
-                          "Azure OpenAI"      = ellmer::content_pdf_file(file_path),
-                          "AWS Bedrock"       = ellmer::content_pdf_file(file_path),
-    )
-    
-    if(debug && service %in% c("Claude")) {
-      message(paste0("run_ellmer_chat: upload_file - ", upload_file@uri, ", type: ", upload_file@mime_type))
+    if (debug) message(paste0("run_ellmer_chat: ", service, " with file upload"))
+    # Claude takes a file uploaded through its Files API, the others a PDF sent
+    # with the prompt (translate_model_code() only uploads where supported)
+    upload_file <- if (service == "Claude") {
+      ellmer::claude_file_upload(path = file_path, beta_headers = "files-api-2025-04-14")
+    } else {
+      ellmer::content_pdf_file(file_path)
     }
     chat_obj$chat(instruction_prompt, upload_file, echo = FALSE)
   }
   
-  if(debug) { message("run_ellmer_chat: chat_obj:"); message(paste(utils::capture.output(print(chat_obj)), collapse = "\n")) }
-  
-  if(debug) .mvp_state$ellmer_chat_response <- final_answer
+  if (debug) {
+    message("run_ellmer_chat: chat_obj:")
+    message_object(chat_obj)
+    .mvp_state$ellmer_chat_response <- final_answer
+  }
   
   usage_df <- chat_obj$get_tokens()
-  
   list(
     answer     = final_answer,
     chat_obj   = chat_obj,
@@ -1012,6 +837,7 @@ run_ellmer_chat <- function(service,
     )
   )
 }
+
 
 #' @name prepare_uploaded_files
 #' 
@@ -1393,22 +1219,10 @@ combine_uploaded_files <- function(file_paths, file_names) {
 #'
 #' @noRd
 get_api_key <- function(llm_service) {
-  switch(EXPR = llm_service, # edit with usethis::edit_r_environ()
-         "PROD"              = Sys.getenv("DIFY_API_KEY"),
-         "PMx Co-Modeler"    = Sys.getenv("DIFY_API_KEY"),
-         "EXP"               = Sys.getenv("DIFY_API_KEY_2"),
-         "Fast"              = Sys.getenv("DIFY_API_KEY_2"),
-         "Claude"            = Sys.getenv("ANTHROPIC_API_KEY"),
-         "Gemini"            = Sys.getenv("GEMINI_API_KEY"),
-         "OpenAI"            = Sys.getenv("OPENAI_API_KEY"),
-         "OpenRouter"        = Sys.getenv("OPENROUTER_API_KEY"),
-         "OpenAI-Compatible" = Sys.getenv("OPENAI_COMPATIBLE_API_KEY"),
-         "DeepSeek"          = Sys.getenv("DEEPSEEK_API_KEY"),
-         "Apollo"            = Sys.getenv("APOLLO_CLIENT_SECRET"),
-         "Test Provider"     = Sys.getenv("APOLLO_CLIENT_SECRET"),
-         "Azure OpenAI"      = Sys.getenv("AZURE_OPENAI_API_KEY"),
-         "AWS Bedrock"       = "dummy"
-  )
+  name <- get_api_key_name(llm_service)
+  # AWS Bedrock takes its credentials from the AWS setup, not from a key
+  if (is.null(name) || name == "dummy") return(name)
+  Sys.getenv(name)
 }
 
 #' @name get_api_key_name
@@ -1443,60 +1257,26 @@ get_api_key_name <- function(llm_service) {
   )
 }
 
-#' Get Apollo OAuth Token
+#' @name get_apollo_token
 #'
+#' @title Get Apollo OAuth Token
+#'
+#' @description
 #' Requests a short-lived OAuth access token from the Axway gateway using
 #' client credentials. Requires \code{APOLLO_CLIENT_ID}, \code{APOLLO_CLIENT_SECRET},
-#' and \code{APOLLO_TOKEN_URL} to be set in \code{.Renviron}.
+#' and \code{APOLLO_TOKEN_URL} (or \code{APOLLO_TOKEN_URL_EXT} for external
+#' deployments) to be set in \code{.Renviron}.
 #' Use \code{usethis::edit_r_environ()} to set them. Only relevant for internal deployments.
-#' @noRd
-
+#'
+#' @param external use the external token URL (\code{APOLLO_TOKEN_URL_EXT})
 #'
 #' @return A character string containing the Bearer access token.
-#'
-#' @examples
-#' \dontrun{
-#' token <- get_apollo_token()
-#' }
-#' 
-#' 
 #' @noRd
-get_apollo_token <- function() {
+get_apollo_token <- function(external = FALSE) {
   rlang::check_installed("httr2", reason = "to use `get_apollo_token()`.")
 
-  response <- httr2::request(Sys.getenv("APOLLO_TOKEN_URL")) %>%
-    httr2::req_body_form(
-      client_id     = Sys.getenv("APOLLO_CLIENT_ID"),
-      client_secret = Sys.getenv("APOLLO_CLIENT_SECRET"),
-      grant_type    = "client_credentials"
-    ) %>%
-    httr2::req_perform()
-  
-  httr2::resp_body_json(response)$access_token
-}
-
-#' Get Apollo OAuth Token (External)
-#'
-#' Requests a short-lived OAuth access token from the Axway gateway using
-#' client credentials. Requires \code{APOLLO_CLIENT_ID}, \code{APOLLO_CLIENT_SECRET},
-#' and \code{APOLLO_TOKEN_URL} to be set in \code{.Renviron}.
-#' Use \code{usethis::edit_r_environ()} to set them. Only relevant for internal deployments.
-#' @noRd
-
-#'
-#' @return A character string containing the Bearer access token.
-#'
-#' @examples
-#' \dontrun{
-#' token <- get_apollo_token()
-#' }
-#' 
-#' 
-#' @noRd
-get_apollo_token_ext <- function() {
-  rlang::check_installed("httr2", reason = "to use `get_apollo_token_ext()`.")
-  
-  response <- httr2::request(Sys.getenv("APOLLO_TOKEN_URL_EXT")) %>%
+  token_url <- Sys.getenv(if (external) "APOLLO_TOKEN_URL_EXT" else "APOLLO_TOKEN_URL")
+  response <- httr2::request(token_url) %>%
     httr2::req_body_form(
       client_id     = Sys.getenv("APOLLO_CLIENT_ID"),
       client_secret = Sys.getenv("APOLLO_CLIENT_SECRET"),

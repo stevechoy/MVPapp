@@ -192,91 +192,34 @@ sanitize_numeric_input <- function(numeric_input,
                                    legal_minimum = NULL,
                                    display_error = FALSE) {
 
-  sanitized_input <- as.numeric(numeric_input)
+  x <- suppressWarnings(as.numeric(numeric_input))
+  if (as_integer) x <- as.integer(x)
 
-  if(as_integer) {
-    sanitized_input <- as.integer(sanitized_input)
-  }
-
-  # Handling NA's
-  if(is.na(sanitized_input)) {
-    if(allow_zero) {
-      sanitized_input <- 0
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      if(display_error) {shiny::showNotification(paste0("WARNING: Bad numeric input. Trying ", sanitized_input, " instead."), type = "warning", duration = 5)}
-      return(sanitized_input)
-    } else {
-      sanitized_input <- 1
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      if(display_error) {shiny::showNotification(paste0("WARNING: Bad numeric input. Trying ", sanitized_input, " instead."), type = "warning", duration = 5)}
-      return(sanitized_input)
+  warn <- function(detail, value) {
+    if (display_error) {
+      shiny::showNotification(paste0("WARNING: Bad numeric input", detail, ". Trying ", value, " instead."),
+                              type = "warning", duration = 5)
     }
   }
 
-  # Handling zeroes
-  if(sanitized_input == 0) {
-    if(allow_zero) {
-      return(sanitized_input)
-    } else {
-      sanitized_input <- 1
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      if(display_error) {shiny::showNotification(paste0("WARNING: Bad numeric input. Trying ", sanitized_input, " instead."), type = "warning", duration = 5)}
-      return(sanitized_input)
-    }
+  # Missing, negative, or zero when zero is not allowed
+  if (length(x) != 1 || is.na(x) || x < 0 || (x == 0 && !allow_zero)) {
+    fallback <- return_value %||% (if (allow_zero) 0 else 1)
+    warn("", fallback)
+    return(fallback)
   }
 
-  # Handling negative numbers
-  if(sanitized_input < 0) {
-    if(allow_zero) {
-      sanitized_input <- 0
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      if(display_error) {shiny::showNotification(paste0("WARNING: Bad numeric input. Trying ", sanitized_input, " instead."), type = "warning", duration = 5)}
-      return(sanitized_input)
-    } else {
-      sanitized_input <- 1
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      if(display_error) {shiny::showNotification(paste0("WARNING: Bad numeric input. Trying ", sanitized_input, " instead."), type = "warning", duration = 5)}
-      return(sanitized_input)
-    }
+  if (!is.null(legal_maximum) && x > legal_maximum) {
+    warn(" (exceeded legal maximum)", legal_maximum)
+    return(return_value %||% legal_maximum)
   }
 
-  if(!is.null(legal_maximum)) {
-    if(sanitized_input > legal_maximum) {
-      if(display_error) {
-        shiny::showNotification(paste0("WARNING: Bad numeric input (exceeded legal maximum). Trying ", legal_maximum, " instead."), type = "warning", duration = 5)
-      }
-      sanitized_input <- legal_maximum
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      return(sanitized_input)
-    }
+  if (!is.null(legal_minimum) && x < legal_minimum) {
+    warn(" (below legal minimum)", legal_minimum)
+    return(return_value %||% legal_minimum)
   }
 
-  if(!is.null(legal_minimum)) {
-    if(sanitized_input < legal_minimum) {
-      if(display_error) {
-        shiny::showNotification(paste0("WARNING: Bad numeric input (below legal minimum). Trying ", legal_minimum, " instead."), type = "warning", duration = 5)
-      }
-      sanitized_input <- legal_minimum
-      if(!is.null(return_value)) {
-        sanitized_input <- return_value
-      }
-      return(sanitized_input)
-    }
-  }
-
-  return(sanitized_input)
+  x
 }
 
 #-------------------------------------------------------------------------------

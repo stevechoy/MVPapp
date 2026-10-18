@@ -22,6 +22,7 @@ First release prepared for CRAN.
 * Fewer dependencies: 'forcats', 'gridExtra', 'purrr' and 'tibble' are no longer needed, and 'GGally' (used only for the correlation plot in Data Exploration) is now optional (Suggests) (#32).
 * Faster app: changing the y-axis or percentiles on the Variability page no longer re-runs the simulation, sorting individual plots is about 200 times faster, and tornado/spider and data plots no longer re-render while typing or changing options (#45)
 * Removed unused internal functions (#33).
+* Simpler internal code with the same results (#77): exposure metrics share one trapezoidal AUC, the plots share helpers for observed data, colours, log axes and regression lines, the tornado and spider plots share their axis logic, and the AI-translation requests share one request path. Dead code and unused arguments were removed. Regression lines are fitted once per group instead of three times, and additional doses (ADDL) are written out without a row-by-row loop. A 0 entered below a field's legal minimum is now replaced by the minimum.
 
 ## Bugfixes
 

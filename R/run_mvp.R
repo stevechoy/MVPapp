@@ -72,7 +72,7 @@
 #' * `deps_env`: an internal cache used to run the app; not useful for debugging.
 #' * With `show_debugging_msg = TRUE`, AI translation responses: `llm_result`
 #'   (initial translation), `llm_refine` (latest retry that still failed),
-#'   `llm_success` (retry that compiled), `branch_model` / `branch_refine` (raw
+#'   `llm_success` (Dify's reply when told the code compiled), `branch_model` / `branch_refine` (raw
 #'   answers before cleaning) and `ellmer_chat_response` /
 #'   `dify_chat_response` (raw chat responses).
 #'

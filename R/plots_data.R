@@ -23,9 +23,7 @@
 #' @param smoother Insert smoother
 #' @param facet_name variable(s) to facet by
 #' @param logy Log Y-axis
-#' @param lby  Log breaks for Y-axis
 #' @param logx Log X-axis
-#' @param lbx  Log breaks for X-axis
 #' @param plot_title Optional plot title
 #' @param label_size font size for geom_text labels (N=x for boxplots or linear regressions)
 #' @param discrete_threshold Draws geom_count if there are <= this number of unique Y-values
@@ -58,8 +56,6 @@ do_data_page_plot <- function(nmd,
                               smoother,
                               facet_name,
                               logy,
-                              lby = logbreaks_y,
-                              lbx = logbreaks_x,
                               logx,
                               plot_title,
                               label_size = 3,
@@ -75,15 +71,14 @@ do_data_page_plot <- function(nmd,
   x_axis_orig <- x_axis
   can_quantize <- FALSE
   
-  # ── Quantize ──────────────────────────────────────────────────────────────
+  # ── Quantize: a continuous x-axis becomes quantile bins (shown as boxplots) ──
   if (num_quantiles > 0) {
     if (is.numeric(nmd[[x_axis_orig]])) {
       boxplot      <- TRUE
       can_quantize <- TRUE
       nmd_q  <- calculate_quantiles(df = nmd, xvar = x_axis_orig, num_quantiles = num_quantiles)
-      if (debug) message(paste(utils::capture.output(print(nmd_q)), collapse = "\n"))
+      if (debug) message_object(nmd_q)
       nmd    <- categorize_xvar(df = nmd, quantiles_df = nmd_q, xvar = x_axis_orig)
-      if (debug) message(paste(utils::capture.output(print(dplyr::count(nmd, Quantile))), collapse = "\n"))
       x_label <- paste0(x_axis, " Quantiles")
       x_axis  <- "Quantile"
     } else {
@@ -103,82 +98,34 @@ do_data_page_plot <- function(nmd,
                             type = "message", duration = 10, id = "note_general_plot_evid")
   }
   
-  # ── Blank handling ────────────────────────────────────────────────────────
-  if (debug) message("Testing for blanks")
   nmd <- handle_blanks(nmd, y_axis)
   nmd <- handle_blanks(nmd, x_axis)
   
-  if (!is.null(facet_name) && facet_name[1] != "") {
+  has_facet       <- !is.null(facet_name[1]) && facet_name[1] != ""
+  facet_same_as_x <- has_facet && x_axis %in% facet_name
+  if (has_facet) {
     for (facet in facet_name[facet_name != x_axis])
       nmd <- handle_blanks(nmd, facet)
   }
   
-  # ── Extract columns + shared condition flag ─────────────────
-  x_col          <- nmd[[x_axis]]
-  y_col          <- nmd[[y_axis]]
-  x_is_numeric   <- is.numeric(x_col)
-  y_is_numeric   <- is.numeric(y_col)
+  x_is_numeric   <- is.numeric(nmd[[x_axis]])
+  y_is_numeric   <- is.numeric(nmd[[y_axis]])
   can_draw_lines <- x_is_numeric && y_is_numeric && !boxplot
   
-  # ── Compute once ──────────────────────────────────────────────────
-  has_color   <- color_by != ""
-  color_valid <- has_color && !all(is.na(nmd[[color_by]]))
-  
-  named_color_vector <- NULL
-  
-  if (has_color) {
-    if (!color_valid) {
-      shiny::showNotification(
-        paste0("WARNING: All values are NA in ", color_by, ". No coloring performed."),
-        type = "warning", duration = 10)
-    } else {
-      if (can_quantize && color_by == x_axis_orig) color_by <- "Quantile"
-      nmd <- handle_blanks(nmd, color_by)
-      nmd[[color_by]] <- as.factor(nmd[[color_by]])
-      n <- nlevels(nmd[[color_by]])
-      named_color_vector <- setNames(scales::hue_pal()(n), levels(nmd[[color_by]]))
-    }
-  }
-  
-  # ── Facet validity — compute once, used in two places ─────────────
-  has_valid_facet   <- !is.null(facet_name[1]) && facet_name[1] != ""
-  facet_same_as_x   <- has_valid_facet && x_axis %in% facet_name
-  
-  # ── Build base plot once ──────────────────────────────────────────
-  make_base_aes <- function(include_group = TRUE) {
-    if (color_valid && !is.null(named_color_vector)) {
-      aes_out <- if (include_group) {
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]],
-                     group = ID, color = !!dplyr::sym(color_by))
-      } else {
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]],
-                     color = !!dplyr::sym(color_by))
-      }
-    } else {
-      aes_out <- if (include_group) {
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]], group = ID)
-      } else {
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]])
-      }
-    }
-    aes_out
-  }
+  if (can_quantize && color_by == x_axis_orig) color_by <- "Quantile"
+  col <- setup_color(nmd, color_by)
+  nmd <- col$data
   
   # ── Boxplot branch ────────────────────────────────────────────────────────
   if (boxplot) {
-    if (length(unique(x_col)) > boxplot_x_threshold) {
-      return(
-        ggplot2::ggplot() +
-          ggplot2::labs(title = paste0(
-            'ERROR: There are too many X-axis categories (>', boxplot_x_threshold,
-            ') for boxplots.\nTry the "Quantize X-axis" option instead.')) +
-          ggplot2::theme(panel.background = ggplot2::element_blank(),
-                         plot.title = ggplot2::element_text(color = error_text_color))
-      )
+    if (length(unique(nmd[[x_axis]])) > boxplot_x_threshold) {
+      return(too_many_categories_plot(boxplot_x_threshold, error_text_color,
+                                      hint = '\nTry the "Quantize X-axis" option instead.'))
     }
     
     if (num_quantiles == 0) nmd[[x_axis]] <- as.factor(nmd[[x_axis]])
     
+    y_col <- nmd[[y_axis]]
     treat_y_as_discrete <- is.character(y_col) || length(unique(y_col)) <= discrete_threshold
     if (treat_y_as_discrete) {
       shiny::showNotification(
@@ -188,33 +135,18 @@ do_data_page_plot <- function(nmd,
       nmd[[y_axis]] <- as.factor(nmd[[y_axis]])
     } else {
       nmd[[y_axis]] <- as.numeric(nmd[[y_axis]])
-      max_y <- max(nmd[[y_axis]], na.rm = TRUE)
+      max_y <- max(nmd[[y_axis]], na.rm = TRUE) # count labels sit just above the highest value
     }
     
+    # One value per subject, unless the bins are quantiles of observations
     if (!can_quantize) nmd <- dplyr::distinct(nmd, ID, .keep_all = TRUE)
     
-    # Re-extract after potential type changes
-    y_col <- nmd[[y_axis]]
+    a <- ggplot2::ggplot(data = nmd, xy_aes(x_axis, y_axis, col$color_by, group = FALSE))
     
-    a <- ggplot2::ggplot(data = nmd, make_base_aes(include_group = FALSE))
-    if (!is.null(named_color_vector))
-      a <- a + ggplot2::scale_color_manual(values = named_color_vector)
-    
-    # ── Compute max_y once ────────────────────────────────────────
-    #max_y <- max(y_col, na.rm = TRUE)
-    
-    # ── df_count ──────────────────────────────────────────────────────────
-    df_count <- nmd
-    if (facet_same_as_x) {
-      shiny::showNotification("ERROR: Facet variable cannot be the same as X-axis.",
-                              type = "error", duration = 10)
-    }
-    
-    count_syms <- if (has_valid_facet && !facet_same_as_x) dplyr::syms(facet_name) else list()
-    
+    # Counts per box (and per facet)
+    count_syms <- if (has_facet && !facet_same_as_x) dplyr::syms(facet_name) else list()
     if (treat_y_as_discrete) {
-      df_count <- dplyr::count(df_count, !!dplyr::sym(x_axis),
-                               !!dplyr::sym(y_axis), !!!count_syms)
+      df_count <- dplyr::count(nmd, !!dplyr::sym(x_axis), !!dplyr::sym(y_axis), !!!count_syms)
       a <- a + ggplot2::geom_count() + ggplot2::scale_size_area(max_size = 12)
       if (label_size > 0)
         a <- a + ggplot2::geom_text(
@@ -223,7 +155,7 @@ do_data_page_plot <- function(nmd,
                                  label = paste0(n), size = n, group = NULL),
           color = "black", vjust = 0.5, size = label_size)
     } else {
-      df_count <- dplyr::count(df_count, !!dplyr::sym(x_axis), !!!count_syms)
+      df_count <- dplyr::count(nmd, !!dplyr::sym(x_axis), !!!count_syms)
       a <- a + ggplot2::geom_boxplot(varwidth = TRUE)
       if (label_size > 0) {
         n_label <- if (can_quantize) paste0("Nobs=", df_count$n) else paste0("N=", df_count$n)
@@ -236,37 +168,27 @@ do_data_page_plot <- function(nmd,
     }
     
   } else {
-    # ── Non-boxplot branch ─────────────────────────────────────────────────
-    a <- ggplot2::ggplot(data = nmd, make_base_aes(include_group = TRUE))
-    if (!is.null(named_color_vector))
-      a <- a + ggplot2::scale_color_manual(values = named_color_vector)
-    a <- a + ggplot2::geom_point(alpha = 0.2) + ggplot2::geom_line(alpha = 0.2)
+    a <- ggplot2::ggplot(data = nmd, xy_aes(x_axis, y_axis, col$color_by)) +
+      ggplot2::geom_point(alpha = 0.2) + ggplot2::geom_line(alpha = 0.2)
   }
   
+  if (!is.null(col$values)) a <- a + ggplot2::scale_color_manual(values = col$values)
   a <- a +
     ggplot2::xlab(x_label) +
     ggplot2::ylab(y_axis) +
     ggplot2::theme_bw()
-  if (color_valid) a <- a + ggplot2::labs(color = color_by) # only when colour is mapped
+  if (!is.null(col$color_by)) a <- a + ggplot2::labs(color = col$color_by) # only when colour is mapped
   
-  # ── Scalar && + shared flag + extract xvar col once ───────
+  # Median line over x-axis bins (so that unevenly timed samples line up)
   if (med_line && can_draw_lines) {
-    x_col_med      <- nmd[[x_axis]]
-    nmd <- dplyr::mutate(nmd,
-                         binned_xvar = quantize(x_col_med,
-                                                levels = get_bin_times(x_col_med, bin_num = 20,
-                                                                       relative_threshold = 0.05)))
-    if (med_line_by == "") {
-      a <- a + ggplot2::stat_summary(
-        data    = nmd,
-        mapping = ggplot2::aes(x = binned_xvar, y = .data[[y_axis]], group = NULL),
-        fun     = median, geom = "line", colour = "black", alpha = 1.0)
+    nmd$binned_xvar <- quantize(nmd[[x_axis]], levels = get_bin_times(nmd[[x_axis]], bin_num = 20, relative_threshold = 0.05))
+    a <- a + if (med_line_by == "") {
+      ggplot2::stat_summary(data = nmd, mapping = ggplot2::aes(x = binned_xvar, y = .data[[y_axis]], group = NULL),
+                            fun = median, geom = "line", colour = "black", alpha = 1.0)
     } else {
-      a <- a + ggplot2::stat_summary(
-        data    = nmd,
-        mapping = ggplot2::aes(x = binned_xvar, y = .data[[y_axis]], group = NULL,
-                               color = as.factor(.data[[med_line_by]])),
-        fun     = median, geom = "line", alpha = 1.0)
+      ggplot2::stat_summary(data = nmd, mapping = ggplot2::aes(x = binned_xvar, y = .data[[y_axis]], group = NULL,
+                                                               color = as.factor(.data[[med_line_by]])),
+                            fun = median, geom = "line", alpha = 1.0)
     }
   }
   
@@ -274,57 +196,201 @@ do_data_page_plot <- function(nmd,
     a <- a + ggplot2::stat_smooth(ggplot2::aes(group = NULL), se = FALSE, linetype = "dashed")
   
   if (dolm && can_draw_lines) {
-    df_stats <- lm_eqn(df = nmd, facet_name = facet_name, x = x_axis, y = y_axis)
-    
-    # ── Use data directly instead of ggplot_build ─────────────────
-    x_col_dolm <- nmd[[x_axis]]
-    y_col_dolm <- nmd[[y_axis]]
-    med_x      <- (min(x_col_dolm, na.rm = TRUE) + max(x_col_dolm, na.rm = TRUE)) / 2
-    max_y      <- max(y_col_dolm, na.rm = TRUE)
-    
-    a <- a + ggplot2::stat_smooth(ggplot2::aes(group = NULL), method = "lm",
-                                  formula = y ~ x, se = FALSE,
-                                  colour = "grey", show.legend = FALSE)
-    if (label_size > 0)
-      a <- a + ggplot2::geom_text(
-        data    = df_stats,
-        mapping = ggplot2::aes(label = label, x = med_x, y = max_y,
-                               group = NULL, color = NULL),
-        hjust = 0.5, vjust = 1, show.legend = FALSE, size = label_size)
+    x_range <- range(nmd[[x_axis]], na.rm = TRUE)
+    a <- add_lm_layers(a, lm_eqn(df = nmd, facet_name = facet_name, x = x_axis, y = y_axis),
+                       label_x = sum(x_range) / 2, label_y = max(nmd[[y_axis]], na.rm = TRUE), label_size = label_size)
   }
   
-  # ── Facet — single validity check ─────────────────────────────────
-  if (has_valid_facet) {
-    if (facet_same_as_x) {
-      shiny::showNotification("ERROR: Facet variable cannot be the same as X-axis.",
-                              type = "error", duration = 10)
+  if (facet_same_as_x) {
+    shiny::showNotification("ERROR: Facet variable cannot be the same as X-axis.", type = "error", duration = 10)
+  } else if (has_facet) {
+    num_facets <- prod(sapply(facet_name, function(v) length(unique(nmd[[v]]))))
+    if (num_facets > 30) {
+      shiny::showNotification(
+        "ERROR: Too many facets (>30) found. Please filter further or choose another variable(s).",
+        type = "error", duration = 10)
     } else {
-      num_facets <- prod(sapply(facet_name, function(v) length(unique(nmd[[v]]))))
-      if (num_facets > 30) {
-        shiny::showNotification(
-          "ERROR: Too many facets (>30) found. Please filter further or choose another variable(s).",
-          type = "error", duration = 10)
-      } else {
-        # vars() with symbols copes with non-syntactic names such as "Dose group"
-        a <- a + ggplot2::facet_wrap(ggplot2::vars(!!!rlang::syms(facet_name)), labeller = ggplot2::label_both)
-      }
+      # vars() with symbols copes with non-syntactic names such as "Dose group"
+      a <- a + ggplot2::facet_wrap(ggplot2::vars(!!!rlang::syms(facet_name)), labeller = ggplot2::label_both)
     }
   }
   
-  if (logy && y_is_numeric)
-    a <- a +
-    ggplot2::scale_y_log10(breaks = logbreaks_y, labels = logbreaks_y, oob = scales::oob_squish_infinite) +
-    ggplot2::annotation_logticks(sides = "l")
-  
-  if (logx && x_is_numeric && !boxplot)
-    a <- a +
-    ggplot2::scale_x_log10(breaks = logbreaks_x, labels = logbreaks_x, oob = scales::oob_squish_infinite) +
-    ggplot2::annotation_logticks(sides = "b")
+  a <- add_log_axes(a, logx = logx && x_is_numeric && !boxplot, logy = logy && y_is_numeric)
   
   if (!is.null(plot_title))
     a <- a + ggplot2::ggtitle(plot_title)
   
-  return(a)
+  a
+}
+
+#-------------------------------------------------------------------------------
+#' @name setup_color
+#'
+#' @title Colour mapping for the data exploration plots
+#'
+#' @param nmd       dataset
+#' @param color_by  column to colour by, or "" for none
+#'
+#' @returns a list: `data` (the column turned into a factor), `color_by`
+#'   (NULL when there is no colouring, e.g. all values NA) and `values` (a named
+#'   palette for scale_color_manual(), or NULL)
+#' @noRd
+#-------------------------------------------------------------------------------
+setup_color <- function(nmd, color_by) {
+  none <- list(data = nmd, color_by = NULL, values = NULL)
+  if (is.null(color_by) || color_by == "") return(none)
+  if (all(is.na(nmd[[color_by]]))) {
+    shiny::showNotification(paste0("WARNING: All values are NA in ", color_by, ". No coloring performed."),
+                            type = "warning", duration = 10)
+    return(none)
+  }
+  nmd <- handle_blanks(nmd, color_by)
+  nmd[[color_by]] <- as.factor(nmd[[color_by]])
+  lev <- levels(nmd[[color_by]])
+  list(data = nmd, color_by = color_by, values = stats::setNames(scales::hue_pal()(length(lev)), lev))
+}
+
+#-------------------------------------------------------------------------------
+#' @name xy_aes
+#'
+#' @title x/y mapping, optionally grouped by ID and coloured by a column
+#'
+#' @param x,y       column names
+#' @param color_by  column name, or NULL
+#' @param group     group by ID (one line per subject)
+#'
+#' @returns a ggplot2 mapping
+#' @noRd
+#-------------------------------------------------------------------------------
+xy_aes <- function(x, y, color_by = NULL, group = TRUE) {
+  extra <- list()
+  if (group)              extra$group  <- rlang::sym("ID")
+  if (!is.null(color_by)) extra$colour <- rlang::sym(color_by)
+  ggplot2::aes(x = .data[[x]], y = .data[[y]], !!!extra)
+}
+
+#-------------------------------------------------------------------------------
+#' @name too_many_categories_plot
+#'
+#' @title Empty plot with an error title, used instead of a boxplot with too many boxes
+#'
+#' @param threshold         maximum number of x-axis categories
+#' @param error_text_color  title colour
+#' @param hint              optional text appended to the title
+#'
+#' @returns a ggplot object
+#' @noRd
+#-------------------------------------------------------------------------------
+too_many_categories_plot <- function(threshold, error_text_color, hint = "") {
+  ggplot2::ggplot() +
+    ggplot2::labs(title = paste0('ERROR: There are too many X-axis categories (>', threshold, ') for boxplots.', hint)) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(color = error_text_color))
+}
+
+#-------------------------------------------------------------------------------
+#' @name add_lm_layers
+#'
+#' @title Linear regression line(s) and their equation labels
+#'
+#' @param p           ggplot object
+#' @param df_stats    labels from lm_eqn() (one row per facet)
+#' @param label_x     x position of the labels
+#' @param label_y     y position of the labels
+#' @param label_size  label size; 0 draws no labels
+#'
+#' @returns the ggplot object
+#' @noRd
+#-------------------------------------------------------------------------------
+add_lm_layers <- function(p, df_stats, label_x, label_y, label_size) {
+  p <- p + ggplot2::stat_smooth(ggplot2::aes(group = NULL), method = "lm", formula = y ~ x, se = FALSE,
+                                colour = "grey", show.legend = FALSE)
+  if (label_size > 0) {
+    p <- p + ggplot2::geom_text(data = df_stats,
+                                mapping = ggplot2::aes(label = label, x = label_x, y = label_y, group = NULL, color = NULL),
+                                hjust = 0.5, vjust = 1, show.legend = FALSE, size = label_size)
+  }
+  p
+}
+
+#-------------------------------------------------------------------------------
+#' @name add_log_axes
+#'
+#' @title Log10 x- and/or y-axis with log tick marks
+#'
+#' @param p     ggplot object
+#' @param logx  log x-axis
+#' @param logy  log y-axis
+#'
+#' @returns the ggplot object
+#' @noRd
+#-------------------------------------------------------------------------------
+add_log_axes <- function(p, logx = FALSE, logy = FALSE) {
+  if (logx) {
+    p <- p +
+      ggplot2::scale_x_log10(breaks = logbreaks_x, labels = logbreaks_x, oob = scales::oob_squish_infinite) +
+      ggplot2::annotation_logticks(sides = "b")
+  }
+  if (logy) {
+    p <- p +
+      ggplot2::scale_y_log10(breaks = logbreaks_y, labels = logbreaks_y, oob = scales::oob_squish_infinite) +
+      ggplot2::annotation_logticks(sides = "l")
+  }
+  p
+}
+
+#-------------------------------------------------------------------------------
+#' @name add_observed_layers
+#'
+#' @title Observed data (e.g. a NONMEM dataset) drawn behind simulated profiles
+#'
+#' @description
+#' Grey lines per subject (or coloured by `color_by`), optional points, and an
+#' optional median line over x-axis bins (so that unevenly timed samples line
+#' up). Dosing records (EVID != 0) are left out. The layers do not inherit the
+#' plot's own mapping.
+#'
+#' @param p             ggplot object
+#' @param data          observed dataset, or NULL
+#' @param xvar,yvar     x and y columns
+#' @param color_by      column to colour the lines by, or NULL for grey
+#' @param show_points   add points
+#' @param show_median   add the median line
+#' @param median_by     column to draw one median line per value of, or NULL / ""
+#' @param median_alpha  transparency of the median line
+#'
+#' @returns the ggplot object
+#' @noRd
+#-------------------------------------------------------------------------------
+add_observed_layers <- function(p, data, xvar, yvar, color_by = NULL, show_points = FALSE,
+                                show_median = FALSE, median_by = NULL, median_alpha = 0.8) {
+  if (is.null(data)) return(p)
+  if ("EVID" %in% names(data)) data <- dplyr::filter(data, EVID == 0)
+  
+  if (is.null(color_by)) {
+    mapping <- ggplot2::aes(x = .data[[xvar]], y = .data[[yvar]], group = ID)
+    fixed   <- list(color = "grey")
+  } else {
+    data[[color_by]] <- as.factor(data[[color_by]])
+    mapping <- ggplot2::aes(x = .data[[xvar]], y = .data[[yvar]], group = ID, color = .data[[color_by]])
+    fixed   <- list()
+  }
+  layer_args <- c(list(data = data, mapping = mapping, alpha = 0.2, inherit.aes = FALSE), fixed)
+  p <- p + do.call(ggplot2::geom_line, layer_args)
+  if (show_points) p <- p + do.call(ggplot2::geom_point, layer_args)
+  
+  if (show_median) {
+    data$binned_xvar <- quantize(data[[xvar]], levels = get_bin_times(data[[xvar]], bin_num = 20, relative_threshold = 0.05))
+    p <- p + if (is.null(median_by) || median_by == "") {
+      ggplot2::stat_summary(data = data, mapping = ggplot2::aes(x = binned_xvar, y = .data[[yvar]]),
+                            fun = median, geom = "line", colour = "black", alpha = median_alpha, inherit.aes = FALSE)
+    } else {
+      ggplot2::stat_summary(data = data, mapping = ggplot2::aes(x = binned_xvar, y = .data[[yvar]],
+                                                                color = as.factor(.data[[median_by]])),
+                            fun = median, geom = "line", alpha = median_alpha, inherit.aes = FALSE)
+    }
+  }
+  p
 }
 
 #-------------------------------------------------------------------------------
@@ -411,16 +477,13 @@ do_data_page_ind_plot <- function(nmd,
   
   if (debug) message("Creating data_page_ind_plot")
   
-  # ── Helper to avoid repeated as.numeric(as.character(...)) ────────
   to_numeric <- function(x) as.numeric(as.character(x))
   
-  nmd <- dplyr::ungroup(nmd)
+  nmd       <- dplyr::ungroup(nmd)
+  has_evid  <- 'EVID' %in% names(nmd)
+  do_dosing <- plot_dosing && has_evid && !boxplot && dose_col != ""
   
-  # ── Compute dosing flag once ─────────────────────────────────────
-  has_evid      <- 'EVID' %in% names(nmd)
-  do_dosing     <- plot_dosing && has_evid && !boxplot && dose_col != ""
-  
-  # ── CMT filter ────────────────────────────────────────────────────────────
+  # ── CMT filter (dosing records are kept for the dose bars) ─────────────────
   if (filter_cmt != 'NULL') {
     nmd <- if (do_dosing) {
       dplyr::filter(nmd, CMT %in% filter_cmt | EVID == 1 | EVID == 4)
@@ -429,7 +492,7 @@ do_data_page_ind_plot <- function(nmd,
     }
   }
   
-  # ── Sorting and facet labels ───────────────────────────────────────────────
+  # ── One panel per subject, labelled and sorted by the sort_by columns ──────
   if (length(sort_by) > 0) {
     nmd <- create_facet_label(df = nmd, sort_by = sort_by)
   } else {
@@ -446,157 +509,84 @@ do_data_page_ind_plot <- function(nmd,
   
   nmd$facet_label <- factor(nmd$facet_label, levels = unique(nmd$facet_label))
   
-  # ── Color setup once ──────────────────────────────────────────────
-  has_color          <- color_by != ""
-  named_color_vector <- NULL
-  color_valid        <- FALSE
-  
-  if (has_color) {
-    if (all(is.na(nmd[[color_by]]))) {
-      shiny::showNotification(
-        paste0("WARNING: All values are NA in ", color_by, ". No coloring performed."),
-        type = "warning", duration = 10)
-    } else {
-      color_valid <- TRUE
-      nmd         <- handle_blanks(nmd, color_by)
-      nmd[[color_by]] <- as.factor(nmd[[color_by]])
-      n <- nlevels(nmd[[color_by]])
-      named_color_vector <- setNames(scales::hue_pal()(n), levels(nmd[[color_by]]))
-    }
-  }
-  
+  col <- setup_color(nmd, color_by)
+  nmd <- col$data
   nmd <- handle_blanks(nmd, y_axis)
   nmd <- handle_blanks(nmd, x_axis)
   
-  # ── Extract column vectors for reuse ──────────────────────────────
-  x_col        <- nmd[[x_axis]]
-  y_col        <- nmd[[y_axis]]
-  x_is_numeric <- is.numeric(x_col)
-  y_is_numeric <- is.numeric(y_col)
+  x_is_numeric <- is.numeric(nmd[[x_axis]])
+  y_is_numeric <- is.numeric(nmd[[y_axis]])
   
-  # ── Same-scale limits from full dataset ───────────────────────────────────
-  nmdx <- if (!is.character(x_col)) dplyr::filter(nmd, !!dplyr::sym(x_axis) != 0) else nmd
-  nmdy <- if (!is.character(y_col)) dplyr::filter(nmd, !!dplyr::sym(y_axis) != 0) else nmd
+  # ── Axis limits over all subjects (zeros left out), used with same_scale ────
+  non_zero <- function(v) if (is.character(v)) v else v[!is.na(v) & v != 0]
+  x_lim <- range(to_numeric(non_zero(nmd[[x_axis]])), na.rm = TRUE)
+  y_lim <- range(to_numeric(non_zero(nmd[[y_axis]])), na.rm = TRUE)
   
-  min_data_x_all <- min(to_numeric(nmdx[[x_axis]]), na.rm = TRUE)
-  max_data_x_all <- max(to_numeric(nmdx[[x_axis]]), na.rm = TRUE)
-  min_data_y_all <- min(to_numeric(nmdy[[y_axis]]), na.rm = TRUE)
-  max_data_y_all <- max(to_numeric(nmdy[[y_axis]]), na.rm = TRUE)
-  
-  # ── Dosing pre-processing ─────────────────────────────────────────────────
+  # ── Dose bars: heights proportional to the dose, the largest reaching half of
+  #    the panel's y range (the whole dataset's with same_scale), drawn from the
+  #    panel's lowest value ──────────────────────────────────────────────────────
   if (do_dosing) {
+    dose_height <- 0.5
     nmd$NAMT <- to_numeric(nmd[[dose_col]])
-    nmd$XVAR <- to_numeric(nmd[[x_axis]])
     nmd$YVAR <- to_numeric(nmd[[y_axis]])
     max_dose_all <- max(nmd$NAMT, na.rm = TRUE)
     
+    finite_or <- function(x, fallback) ifelse(is.finite(x), x, fallback)
     nmd <- nmd %>%
       dplyr::group_by(facet_label) %>%
-      dplyr::mutate(
-        max_dose = max(NAMT, na.rm = TRUE),
-        min_xvar = round(min(XVAR, na.rm = TRUE), digits = 3),
-        max_xvar = round(max(XVAR, na.rm = TRUE), digits = 3),
-        min_yvar = min(YVAR, na.rm = TRUE),
-        max_yvar = max(YVAR, na.rm = TRUE)) %>%
-      dplyr::ungroup()
+      dplyr::mutate(max_dose = suppressWarnings(max(NAMT, na.rm = TRUE)),
+                    min_yvar = suppressWarnings(min(YVAR, na.rm = TRUE)),
+                    max_yvar = suppressWarnings(max(YVAR, na.rm = TRUE))) %>%
+      dplyr::ungroup() %>%
+      # a panel without values uses the whole dataset's range
+      dplyr::mutate(max_dose = finite_or(max_dose, NA),
+                    min_yvar = finite_or(min_yvar, min(YVAR, na.rm = TRUE)),
+                    max_yvar = finite_or(max_yvar, max(YVAR, na.rm = TRUE)))
     
-    # numeric columns only: a text value such as "Inf" must not become NA (L56)
-    num_cols <- vapply(nmd, is.numeric, logical(1))
-    nmd[num_cols] <- lapply(nmd[num_cols], function(x) replace(x, is.infinite(x), NA))
-    
-    dose_height <- 0.5
-    
-    nmd <- nmd %>%
-      dplyr::mutate(
-        max_dose_all = max(NAMT, na.rm = TRUE),
-        min_data_y   = min(YVAR, na.rm = TRUE),
-        max_data_y   = max(YVAR, na.rm = TRUE),
-        min_data_x   = min(XVAR, na.rm = TRUE),
-        max_data_x   = max(XVAR, na.rm = TRUE),
-        min_yvar     = dplyr::case_when(is.na(min_yvar) ~ min_data_y, TRUE ~ min_yvar),
-        max_yvar     = dplyr::case_when(is.na(max_yvar) ~ max_data_y, TRUE ~ max_yvar),
-        min_xvar     = dplyr::case_when(is.na(min_xvar) ~ min_data_x, TRUE ~ min_xvar),
-        max_xvar     = dplyr::case_when(is.na(max_xvar) ~ max_data_x, TRUE ~ max_xvar),
-        scaling_factor = if (same_scale) {
-          max_data_y_all / max_dose_all * dose_height
-        } else {
-          ((max_yvar - min_yvar) * dose_height + min_yvar) / max_dose
-        },
-        SAMT = NAMT * scaling_factor
-      )
+    nmd$SAMT <- nmd$NAMT * if (same_scale) {
+      y_lim[2] / max_dose_all * dose_height
+    } else {
+      ((nmd$max_yvar - nmd$min_yvar) * dose_height + nmd$min_yvar) / nmd$max_dose
+    }
+    if (same_scale) nmd$min_yvar <- y_lim[1]
   }
   
-  if (same_scale)
-    nmd <- dplyr::mutate(nmd,
-                         min_xvar = min_data_x_all, max_xvar = max_data_x_all,
-                         min_yvar = min_data_y_all, max_yvar = max_data_y_all)
-  
-  # ── Compute filter_id flag once ───────────────────────────────────
+  # ── Subjects on this page (or the selected IDs) ───────────────────────────────
   no_id_filter <- is.null(filter_id[1]) || filter_id[1] == ''
-  
   if (no_id_filter) {
-    unique_ids  <- unique(nmd$ID)
-    ids_this_page <- unique_ids[((rownums * colnums) * (pagenum - 1) + 1):
-                                  ((rownums * colnums) * pagenum)]
-    nmd <- dplyr::filter(nmd, ID %in% ids_this_page)
+    per_page <- rownums * colnums
+    page_ids <- unique(nmd$ID)[(per_page * (pagenum - 1) + 1):(per_page * pagenum)]
+    nmd <- dplyr::filter(nmd, ID %in% page_ids)
   } else {
     nmd <- dplyr::filter(nmd, ID %in% filter_id)
   }
   
-  # ── Dosing expansion (post-page filter) ───────────────────────────────────
+  # ── Dosing records, with additional doses (ADDL) written out ─────────────────
   id_dose_expand <- NULL
   id_dose_unique <- NULL
-  
   if (do_dosing) {
     id_dose_expand <- dplyr::filter(nmd, EVID == 1 | EVID == 4)
-    
     if (nrow(id_dose_expand) >= 1)
       id_dose_expand <- expand_addl_ii(id_dose_expand, x_axis = x_axis, dose_col = dose_col)
-    
     if (debug) { message("Dosing expanded:"); dplyr::glimpse(id_dose_expand) }
     
-    id_dose_unique <- dplyr::distinct(id_dose_expand, facet_label,
-                                      !!dplyr::sym(dose_col), .keep_all = TRUE)
+    # one text label per dose amount and panel
+    id_dose_unique <- dplyr::distinct(id_dose_expand, facet_label, !!dplyr::sym(dose_col), .keep_all = TRUE)
     id_dose_unique[[dose_col]] <- to_numeric(id_dose_unique[[dose_col]])
-    id_dose_unique <- dplyr::mutate(id_dose_unique,
-                                    dosename = paste0(round(.data[[dose_col]], digits = 2), dose_units))
+    id_dose_unique$dosename    <- paste0(round(id_dose_unique[[dose_col]], digits = 2), dose_units)
   }
   
   if (has_evid) nmd <- dplyr::filter(nmd, EVID == 0)
   
-  # Re-extract after filtering
-  x_col <- nmd[[x_axis]]
-  y_col <- nmd[[y_axis]]
-  
-  # ── Build base plot once ──────────────────────────────────────────
-  make_aes <- function(include_group = TRUE) {
-    if (color_valid) {
-      if (include_group)
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]],
-                     group = ID, color = !!dplyr::sym(color_by))
-      else
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]],
-                     color = !!dplyr::sym(color_by))
-    } else {
-      if (include_group)
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]], group = ID)
-      else
-        ggplot2::aes(x = .data[[x_axis]], y = .data[[y_axis]])
-    }
-  }
-  
   # ── Boxplot branch ────────────────────────────────────────────────────────
   if (boxplot) {
-    if (length(unique(x_col)) > boxplot_x_threshold) {
-      return(ggplot2::ggplot() +
-               ggplot2::labs(title = paste0('ERROR: There are too many X-axis categories (>',
-                                            boxplot_x_threshold, ') for boxplots.')) +
-               ggplot2::theme(panel.background = ggplot2::element_blank(),
-                              plot.title = ggplot2::element_text(color = error_text_color)))
+    if (length(unique(nmd[[x_axis]])) > boxplot_x_threshold) {
+      return(too_many_categories_plot(boxplot_x_threshold, error_text_color))
     }
     
     nmd[[x_axis]] <- as.factor(nmd[[x_axis]])
     
+    y_col <- nmd[[y_axis]]
     treat_y_as_discrete <- is.character(y_col) || length(unique(y_col)) <= discrete_threshold
     if (treat_y_as_discrete) {
       shiny::showNotification(
@@ -609,29 +599,13 @@ do_data_page_ind_plot <- function(nmd,
       max_y         <- max(nmd[[y_axis]], na.rm = TRUE)
     }
     
-    # ── Distinct once ─────────────────────────────────────────────
-    nmd_distinct <- dplyr::distinct(nmd, ID, .keep_all = TRUE)
+    nmd_distinct <- dplyr::distinct(nmd, ID, .keep_all = TRUE) # one value per subject
+    a <- ggplot2::ggplot(data = nmd_distinct, xy_aes(x_axis, y_axis, col$color_by, group = FALSE))
     
-    a <- ggplot2::ggplot(data = nmd_distinct, make_aes(include_group = FALSE))
-    if (!is.null(named_color_vector))
-      a <- a + ggplot2::scale_color_manual(values = named_color_vector)
-    
-    facet_same_as_x <- facet_name == x_axis
-    
-    if (facet_same_as_x)
-      shiny::showNotification("ERROR: Facet variable cannot be the same as X-axis.",
-                              type = "error", duration = 10)
-    
-    has_valid_facet <- facet_name != ""
-    count_syms      <- if (has_valid_facet && !facet_same_as_x) list(dplyr::sym(facet_name)) else list()
-    
-    df_count <- if (treat_y_as_discrete) {
-      dplyr::count(nmd_distinct, !!dplyr::sym(x_axis), !!dplyr::sym(y_axis), !!!count_syms)
-    } else {
-      dplyr::count(nmd_distinct, !!dplyr::sym(x_axis), !!!count_syms)
-    }
-    
+    # Counts per box (and per facet)
+    count_syms <- if (facet_name != "" && facet_name != x_axis) list(dplyr::sym(facet_name)) else list()
     if (treat_y_as_discrete) {
+      df_count <- dplyr::count(nmd_distinct, !!dplyr::sym(x_axis), !!dplyr::sym(y_axis), !!!count_syms)
       a <- a + ggplot2::geom_count() + ggplot2::scale_size_area(max_size = 12)
       if (label_size > 0)
         a <- a + ggplot2::geom_text(
@@ -640,6 +614,7 @@ do_data_page_ind_plot <- function(nmd,
                                  label = paste0(n), size = n, group = NULL),
           color = "black", vjust = 2, size = label_size)
     } else {
+      df_count <- dplyr::count(nmd_distinct, !!dplyr::sym(x_axis), !!!count_syms)
       a <- a + ggplot2::geom_boxplot(varwidth = TRUE)
       if (label_size > 0)
         a <- a + ggplot2::geom_text(
@@ -650,23 +625,14 @@ do_data_page_ind_plot <- function(nmd,
     }
     
   } else {
-    # ── Non-boxplot branch ────────────────────────────────────────────────
-    a <- ggplot2::ggplot(data = nmd, make_aes(include_group = TRUE))
-    if (!is.null(named_color_vector))
-      a <- a + ggplot2::scale_color_manual(values = named_color_vector)
+    # ── Profiles, with dose bars, LLOQ line and highlighted points ──────────────
+    a <- ggplot2::ggplot(data = nmd, xy_aes(x_axis, y_axis, col$color_by))
     
-    if (do_dosing && !is.null(id_dose_expand) &&
-        'DOSETIME' %in% colnames(id_dose_expand)) {
-      
-      id_dose_expand$INFDUR <- id_dose_expand$DOSETIME
-      
-      if ("RATE" %in% colnames(id_dose_expand) &&
-          any(!is.na(id_dose_expand$RATE) & id_dose_expand$RATE > 0)) {
-        id_dose_expand <- dplyr::mutate(id_dose_expand,
-                                        INFDUR = dplyr::case_when(
-                                          !is.na(RATE) & RATE > 0 ~ DOSETIME + (NAMT / RATE),
-                                          TRUE                    ~ DOSETIME))
-      }
+    if (do_dosing && !is.null(id_dose_expand) && 'DOSETIME' %in% colnames(id_dose_expand)) {
+      # an infusion's bar spans the infusion (start to start + amount / rate)
+      rate     <- if ("RATE" %in% colnames(id_dose_expand)) id_dose_expand$RATE else NA_real_
+      duration <- ifelse(!is.na(rate) & rate > 0, id_dose_expand$NAMT / rate, 0)
+      id_dose_expand$INFDUR <- id_dose_expand$DOSETIME + duration
       
       linecolour <- "#ED5C42A0"
       a <- a +
@@ -684,8 +650,7 @@ do_data_page_ind_plot <- function(nmd,
     }
     
     if (lloq_name != '' && lloq_name %in% colnames(nmd)) {
-      nmd[[lloq_name]] <- to_numeric(nmd[[lloq_name]])
-      a <- a + ggplot2::geom_hline(yintercept = unique(nmd[[lloq_name]]),
+      a <- a + ggplot2::geom_hline(yintercept = unique(to_numeric(nmd[[lloq_name]])),
                                    colour = "orange", linetype = "dashed",
                                    linewidth = 0.5, alpha = 0.5)
     }
@@ -702,82 +667,53 @@ do_data_page_ind_plot <- function(nmd,
     }
   }
   
+  if (!is.null(col$values)) a <- a + ggplot2::scale_color_manual(values = col$values)
   a <- a +
     ggplot2::xlab(x_axis) + ggplot2::ylab(y_axis) +
     ggplot2::theme_bw()
-  if (color_valid) a <- a + ggplot2::labs(color = color_by) # only when colour is mapped
+  if (!is.null(col$color_by)) a <- a + ggplot2::labs(color = col$color_by) # only when colour is mapped
   
-  # ── && for scalar + data directly instead of ggplot_build ────
   if (dolm && x_is_numeric && y_is_numeric && !boxplot && !logx && !logy) { # lm label is on the linear scale
     # One label per panel: panels are split by facet_label (one per individual)
     lm_facet <- if (facet_name != "" && facet_name != x_axis) "facet_label" else ""
-    df_stats <- lm_eqn(df = nmd, facet_name = lm_facet, x = x_axis, y = y_axis)
-    
-    if (same_scale) {
-      med_x <- (min_data_x_all + max_data_x_all) / 2
-      max_y <- max_data_y_all
-    } else {
-      med_x <- (min(x_col, na.rm = TRUE) + max(x_col, na.rm = TRUE)) / 2
-      max_y <- max(y_col, na.rm = TRUE)
-    }
-    
-    a <- a + ggplot2::stat_smooth(ggplot2::aes(group = NULL), method = "lm",
-                                  formula = y ~ x, se = FALSE,
-                                  colour = "grey", show.legend = FALSE)
-    if (label_size > 0)
-      a <- a + ggplot2::geom_text(
-        data    = df_stats,
-        mapping = ggplot2::aes(label = label, x = med_x, y = max_y,
-                               group = NULL, color = NULL),
-        hjust = 0.5, vjust = 1, show.legend = FALSE, size = label_size)
+    x_range  <- if (same_scale) x_lim else range(nmd[[x_axis]], na.rm = TRUE)
+    a <- add_lm_layers(a, lm_eqn(df = nmd, facet_name = lm_facet, x = x_axis, y = y_axis),
+                       label_x    = sum(x_range) / 2,
+                       label_y    = if (same_scale) y_lim[2] else max(nmd[[y_axis]], na.rm = TRUE),
+                       label_size = label_size)
   }
   
-  # ── Facet_wrap with computed scale/filter args ────────────────────
   if (facet_name != "") {
     if (facet_name == x_axis) {
       shiny::showNotification("ERROR: Facet variable cannot be the same as X-axis.",
                               type = "error", duration = 10)
     } else {
       facet_scales <- if (same_scale) "fixed" else "free"
-      if (no_id_filter) {
-        a <- a + ggplot2::facet_wrap(~facet_label, nrow = rownums, ncol = colnums,
-                                     scales = facet_scales)
+      a <- a + if (no_id_filter) {
+        ggplot2::facet_wrap(~facet_label, nrow = rownums, ncol = colnums, scales = facet_scales)
       } else {
-        a <- a + ggplot2::facet_wrap(~facet_label, scales = facet_scales)
+        ggplot2::facet_wrap(~facet_label, scales = facet_scales)
       }
     }
   }
   
-  if (logy && y_is_numeric)
-    a <- a +
-    ggplot2::scale_y_log10(breaks = logbreaks_y, labels = logbreaks_y, oob = scales::oob_squish_infinite) +
-    ggplot2::annotation_logticks(sides = "l")
-  
-  if (logx && x_is_numeric && !boxplot)
-    a <- a +
-    ggplot2::scale_x_log10(breaks = logbreaks_x, labels = logbreaks_x, oob = scales::oob_squish_infinite) +
-    ggplot2::annotation_logticks(sides = "b")
+  a <- add_log_axes(a, logx = logx && x_is_numeric && !boxplot, logy = logy && y_is_numeric)
   
   if (same_scale) {
-    cc_xlim <- if (do_dosing && !is.null(id_dose_expand) &&
-                   'DOSETIME' %in% colnames(id_dose_expand)) {
-      c(min(min_data_x_all, min(id_dose_expand$DOSETIME)),
-        max(max_data_x_all, max(id_dose_expand$DOSETIME)))
+    # the shared x-range also covers all dose times
+    cc_xlim <- if (do_dosing && !is.null(id_dose_expand) && 'DOSETIME' %in% colnames(id_dose_expand)) {
+      range(c(x_lim, id_dose_expand$DOSETIME))
     } else {
-      c(min_data_x_all, max_data_x_all)
+      x_lim
     }
-    if (debug) {
-      message(paste0("cc_ylim: ", min_data_y_all, " ", max_data_y_all))
-      message(paste0("cc_xlim: ", cc_xlim))
-    }
-    a <- a + ggplot2::coord_cartesian(xlim = cc_xlim,
-                                      ylim = c(min_data_y_all, max_data_y_all))
+    if (debug) message("cc_xlim: ", paste(cc_xlim, collapse = " "), "; cc_ylim: ", paste(y_lim, collapse = " "))
+    a <- a + ggplot2::coord_cartesian(xlim = cc_xlim, ylim = y_lim)
   }
   
   if (!is.null(plot_title))
     a <- a + ggplot2::ggtitle(plot_title)
   
-  return(a)
+  a
 }
 
 #-------------------------------------------------------------------------------
@@ -1021,8 +957,7 @@ print_cov_plot <- function(data, lo_percentile = 0.025, hi_percentile = 0.975) {
 #' @param xvar                 Name of X-variable to be plotted, string
 #' @param yvar                 Name of Y-variable to be plotted, string (Model 1)
 #' @param yvar_2               Name of Y-variable to be plotted, string (Model 2)
-#' @param log_x_axis,log_x_ticks,log_x_labels,log_y_axis,log_y_ticks,log_y_labels
-#'  Log options and axis tick labels
+#' @param log_x_axis,log_y_axis Log x- / y-axis
 #' @param geom_point_sim_option,geom_point_data_option Plotting sampling points
 #' @param stat_summary_data_option Plots median line of dataset
 #' @param stat_summary_data_by Inserts median line by variable
@@ -1049,11 +984,7 @@ plot_data_with_nm <- function(
     yvar                     = NULL,
     yvar_2                   = NULL,
     log_x_axis               = FALSE,
-    log_x_ticks              = logbreaks_x,
-    log_x_labels             = logbreaks_x,
     log_y_axis               = FALSE,
-    log_y_ticks              = logbreaks_y,
-    log_y_labels             = logbreaks_y,
     geom_point_sim_option    = FALSE,
     geom_point_data_option   = FALSE,
     stat_summary_data_option = FALSE,
@@ -1068,107 +999,39 @@ plot_data_with_nm <- function(
   
   if (debug) message("Running plot_data_with_nm()")
   
-  # Start with an empty base; all geoms supply their own data/aes
-  p1 <- ggplot2::ggplot()
+  use_color_by <- !is.null(color_data_by) && !is.null(nonmem_dataset) && color_data_by %in% names(nonmem_dataset)
   
-  # Evaluate once, use everywhere
-  use_color_by <- !is.null(color_data_by) &&
-    !is.null(nonmem_dataset) &&
-    color_data_by %in% names(nonmem_dataset)
+  p1 <- ggplot2::ggplot() %>%
+    add_observed_layers(nonmem_dataset, xvar, nm_yvar,
+                        color_by     = if (use_color_by) color_data_by,
+                        show_points  = geom_point_data_option,
+                        show_median  = stat_summary_data_option,
+                        median_by    = stat_summary_data_by)
   
-  # ── Internal helper: add line + optional points for a dataset (Fix #5)
-  add_line_geom <- function(p, data, yname, color, add_points) {
-    aes_mapping <- ggplot2::aes(x = .data[[xvar]], y = .data[[yname]])
-    p <- p + ggplot2::geom_line(data = data, aes_mapping, color = color)
-    if (add_points)
-      p <- p + ggplot2::geom_point(data = data, aes_mapping, color = color)
+  # Simulated profiles: a line (and optional points) per model
+  add_sim_line <- function(p, data, yname, color) {
+    if (is.null(data)) return(p)
+    mapping <- ggplot2::aes(x = .data[[xvar]], y = .data[[yname]])
+    p <- p + ggplot2::geom_line(data = data, mapping, color = color)
+    if (geom_point_sim_option) p <- p + ggplot2::geom_point(data = data, mapping, color = color)
     p
   }
+  p1 <- add_sim_line(p1, input_dataset1, yvar,   line_color_1)
+  p1 <- add_sim_line(p1, input_dataset2, yvar_2, line_color_2)
   
-  # ── Nonmem dataset layer
-  if (!is.null(nonmem_dataset)) {
-    if ('EVID' %in% names(nonmem_dataset))
-      nonmem_dataset <- dplyr::filter(nonmem_dataset, EVID == 0)
-    
-    if (use_color_by) {
-      nonmem_dataset[[color_data_by]] <- as.factor(nonmem_dataset[[color_data_by]])
-      
-      nm_line_aes <- ggplot2::aes(x = .data[[xvar]], y = .data[[nm_yvar]],
-                                  group = ID, color = .data[[color_data_by]])
-    } else {
-      nm_line_aes <- ggplot2::aes(x = .data[[xvar]], y = .data[[nm_yvar]], group = ID)
-    }
-    
-    nm_color_arg <- if (use_color_by) NULL else list(color = "grey")
-    
-    p1 <- p1 + do.call(ggplot2::geom_line,
-                       c(list(data = nonmem_dataset, mapping = nm_line_aes, alpha = 0.2),
-                         nm_color_arg))
-    
-    if (geom_point_data_option)
-      p1 <- p1 + do.call(ggplot2::geom_point,
-                         c(list(data = nonmem_dataset, mapping = nm_line_aes, alpha = 0.2),
-                           nm_color_arg))
-    
-    if (stat_summary_data_option) {
-      # Extract xvar column once
-      xvar_col    <- nonmem_dataset[[xvar]]
-      nonmem_dataset <- dplyr::mutate(nonmem_dataset,
-                                      binned_xvar = quantize(xvar_col,
-                                                             levels = get_bin_times(xvar_col, bin_num = 20,
-                                                                                    relative_threshold = 0.05)))
-      
-      if (is.null(stat_summary_data_by) || stat_summary_data_by == "") {
-        p1 <- p1 + ggplot2::stat_summary(
-          data    = nonmem_dataset,
-          mapping = ggplot2::aes(x = binned_xvar, y = .data[[nm_yvar]]),
-          fun     = median, geom = "line", colour = "black", alpha = 0.8)
-      } else {
-        p1 <- p1 + ggplot2::stat_summary(
-          data    = nonmem_dataset,
-          mapping = ggplot2::aes(x = binned_xvar, y = .data[[nm_yvar]],
-                                 color = as.factor(.data[[stat_summary_data_by]])),
-          fun     = median, geom = "line", alpha = 0.8)
-      }
-    }
-  }
-  
-  # ── Sim dataset layers (using helper)
-  if (!is.null(input_dataset1))
-    p1 <- add_line_geom(p1, input_dataset1, yvar,   line_color_1, geom_point_sim_option)
-  
-  if (!is.null(input_dataset2))
-    p1 <- add_line_geom(p1, input_dataset2, yvar_2, line_color_2, geom_point_sim_option)
-  
-  # ── Axis scaling
-  if (log_x_axis) {
-    p1 <- p1 +
-      ggplot2::scale_x_log10(breaks = log_x_ticks, labels = log_x_labels, oob = scales::oob_squish_infinite) +
-      ggplot2::annotation_logticks(sides = "b")
-  } else {
-    # Derive the axis maximum from the data rather than calling ggplot_build()
+  if (!log_x_axis) {
+    # Axis maximum from the data rather than from an expensive ggplot_build()
     max_x_all <- max_x_of(xvar, input_dataset1, input_dataset2, nonmem_dataset)
     p1 <- smart_x_axis(p1, xlabel = xlabel, max_x = if (is.finite(max_x_all)) max_x_all else NULL, debug = debug)
   }
+  p1 <- add_log_axes(p1, logx = log_x_axis, logy = log_y_axis)
   
-  if (log_y_axis) {
-    p1 <- p1 +
-      ggplot2::scale_y_log10(breaks = log_y_ticks, labels = log_y_labels, oob = scales::oob_squish_infinite) +
-      ggplot2::annotation_logticks(sides = "l")
-  }
-  
-  # ── Theme and labels
-  p1 <- p1 +
+  show_legend <- use_color_by || (isTRUE(stat_summary_data_option) && !is.null(stat_summary_data_by) && nzchar(stat_summary_data_by))
+  p1 +
     ggplot2::theme_bw() +
     ggplot2::labs(x = xlabel, y = ylabel) +
     ggplot2::ggtitle(title) +
-    ggplot2::theme(legend.position = if (use_color_by ||
-                                          (isTRUE(stat_summary_data_option) && !is.null(stat_summary_data_by) &&
-                                           nzchar(stat_summary_data_by))) "right" else "none")
-  
-  if (debug) message("plot_data_with_nm() OK")
-  
-  return(p1)
+    ggplot2::theme(legend.position = if (show_legend) "right" else "none")
 }
 
 #-------------------------------------------------------------------------------
@@ -1188,8 +1051,7 @@ plot_data_with_nm <- function(
 #' @param nonmem_dataset       uploaded NONMEM dataset
 #' @param xvar                 Name of X-variable to be plotted, string
 #' @param yvar                 Name of Y-variable to be plotted, string
-#' @param log_x_axis,log_x_ticks,log_x_labels,log_y_axis,log_y_ticks,log_y_labels
-#'  Log options and axis tick labels
+#' @param log_x_axis,log_y_axis Log x- / y-axis
 #' @param geom_point_sim_option,geom_point_data_option Plotting sampling points
 #' @param stat_summary_data_option Plots median line of dataset
 #' @param geom_ribbon_option   Plots AUC when TRUE
@@ -1221,11 +1083,7 @@ plot_three_data_with_nm <- function(
     xvar = 'TIMEADJ',
     yvar = NULL,
     log_x_axis = FALSE,
-    log_x_ticks = logbreaks_x,
-    log_x_labels= logbreaks_x,
     log_y_axis = FALSE,
-    log_y_ticks = logbreaks_y,
-    log_y_labels= logbreaks_y,
     geom_point_sim_option = FALSE,
     geom_point_data_option = FALSE,
     geom_ribbon_option = FALSE,
@@ -1238,26 +1096,19 @@ plot_three_data_with_nm <- function(
     title  = NULL
 ) {
 
-  # Correct NULL check across multiple objects ──────────────────
-  if (all(vapply(list(input_dataset_min, input_dataset_mid, input_dataset_max),
-                 is.null, logical(1)))) return(NULL)
+  if (is.null(input_dataset_min) && is.null(input_dataset_mid) && is.null(input_dataset_max)) return(NULL)
   
-  # Single helper replaces three identical mutate blocks ─────────
+  # The three runs, labelled Min / Mid / Max and by the parameter value used
   label_dataset <- function(df, id_label, param_value) {
     if (is.null(df)) return(NULL)
     dplyr::mutate(df, ID = id_label, "{param_name}" := param_value)
   }
+  combined_input <- dplyr::bind_rows(label_dataset(input_dataset_min, "Min", param_min_value),
+                                     label_dataset(input_dataset_mid, "Mid", param_mid_value),
+                                     label_dataset(input_dataset_max, "Max", param_max_value))
+  combined_input[[param_name]] <- fct_inorder(as.factor(combined_input[[param_name]]))
   
-  df_min <- label_dataset(input_dataset_min, "Min", param_min_value)
-  df_mid <- label_dataset(input_dataset_mid, "Mid", param_mid_value)
-  df_max <- label_dataset(input_dataset_max, "Max", param_max_value)
-  
-  combined_input <- dplyr::bind_rows(df_min, df_mid, df_max)
-  combined_input[[param_name]] <- fct_inorder(
-    as.factor(combined_input[[param_name]])
-  )
-  
-  max_x_value <- max(combined_input[[xvar]])
+  x_values <- combined_input[[xvar]]
   
   p1 <- ggplot2::ggplot(
     data    = combined_input,
@@ -1265,49 +1116,16 @@ plot_three_data_with_nm <- function(
                            y     = .data[[yvar]],
                            group = ID,
                            color = !!dplyr::sym(param_name))
-  )
+  ) %>%
+    add_observed_layers(nonmem_dataset, xvar, nm_yvar,
+                        show_points = geom_point_data_option,
+                        show_median = stat_summary_data_option)
   
-  # ── Nonmem overlay ───────────────────────────────────────────────────────
-  if (!is.null(nonmem_dataset)) {
-    if ('EVID' %in% names(nonmem_dataset))
-      nonmem_dataset <- dplyr::filter(nonmem_dataset, EVID == 0)
-    
-    nm_aes <- ggplot2::aes(x     = .data[[xvar]],
-                           y     = .data[[nm_yvar]],
-                           group = ID,
-                           color = NULL)
-    
-    p1 <- p1 +
-      ggplot2::geom_line(data = nonmem_dataset, nm_aes, color = 'grey', alpha = 0.2)
-    
-    if (geom_point_data_option)
-      p1 <- p1 +
-      ggplot2::geom_point(data = nonmem_dataset, nm_aes, color = 'grey', alpha = 0.2)
-    
-    if (stat_summary_data_option) {
-      # ── Fix #7: extract column once ──────────────────────────────────────
-      xvar_col       <- nonmem_dataset[[xvar]]
-      nonmem_dataset <- dplyr::mutate(nonmem_dataset,
-                                      binned_xvar = quantize(xvar_col,
-                                                             levels = get_bin_times(xvar_col, bin_num = 20,
-                                                                                    relative_threshold = 0.05)))
-      p1 <- p1 +
-        ggplot2::stat_summary(
-          data    = nonmem_dataset,
-          mapping = ggplot2::aes(x = binned_xvar, y = .data[[nm_yvar]],
-                                 group = NULL, color = NULL),
-          geom    = "line", fun = median, colour = "black", alpha = 0.8)
-    }
-  }
-  
-  # Compute ribbon data and add geoms only when needed ──────
+  # Shaded areas under each curve within [x_min, x_max]
   if (geom_ribbon_option) {
     ribbon_colors <- c("Min" = "#1B9E77", "Mid" = "#D95F02", "Max" = "#7570B3")
     ribbon_alphas <- c("Min" = 0.3,       "Mid" = 0.4,       "Max" = 0.5)
-    
-    ribbon_data <- dplyr::filter(combined_input,
-                                 .data[[xvar]] >= x_min & .data[[xvar]] <= x_max)
-    
+    ribbon_data   <- dplyr::filter(combined_input, .data[[xvar]] >= x_min & .data[[xvar]] <= x_max)
     for (id_label in c("Min", "Mid", "Max")) {
       p1 <- p1 + ggplot2::geom_ribbon(
         data    = dplyr::filter(ribbon_data, ID == id_label),
@@ -1317,13 +1135,11 @@ plot_three_data_with_nm <- function(
     }
   }
   
-  # Use xvar instead of hardcoded "TIMEADJ" ─────────────────────
-  if (geom_vline_option) {
-    if (x_min > min(combined_input[[xvar]]) || x_max < max_x_value) {
-      p1 <- p1 +
-        ggplot2::geom_vline(xintercept = x_min, linetype = "longdash", alpha = 0.3) +
-        ggplot2::geom_vline(xintercept = x_max, linetype = "longdash", alpha = 0.3)
-    }
+  # Window bounds, unless the window is the whole simulation
+  if (geom_vline_option && (x_min > min(x_values) || x_max < max(x_values))) {
+    p1 <- p1 +
+      ggplot2::geom_vline(xintercept = x_min, linetype = "longdash", alpha = 0.3) +
+      ggplot2::geom_vline(xintercept = x_max, linetype = "longdash", alpha = 0.3)
   }
   
   p1 <- p1 +
@@ -1337,20 +1153,8 @@ plot_three_data_with_nm <- function(
   if (geom_point_sim_option)
     p1 <- p1 + ggplot2::geom_point(alpha = 0.7)
   
-  if (log_x_axis) {
-    p1 <- p1 +
-      ggplot2::scale_x_log10(breaks = log_x_ticks, labels = log_x_labels, oob = scales::oob_squish_infinite) +
-      ggplot2::annotation_logticks(sides = "b")
-  } else {
-    p1 <- smart_x_axis(p1, xlabel = xlabel, max_x = max_x_value)
-  }
-  
-  if (log_y_axis)
-    p1 <- p1 +
-    ggplot2::scale_y_log10(breaks = log_y_ticks, labels = log_y_labels, oob = scales::oob_squish_infinite) +
-    ggplot2::annotation_logticks(sides = "l")
-  
-  return(p1)
+  if (!log_x_axis) p1 <- smart_x_axis(p1, xlabel = xlabel, max_x = max(x_values))
+  add_log_axes(p1, logx = log_x_axis, logy = log_y_axis)
 }
 
 #-------------------------------------------------------------------------------
@@ -1364,8 +1168,7 @@ plot_three_data_with_nm <- function(
 #' @param xvar                 Name of X-variable to be plotted, string
 #' @param yvar                 Name of Y-variable to be plotted, string (Model 1)
 #' @param yvar_2               Name of Y-variable to be plotted, string (Model 2)
-#' @param log_x_axis,log_x_ticks,log_x_labels,log_y_axis,log_y_ticks,log_y_labels
-#'  Log options and axis tick labels
+#' @param log_x_axis,log_y_axis Log x- / y-axis
 #' @param geom_point_sim_option,geom_point_data_option Plotting sampling points
 #' @param stat_summary_data_option Plots median line of dataset
 #' @param show_ind_profiles    If TRUE, plots individual profiles instead of prediction intervals
@@ -1399,11 +1202,7 @@ plot_iiv_data_with_nm <- function(
     yvar = NULL,
     yvar_2 = NULL,
     log_x_axis = FALSE,
-    log_x_ticks = logbreaks_x,
-    log_x_labels= logbreaks_x,
     log_y_axis  = FALSE,
-    log_y_ticks = logbreaks_y,
-    log_y_labels= logbreaks_y,
     geom_point_sim_option = FALSE,
     geom_point_data_option = FALSE,
     show_ind_profiles = FALSE,
@@ -1426,69 +1225,23 @@ plot_iiv_data_with_nm <- function(
     y_intercept_value = NULL
 ) {
   
-  if (debug) {
-    message("Running plot_iiv_data_with_nm()")
-  }
+  if (debug) message("Running plot_iiv_data_with_nm()")
   
-  # Consistent namespacing; trim columns early ───────────────────
-  sim_cols <- c("ID", "median_yvar", "mean_yvar", "lower_yvar", "upper_yvar")
-  
-  if (!is.null(input_dataset1)) {
-    if (debug) message('dataset1 provided')
-    input_dataset1 <- dplyr::select(input_dataset1,
-                                    dplyr::all_of(c(sim_cols, xvar, yvar)))
-  }
-  
-  if (!is.null(input_dataset2)) {
-    if (debug) message('dataset2 provided')
-    input_dataset2 <- dplyr::select(input_dataset2,
-                                    dplyr::all_of(c(sim_cols, xvar, yvar_2)))
-  }
-  
-  # Always start with empty base; all geoms supply their own data ─
   p1 <- ggplot2::ggplot()
   
   if (show_x_intercept && !is.null(x_intercept_value) && !is.na(x_intercept_value))
-    p1 <- p1 + ggplot2::geom_vline(xintercept = x_intercept_value,
-                                   linetype = "longdash", alpha = 0.3)
+    p1 <- p1 + ggplot2::geom_vline(xintercept = x_intercept_value, linetype = "longdash", alpha = 0.3)
   
   if (show_y_intercept && !is.null(y_intercept_value) && !is.na(y_intercept_value))
-    p1 <- p1 + ggplot2::geom_hline(yintercept = y_intercept_value,
-                                   linetype = "longdash", alpha = 0.3)
+    p1 <- p1 + ggplot2::geom_hline(yintercept = y_intercept_value, linetype = "longdash", alpha = 0.3)
   
-  # ── Nonmem overlay ────────────────────────────────────────────────────────
-  if (!is.null(nonmem_dataset)) {
-    if ('EVID' %in% names(nonmem_dataset))
-      nonmem_dataset <- dplyr::filter(nonmem_dataset, EVID == 0)
-    
-    nonmem_dataset <- dplyr::select(nonmem_dataset,
-                                    dplyr::all_of(c("ID", xvar, nm_yvar)))
-    
-    nm_aes <- ggplot2::aes(x = .data[[xvar]], y = .data[[nm_yvar]], group = ID)
-    
-    p1 <- p1 +
-      ggplot2::geom_line(data = nonmem_dataset, nm_aes, color = 'grey', alpha = 0.2)
-    
-    if (geom_point_data_option)
-      p1 <- p1 +
-      ggplot2::geom_point(data = nonmem_dataset, nm_aes, color = 'grey', alpha = 0.2)
-    
-    if (stat_summary_data_option) {
-      # Extract column once ────────────────────────────────────────
-      xvar_col       <- nonmem_dataset[[xvar]]
-      nonmem_dataset <- dplyr::mutate(nonmem_dataset,
-                                      binned_xvar = quantize(xvar_col,
-                                                             levels = get_bin_times(xvar_col, bin_num = 20,
-                                                                                    relative_threshold = 0.05)))
-      p1 <- p1 +
-        ggplot2::stat_summary(
-          data    = nonmem_dataset,
-          mapping = ggplot2::aes(x = binned_xvar, y = .data[[nm_yvar]]),
-          fun     = median, geom = "line", colour = "black", alpha = 0.7)
-    }
-  }
+  p1 <- add_observed_layers(p1, nonmem_dataset, xvar, nm_yvar,
+                            show_points  = geom_point_data_option,
+                            show_median  = stat_summary_data_option,
+                            median_alpha = 0.7)
   
-  # Helper replaces duplicated dataset1/dataset2 layer blocks ─────
+  # Per model: the prediction interval and median (or one line per subject),
+  # plus an optional dashed mean line
   add_sim_layers <- function(p, dataset, yvar_name, line_color) {
     if (is.null(dataset)) return(p)
     
@@ -1496,9 +1249,7 @@ plot_iiv_data_with_nm <- function(
       p <- p +
         ggplot2::geom_ribbon(
           data    = dataset,
-          mapping = ggplot2::aes(x    = .data[[xvar]],
-                                 ymax = .data[[y_max]],
-                                 ymin = .data[[y_min]]),
+          mapping = ggplot2::aes(x = .data[[xvar]], ymax = .data[[y_max]], ymin = .data[[y_min]]),
           fill  = line_color, alpha = 0.4, color = line_color) +
         ggplot2::geom_line(
           data    = dataset,
@@ -1508,9 +1259,8 @@ plot_iiv_data_with_nm <- function(
       p <- p +
         ggplot2::geom_line(
           data    = dataset,
-          mapping = ggplot2::aes(x = .data[[xvar]], y = .data[[yvar_name]],
-                                 group = ID), # one line per subject
-          color = line_color, alpha = 0.4)    # one colour per model
+          mapping = ggplot2::aes(x = .data[[xvar]], y = .data[[yvar_name]], group = ID),
+          color = line_color, alpha = 0.4)
     }
     
     if (show_y_mean)
@@ -1525,30 +1275,17 @@ plot_iiv_data_with_nm <- function(
   p1 <- add_sim_layers(p1, input_dataset1, yvar,   line_color_1)
   p1 <- add_sim_layers(p1, input_dataset2, yvar_2, line_color_2)
   
-  # ── Axis scaling ──────────────────────────────────────────────────────────
-  if (log_x_axis) {
-    p1 <- p1 +
-      ggplot2::scale_x_log10(breaks = log_x_ticks, labels = log_x_labels, oob = scales::oob_squish_infinite) +
-      ggplot2::annotation_logticks(sides = "b")
-  } else {
+  if (!log_x_axis) {
     max_x_all <- max_x_of(xvar, input_dataset1, input_dataset2)
     p1 <- smart_x_axis(p1, xlabel = xlabel, max_x = if (is.finite(max_x_all)) max_x_all else NULL)
   }
+  p1 <- add_log_axes(p1, logx = log_x_axis, logy = log_y_axis)
   
-  if (log_y_axis)
-    p1 <- p1 +
-    ggplot2::scale_y_log10(breaks = log_y_ticks, labels = log_y_labels, oob = scales::oob_squish_infinite) +
-    ggplot2::annotation_logticks(sides = "l")
-  
-  p1 <- p1 +
+  p1 +
     ggplot2::theme_bw() +
     ggplot2::labs(x = xlabel, y = ylabel) +
     ggplot2::ggtitle(title) +
     ggplot2::theme(legend.position = "none")
-  
-  if (debug) message('iiv plot generated')
-  
-  return(p1)
 }
 
 #=============================================================================
@@ -1707,58 +1444,23 @@ plot_iiv_exp_data <- function(input_dataset,
 #' @param quantiles_df    Name of dataframe containing the quantiles limits
 #' @param xvar            Name of x-axis variable to split by
 #'
-#' @importFrom dplyr case_when filter mutate sym syms summarise
-#' @returns a character string containing the quantile limits
+#' @returns df with a `Quantile` factor column ("NA" first, then the bins in order)
 #' @noRd
 #-------------------------------------------------------------------------------
 
 categorize_xvar <- function(df, quantiles_df, xvar) {
+  x     <- df[[xvar]]
+  upper <- unlist(quantiles_df[1, ], use.names = FALSE)
+  lower <- c(min(x, na.rm = TRUE), upper[-length(upper)])
 
-  # Check for any blanks / NAs in X-axis
-  # if(any(is.na(df[[xvar]]))) {
-  #   df <- df %>% filter(!is.na(!!dplyr::sym(xvar)))
-  #   shiny::showNotification(paste0("WARNING: Some ", xvar, " values are NA and are removed prior to plotting."), type = "warning", duration = 10)
-  # }
+  # Labels such as "Q1\n[40-59]", "Q2\n(59-80]": the first bin includes its lower limit
+  labels <- paste0(names(quantiles_df), "\n", c("[", rep("(", length(upper) - 1)),
+                   round(lower), "-", round(upper), "]")
 
-  # print("before rename quantiles_df:")
-  # print(knitr::kable(quantiles_df))
-
-  # Rename the quantile df to have limits inserted as part of the column name
-  for(i in seq_along(quantiles_df)) {
-    ending_bracket   <- "]" # Note that [ ] means inclusive intervals, ( ) means exclusive intervals
-    if(i == 1) { # Special case for first quantile
-      starting_bracket <- "\n["
-      names(quantiles_df)[i] <- paste0(names(quantiles_df)[i], starting_bracket, round(min(df[[xvar]], na.rm = TRUE)), "-", round(quantiles_df[[1,1]]), ending_bracket)
-    } else {
-      starting_bracket <- "\n("
-      #names(quantiles_df)[i] <- paste0(names(quantiles_df)[i], starting_bracket, round(quantiles_df[,..i-1]), "-", round(quantiles_df[,..i]), ending_bracket)
-      names(quantiles_df)[i] <- paste0(names(quantiles_df)[i], starting_bracket, round(quantiles_df[[1,i-1]]), "-", round(quantiles_df[[1,i]]), ending_bracket)
-    }
-  }
-
-  # print("after rename quantiles_df:")
-  # print(knitr::kable(quantiles_df))
-
-  conditions <- Map(
-    function(x, y) rlang::expr(!!dplyr::sym(xvar) <= !!x ~ !!y),
-    quantiles_df,
-    names(quantiles_df)
-  )
-
-  conditions <- c(rlang::expr(is.na(!!dplyr::sym(xvar)) ~ "NA"), conditions)
-
-  df <- df %>%
-    dplyr::mutate(Quantile = dplyr::case_when(!!!conditions)) # triple-bang for list
-
-  # Rename NAs
-  df <- df %>%
-    dplyr::mutate(Quantile = dplyr::case_when(is.na(Quantile) ~ "NA", TRUE ~ Quantile))
-
-  # Reorder factor levels to place "NA" first
-  df <- df %>%
-    dplyr::mutate(Quantile = fct_relevel(Quantile, "NA", names(quantiles_df)))
-
-  return(df)
+  # Each value goes in the first bin whose upper limit it does not exceed
+  bin <- findInterval(x, upper, left.open = TRUE) + 1
+  df$Quantile <- fct_relevel(ifelse(is.na(x), "NA", labels[bin]), "NA", labels)
+  df
 }
 
 #-------------------------------------------------------------------------------

@@ -181,7 +181,7 @@ bundle download).
 \item \code{deps_env}: an internal cache used to run the app; not useful for debugging.
 \item With \code{show_debugging_msg = TRUE}, AI translation responses: \code{llm_result}
 (initial translation), \code{llm_refine} (latest retry that still failed),
-\code{llm_success} (retry that compiled), \code{branch_model} / \code{branch_refine} (raw
+\code{llm_success} (Dify's reply when told the code compiled), \code{branch_model} / \code{branch_refine} (raw
 answers before cleaning) and \code{ellmer_chat_response} /
 \code{dify_chat_response} (raw chat responses).
 }

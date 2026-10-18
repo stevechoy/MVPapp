@@ -3719,8 +3719,6 @@ server <- function(input, output, session) {
                              facet_name  = input$facet_by,
                              logy        = input$log_y_axis_data,
                              logx        = input$log_x_axis_data,
-                             lby         = logbreaks_y,
-                             lbx         = logbreaks_x,
                              plot_title  = d_plot_title_data(),
                              label_size  = as.numeric(input$select_label_size),
                              debug       = show_debugging_msg)
@@ -4579,15 +4577,7 @@ server <- function(input, output, session) {
     api_chat                   <- llm_settings_model_1$api_chat
     user_id                    <- llm_settings_model_1$user_id
     reuse_context              <- llm_settings_model_1$reuse_context
-    model_gemini               <- llm_settings_model_1$model_gemini
-    model_openai               <- llm_settings_model_1$model_openai
-    model_anthropic            <- llm_settings_model_1$model_anthropic
-    model_openrouter           <- llm_settings_model_1$model_openrouter
-    model_openai_compatible    <- llm_settings_model_1$model_openai_compatible
-    model_deepseek             <- llm_settings_model_1$model_deepseek
-    model_apollo               <- llm_settings_model_1$model_apollo
-    model_azure                <- llm_settings_model_1$model_azure
-    model_aws                  <- llm_settings_model_1$model_aws
+    llm_models                 <- shiny::reactiveValuesToList(llm_settings_model_1) # model_gemini, model_openai, ...
     #display_info               <- TRUE
     temperature                <- llm_settings_model_1$temperature
     llm_seed                   <- llm_settings_model_1$llm_seed
@@ -4745,15 +4735,7 @@ server <- function(input, output, session) {
         api_upload                 = api_upload,
         api_chat                   = api_chat,
         user_id                    = user_id,
-        model_gemini               = model_gemini,
-        model_openai               = model_openai,
-        model_anthropic            = model_anthropic,
-        model_openrouter           = model_openrouter,
-        model_openai_compatible    = model_openai_compatible,
-        model_deepseek             = model_deepseek,
-        model_apollo               = model_apollo,
-        model_azure                = model_azure,
-        model_aws                  = model_aws,
+        models                     = llm_models,
         display_info               = TRUE,
         temperature                = temperature,
         seed                       = llm_seed,
@@ -4761,15 +4743,7 @@ server <- function(input, output, session) {
         model_lang                 = model_lang,
         deep_pdfscan               = deep_pdfscan,
         force_parse                = force_parse,
-        mrgsolve_system_prompt     = mrgsolve_translation_system_prompt,
-        mrgsolve_long_user_prompt  = mrgsolve_translation_long_user_prompt,
-        mrgsolve_short_user_prompt = mrgsolve_translation_short_user_prompt,
-        nonmem_system_prompt       = nonmem_translation_system_prompt,
-        nonmem_long_user_prompt    = nonmem_translation_long_user_prompt,
-        nonmem_short_user_prompt   = nonmem_translation_short_user_prompt,
-        rxode2_system_prompt       = rxode2_translation_system_prompt,
-        rxode2_long_user_prompt    = rxode2_translation_long_user_prompt,
-        rxode2_short_user_prompt   = rxode2_translation_short_user_prompt,
+        prompts                    = llm_prompts(paste0(model_lang, "_translation"), environment()),
         internal_version           = internal_version,
         debug                      = show_debugging_msg
       )
@@ -4801,39 +4775,12 @@ server <- function(input, output, session) {
       if(reuse_context && (llm_service %in% dify_services)) {
         # Relay success to PMx Co-Modeler
         if(show_debugging_msg) message("Relaying success")
-        relay_success <- refine_model_code(
-          model_code                 = current_code$answer,
-          error_message              = "N/A",
-          context                    = current_code,
-          reuse_context              = reuse_context,
-          service                    = llm_service,
-          api_key                    = api_key,
-          api_chat                   = api_chat,
-          user_id                    = user_id,
-          model_gemini               = model_gemini,
-          model_openai               = model_openai,
-          model_anthropic            = model_anthropic,
-          model_openrouter           = model_openrouter,
-          model_openai_compatible    = model_openai_compatible,
-          model_deepseek             = model_deepseek,
-          model_apollo               = model_apollo,
-          model_azure                = model_azure,
-          model_aws                  = model_aws,
-          progress_bar               = 0,
-          max_retries                = max_retries,
-          display_info               = FALSE,
-          temperature                = temperature,
-          seed                       = llm_seed,
-          attempt                    = 0, # the retry loop below defines `attempt`
-          deep_pdfscan               = FALSE, # not relevant
-          force_parse                = FALSE, # not relevant
-          system_prompt              = mrgsolve_refine_system_prompt,
-          long_user_prompt           = mrgsolve_refine_long_user_prompt,
-          short_user_prompt          = mrgsolve_refine_short_user_prompt,
-          internal_version           = internal_version,
-          feedback_success           = TRUE,
-          debug                      = show_debugging_msg
-        )
+        relay_llm_success(context  = current_code,
+                          service  = llm_service,
+                          api_key  = api_key,
+                          api_chat = api_chat,
+                          user_id  = user_id,
+                          debug    = show_debugging_msg)
       }
       
       update_editor(current_code$answer)
@@ -4874,28 +4821,15 @@ server <- function(input, output, session) {
         api_key                    = api_key,
         api_chat                   = api_chat,
         user_id                    = user_id,
-        model_gemini               = model_gemini,
-        model_openai               = model_openai,
-        model_anthropic            = model_anthropic,
-        model_openrouter           = model_openrouter,
-        model_openai_compatible    = model_openai_compatible,
-        model_deepseek             = model_deepseek,
-        model_apollo               = model_apollo,
-        model_azure                = model_azure,
-        model_aws                  = model_aws,
+        models                     = llm_models,
         progress_bar               = current_start_point,
         max_retries                = max_retries,
         display_info               = TRUE,
         temperature                = temperature,
         seed                       = llm_seed,
         attempt                    = attempt,
-        deep_pdfscan               = FALSE, # not relevant in retries
-        force_parse                = FALSE, # not relevant in retries
-        system_prompt              = mrgsolve_refine_system_prompt,
-        long_user_prompt           = mrgsolve_refine_long_user_prompt,
-        short_user_prompt          = mrgsolve_refine_short_user_prompt,
+        prompts                    = llm_prompts("mrgsolve_refine", environment()),
         internal_version           = internal_version,
-        feedback_success           = FALSE,
         debug                      = show_debugging_msg
       )
       
@@ -4914,39 +4848,12 @@ server <- function(input, output, session) {
         # Relay success to PMx Co-Modeler
         if(reuse_context && (llm_service %in% dify_services)) {
           if(show_debugging_msg) message("Relaying success")
-          relay_success <- refine_model_code(
-            model_code                 = current_code$answer,
-            error_message              = "N/A",
-            context                    = current_code,
-            reuse_context              = reuse_context,
-            service                    = llm_service,
-            api_key                    = api_key,
-            api_chat                   = api_chat,
-            user_id                    = user_id,
-            model_gemini               = model_gemini,
-            model_openai               = model_openai,
-            model_anthropic            = model_anthropic,
-            model_openrouter           = model_openrouter,
-            model_openai_compatible    = model_openai_compatible,
-            model_deepseek             = model_deepseek,
-            model_apollo               = model_apollo,
-            model_azure                = model_azure,
-            model_aws                  = model_aws,
-            progress_bar               = 0,
-            max_retries                = max_retries,
-            display_info               = FALSE,
-            temperature                = temperature,
-            seed                       = llm_seed,
-            attempt                    = attempt,
-            deep_pdfscan               = FALSE,
-            force_parse                = FALSE,
-            system_prompt              = mrgsolve_refine_system_prompt,
-            long_user_prompt           = mrgsolve_refine_long_user_prompt,
-            short_user_prompt          = mrgsolve_refine_short_user_prompt,
-            internal_version           = internal_version,
-            feedback_success           = TRUE, # Model cache purposes
-            debug                      = show_debugging_msg
-          )
+          relay_llm_success(context  = current_code,
+                            service  = llm_service,
+                            api_key  = api_key,
+                            api_chat = api_chat,
+                            user_id  = user_id,
+                            debug    = show_debugging_msg)
         }
         
         update_editor(current_code$answer)
@@ -5368,15 +5275,7 @@ server <- function(input, output, session) {
     api_chat                   <- llm_settings_model_2$api_chat
     user_id                    <- llm_settings_model_2$user_id
     reuse_context              <- llm_settings_model_2$reuse_context
-    model_gemini               <- llm_settings_model_2$model_gemini
-    model_openai               <- llm_settings_model_2$model_openai
-    model_anthropic            <- llm_settings_model_2$model_anthropic
-    model_openrouter           <- llm_settings_model_2$model_openrouter
-    model_openai_compatible    <- llm_settings_model_2$model_openai_compatible
-    model_deepseek             <- llm_settings_model_2$model_deepseek
-    model_apollo               <- llm_settings_model_2$model_apollo
-    model_azure                <- llm_settings_model_2$model_azure
-    model_aws                  <- llm_settings_model_2$model_aws
+    llm_models                 <- shiny::reactiveValuesToList(llm_settings_model_2) # model_gemini, model_openai, ...
     #display_info               <- TRUE
     temperature                <- llm_settings_model_2$temperature
     llm_seed                   <- llm_settings_model_2$llm_seed
@@ -5535,15 +5434,7 @@ server <- function(input, output, session) {
         api_upload                 = api_upload,
         api_chat                   = api_chat,
         user_id                    = user_id,
-        model_gemini               = model_gemini,
-        model_openai               = model_openai,
-        model_anthropic            = model_anthropic,
-        model_openrouter           = model_openrouter,
-        model_openai_compatible    = model_openai_compatible,
-        model_deepseek             = model_deepseek,
-        model_apollo               = model_apollo,
-        model_azure                = model_azure,
-        model_aws                  = model_aws,
+        models                     = llm_models,
         display_info               = TRUE,
         temperature                = temperature,
         seed                       = llm_seed,
@@ -5551,15 +5442,7 @@ server <- function(input, output, session) {
         model_lang                 = model_lang,
         deep_pdfscan               = deep_pdfscan,
         force_parse                = force_parse,
-        mrgsolve_system_prompt     = mrgsolve_translation_system_prompt,
-        mrgsolve_long_user_prompt  = mrgsolve_translation_long_user_prompt,
-        mrgsolve_short_user_prompt = mrgsolve_translation_short_user_prompt,
-        nonmem_system_prompt       = nonmem_translation_system_prompt,
-        nonmem_long_user_prompt    = nonmem_translation_long_user_prompt,
-        nonmem_short_user_prompt   = nonmem_translation_short_user_prompt,
-        rxode2_system_prompt       = rxode2_translation_system_prompt,
-        rxode2_long_user_prompt    = rxode2_translation_long_user_prompt,
-        rxode2_short_user_prompt   = rxode2_translation_short_user_prompt,
+        prompts                    = llm_prompts(paste0(model_lang, "_translation"), environment()),
         internal_version           = internal_version,
         debug                      = show_debugging_msg
       )
@@ -5591,39 +5474,12 @@ server <- function(input, output, session) {
       if(reuse_context && (llm_service %in% dify_services)) {
         # Relay success to PMx Co-Modeler
         if(show_debugging_msg) message("Relaying success")
-        relay_success <- refine_model_code(
-          model_code                 = current_code$answer,
-          error_message              = "N/A",
-          context                    = current_code,
-          reuse_context              = reuse_context,
-          service                    = llm_service,
-          api_key                    = api_key,
-          api_chat                   = api_chat,
-          user_id                    = user_id,
-          model_gemini               = model_gemini,
-          model_openai               = model_openai,
-          model_anthropic            = model_anthropic,
-          model_openrouter           = model_openrouter,
-          model_openai_compatible    = model_openai_compatible,
-          model_deepseek             = model_deepseek,
-          model_apollo               = model_apollo,
-          model_azure                = model_azure,
-          model_aws                  = model_aws,
-          progress_bar               = 0,
-          max_retries                = max_retries,
-          display_info               = FALSE,
-          temperature                = temperature,
-          seed                       = llm_seed,
-          attempt                    = 0, # the retry loop below defines `attempt`
-          deep_pdfscan               = FALSE, # not relevant
-          force_parse                = FALSE, # not relevant
-          system_prompt              = mrgsolve_refine_system_prompt,
-          long_user_prompt           = mrgsolve_refine_long_user_prompt,
-          short_user_prompt          = mrgsolve_refine_short_user_prompt,
-          internal_version           = internal_version,
-          feedback_success           = TRUE,
-          debug                      = show_debugging_msg
-        )
+        relay_llm_success(context  = current_code,
+                          service  = llm_service,
+                          api_key  = api_key,
+                          api_chat = api_chat,
+                          user_id  = user_id,
+                          debug    = show_debugging_msg)
       }
       
       update_editor(current_code$answer)
@@ -5664,28 +5520,15 @@ server <- function(input, output, session) {
         api_key                    = api_key,
         api_chat                   = api_chat,
         user_id                    = user_id,
-        model_gemini               = model_gemini,
-        model_openai               = model_openai,
-        model_anthropic            = model_anthropic,
-        model_openrouter           = model_openrouter,
-        model_openai_compatible    = model_openai_compatible,
-        model_deepseek             = model_deepseek,
-        model_apollo               = model_apollo,
-        model_azure                = model_azure,
-        model_aws                  = model_aws,
+        models                     = llm_models,
         progress_bar               = current_start_point,
         max_retries                = max_retries,
         display_info               = TRUE,
         temperature                = temperature,
         seed                       = llm_seed,
         attempt                    = attempt,
-        deep_pdfscan               = FALSE, # not relevant in retries
-        force_parse                = FALSE, # not relevant in retries
-        system_prompt              = mrgsolve_refine_system_prompt,
-        long_user_prompt           = mrgsolve_refine_long_user_prompt,
-        short_user_prompt          = mrgsolve_refine_short_user_prompt,
+        prompts                    = llm_prompts("mrgsolve_refine", environment()),
         internal_version           = internal_version,
-        feedback_success           = FALSE,
         debug                      = show_debugging_msg
       )
       
@@ -5704,39 +5547,12 @@ server <- function(input, output, session) {
         # Relay success to PMx Co-Modeler
         if(reuse_context && (llm_service %in% dify_services)) {
           if(show_debugging_msg) message("Relaying success")
-          relay_success <- refine_model_code(
-            model_code                 = current_code$answer,
-            error_message              = "N/A",
-            context                    = current_code,
-            reuse_context              = reuse_context,
-            service                    = llm_service,
-            api_key                    = api_key,
-            api_chat                   = api_chat,
-            user_id                    = user_id,
-            model_gemini               = model_gemini,
-            model_openai               = model_openai,
-            model_anthropic            = model_anthropic,
-            model_openrouter           = model_openrouter,
-            model_openai_compatible    = model_openai_compatible,
-            model_deepseek             = model_deepseek,
-            model_apollo               = model_apollo,
-            model_azure                = model_azure,
-            model_aws                  = model_aws,
-            progress_bar               = 0,
-            max_retries                = max_retries,
-            display_info               = FALSE,
-            temperature                = temperature,
-            seed                       = llm_seed,
-            attempt                    = attempt,
-            deep_pdfscan               = FALSE,
-            force_parse                = FALSE,
-            system_prompt              = mrgsolve_refine_system_prompt,
-            long_user_prompt           = mrgsolve_refine_long_user_prompt,
-            short_user_prompt          = mrgsolve_refine_short_user_prompt,
-            internal_version           = internal_version,
-            feedback_success           = TRUE, # Model cache purposes
-            debug                      = show_debugging_msg
-          )
+          relay_llm_success(context  = current_code,
+                            service  = llm_service,
+                            api_key  = api_key,
+                            api_chat = api_chat,
+                            user_id  = user_id,
+                            debug    = show_debugging_msg)
         }
         
         update_editor(current_code$answer)
@@ -5943,14 +5759,10 @@ server <- function(input, output, session) {
   dosing_regimen_model_1 <- reactive({
     
     dose_regimen <- generate_dosing_regimens(
-      amt1 = input$amt1, delay_time1 = input$delay_time1, cmt1 = input$cmt1_model_1, tinf1 = input$tinf1, total1 = input$total1, ii1 = input$ii1,
-      amt2 = input$amt2, delay_time2 = input$delay_time2, cmt2 = input$cmt2_model_1, tinf2 = input$tinf2, total2 = input$total2, ii2 = input$ii2,
-      amt3 = input$amt3, delay_time3 = input$delay_time3, cmt3 = input$cmt3_model_1, tinf3 = input$tinf3, total3 = input$total3, ii3 = input$ii3,
-      amt4 = input$amt4, delay_time4 = input$delay_time4, cmt4 = input$cmt4_model_1, tinf4 = input$tinf4, total4 = input$total4, ii4 = input$ii4,
-      amt5 = input$amt5, delay_time5 = input$delay_time5, cmt5 = input$cmt5_model_1, tinf5 = input$tinf5, total5 = input$total5, ii5 = input$ii5,
-      mw_conversion = mw_conversion_model_1(),
+      regimens        = dosing_regimens_from_input(input, model = 1),
+      mw_conversion   = mw_conversion_model_1(),
       create_dummy_ev = TRUE,
-      debug = show_debugging_msg
+      debug           = show_debugging_msg
     )
     
     if(dose_regimen$cmt[1] == "" && model_1_is_pred() == FALSE) {
@@ -6326,14 +6138,10 @@ server <- function(input, output, session) {
   dosing_regimen_model_2 <- reactive({
     
     dose_regimen_2 <- generate_dosing_regimens(
-      amt1 = input$amt1_2, delay_time1 = input$delay_time1_2, cmt1 = input$cmt1_model_2, tinf1 = input$tinf1_2, total1 = input$total1_2, ii1 = input$ii1_2,
-      amt2 = input$amt2_2, delay_time2 = input$delay_time2_2, cmt2 = input$cmt2_model_2, tinf2 = input$tinf2_2, total2 = input$total2_2, ii2 = input$ii2_2,
-      amt3 = input$amt3_2, delay_time3 = input$delay_time3_2, cmt3 = input$cmt3_model_2, tinf3 = input$tinf3_2, total3 = input$total3_2, ii3 = input$ii3_2,
-      amt4 = input$amt4_2, delay_time4 = input$delay_time4_2, cmt4 = input$cmt4_model_2, tinf4 = input$tinf4_2, total4 = input$total4_2, ii4 = input$ii4_2,
-      amt5 = input$amt5_2, delay_time5 = input$delay_time5_2, cmt5 = input$cmt5_model_2, tinf5 = input$tinf5_2, total5 = input$total5_2, ii5 = input$ii5_2,
-      mw_conversion = mw_conversion_model_2(),
+      regimens        = dosing_regimens_from_input(input, model = 2),
+      mw_conversion   = mw_conversion_model_2(),
       create_dummy_ev = TRUE,
-      debug = show_debugging_msg
+      debug           = show_debugging_msg
     )
     
     if(dose_regimen_2$cmt[1] == "" && model_2_is_pred() == FALSE) {
@@ -7044,16 +6852,7 @@ server <- function(input, output, session) {
   # ── Root cause fix: removing req(applied_param_X()) breaks the false double-invalidation
   psa_dosing_regimen_model_1 <- reactive({
     generate_dosing_regimens(
-      amt1 = input$amt1, delay_time1 = input$delay_time1, cmt1 = input$cmt1_model_1,
-      tinf1 = input$tinf1, total1 = input$total1, ii1 = input$ii1,
-      amt2 = input$amt2, delay_time2 = input$delay_time2, cmt2 = input$cmt2_model_1,
-      tinf2 = input$tinf2, total2 = input$total2, ii2 = input$ii2,
-      amt3 = input$amt3, delay_time3 = input$delay_time3, cmt3 = input$cmt3_model_1,
-      tinf3 = input$tinf3, total3 = input$total3, ii3 = input$ii3,
-      amt4 = input$amt4, delay_time4 = input$delay_time4, cmt4 = input$cmt4_model_1,
-      tinf4 = input$tinf4, total4 = input$total4, ii4 = input$ii4,
-      amt5 = input$amt5, delay_time5 = input$delay_time5, cmt5 = input$cmt5_model_1,
-      tinf5 = input$tinf5, total5 = input$total5, ii5 = input$ii5,
+      regimens        = dosing_regimens_from_input(input, model = 1),
       mw_conversion   = mw_conversion_model_1(),
       create_dummy_ev = TRUE,
       debug           = show_debugging_msg
@@ -7360,16 +7159,7 @@ server <- function(input, output, session) {
   # ── Fix #2 + root cause: single shared dosing regimen, no false dependency ───
   psa_dosing_regimen_model_2 <- reactive({
     generate_dosing_regimens(
-      amt1 = input$amt1_2, delay_time1 = input$delay_time1_2, cmt1 = input$cmt1_model_2,
-      tinf1 = input$tinf1_2, total1 = input$total1_2, ii1 = input$ii1_2,
-      amt2 = input$amt2_2, delay_time2 = input$delay_time2_2, cmt2 = input$cmt2_model_2,
-      tinf2 = input$tinf2_2, total2 = input$total2_2, ii2 = input$ii2_2,
-      amt3 = input$amt3_2, delay_time3 = input$delay_time3_2, cmt3 = input$cmt3_model_2,
-      tinf3 = input$tinf3_2, total3 = input$total3_2, ii3 = input$ii3_2,
-      amt4 = input$amt4_2, delay_time4 = input$delay_time4_2, cmt4 = input$cmt4_model_2,
-      tinf4 = input$tinf4_2, total4 = input$total4_2, ii4 = input$ii4_2,
-      amt5 = input$amt5_2, delay_time5 = input$delay_time5_2, cmt5 = input$cmt5_model_2,
-      tinf5 = input$tinf5_2, total5 = input$total5_2, ii5 = input$ii5_2,
+      regimens        = dosing_regimens_from_input(input, model = 2),
       mw_conversion   = mw_conversion_model_2(),
       create_dummy_ev = TRUE,
       debug           = show_debugging_msg
@@ -7745,9 +7535,7 @@ server <- function(input, output, session) {
       divide_by          = time_value(),
       debug              = show_debugging_msg,
       show_progress      = TRUE,
-      gradient           = input$tor_do_gradient_model_1,
-      parallel_sim       = FALSE, #input$para_checkbox,
-      parallel_n         = 100 # input$para_n,
+      gradient           = input$tor_do_gradient_model_1
     )
     
     batch_runs_model_1(batch_runs)
@@ -8099,9 +7887,7 @@ server <- function(input, output, session) {
       divide_by          = time_value(),
       debug              = show_debugging_msg,
       show_progress      = TRUE,
-      gradient           = input$tor_do_gradient_model_2,
-      parallel_sim       = FALSE, #input$para_checkbox,
-      parallel_n         = 100 # input$para_n,
+      gradient           = input$tor_do_gradient_model_2
     )
     
     batch_runs_model_2(batch_runs)
@@ -9184,12 +8970,9 @@ server <- function(input, output, session) {
         seed               = d_seed_number_model_1(),
         debug              = show_debugging_msg,
         divide_by          = time_value(),
-        nsubj              = n_subj_model_1_clean(),
         nsubj_offset       = 0,
         ext_db             = database_model_1(),
-        show_matches       = TRUE,
-        parallel_sim       = FALSE, #input$para_checkbox,
-        parallel_n         = 100 # input$para_n,
+        show_matches       = TRUE
       )
     }
   }, label = 'iiv_raw_model_1()')
@@ -10042,15 +9825,12 @@ server <- function(input, output, session) {
         seed               = d_seed_number_model_2(),
         debug              = show_debugging_msg,
         divide_by          = time_value(),
-        nsubj              = n_subj_model_2_clean(),
         # Fixed offset (Model 1 can never exceed max_sim_n subjects): IDs never
         # overlap Model 1's, and changing Model 1's N no longer re-simulates Model 2
         nsubj_offset       = max_sim_n,
         append_id_text     = "m2-",
         ext_db             = database_model_2(),
-        show_matches       = TRUE,
-        parallel_sim       = FALSE, #input$para_checkbox,
-        parallel_n         = 100 # input$para_n
+        show_matches       = TRUE
       )
     }
   }, label = 'iiv_raw_model_2()')

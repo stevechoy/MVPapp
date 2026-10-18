@@ -283,35 +283,32 @@ quantile_output <- function(iiv_sim_input,
                             upper_quartile = 0.975,
                             dp   = 5
 ) {
-  # Statistics use observation records only: at a dose time that is also a
-  # sampling time, dose records carry post-dose values that would otherwise be
-  # blended with the pre-dose observations
-  obs <- if ("evid" %in% names(iiv_sim_input)) iiv_sim_input$evid == 0 else rep(TRUE, nrow(iiv_sim_input))
-  iiv_sim_input$.obs_yvar <- ifelse(obs, iiv_sim_input[[yvar]], NA_real_)
-
-  iiv_sim_input <- iiv_sim_input %>%
+  obs_only(iiv_sim_input) %>%
     dplyr::group_by(TIME) %>%
-    dplyr::mutate(median_yvar   = quantile(.data$.obs_yvar, probs = 0.5, na.rm = TRUE) %>% round(digits = dp),
-                  mean_yvar     = mean(.data$.obs_yvar, na.rm = TRUE) %>% round(digits = dp),
-                  lower_yvar    = quantile(.data$.obs_yvar, probs = lower_quartile, na.rm = TRUE) %>% round(digits = dp),
-                  upper_yvar    = quantile(.data$.obs_yvar, probs = upper_quartile, na.rm = TRUE) %>% round(digits = dp)) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-".obs_yvar")
+    dplyr::mutate(median_yvar = round(stats::quantile(.data[[yvar]], probs = 0.5,            na.rm = TRUE), dp),
+                  mean_yvar   = round(mean(.data[[yvar]], na.rm = TRUE), dp),
+                  lower_yvar  = round(stats::quantile(.data[[yvar]], probs = lower_quartile, na.rm = TRUE), dp),
+                  upper_yvar  = round(stats::quantile(.data[[yvar]], probs = upper_quartile, na.rm = TRUE), dp)) %>%
+    dplyr::ungroup()
 }
 
 #-------------------------------------------------------------------------------
 #' @name pknca_table
 #'
-#' @title Function to calculate summary statistics from simulated output
+#' @title Exposure metrics of a single simulated profile
+#'
+#' @description
+#' Metrics over the whole simulation (columns ending in `_tlast`) and over the
+#' time window `[start_time, end_time]` (columns ending in `_ranged`), from
+#' observation records only.
 #'
 #' @param input_simulated_table  a dataframe (usually created from mrgsim)
 #' @param output_conc            y variable of interest to perform summary stats calc
 #' @param start_time             start time interval for metrics
 #' @param end_time               end time interval for metrics
-#' @param debug                  show debugging messages
+#' @param debug                  unused, kept for the app's calls
 #'
-#' @returns a dataframe with additional columns of summary stats
-#' @importFrom dplyr mutate if_else ungroup select filter rename first
+#' @returns the simulated rows with the metric columns added
 #' @noRd
 #-------------------------------------------------------------------------------
 
@@ -321,131 +318,87 @@ pknca_table <- function(input_simulated_table,
                         end_time   = NULL,
                         debug      = FALSE
 ) {
+  if (is.null(input_simulated_table)) return(NULL)
 
-  if(is.null(input_simulated_table)) {
-    return(NULL)
-  }
+  df <- dplyr::arrange(obs_only(input_simulated_table), TIME)
+  y  <- df[[output_conc]]
+  baseline <- y[1] # % change from baseline is always relative to the first time point overall
 
-  reactive_cmin <- paste0(output_conc, '_CMIN_ranged')
-  reactive_cmax <- paste0(output_conc, '_CMAX_ranged')
-  reactive_cavg <- paste0(output_conc, '_CAVG_ranged')
-  reactive_tmax <- paste0(output_conc, '_TMAX_ranged')
-  reactive_tmin <- paste0(output_conc, '_TMIN_ranged')
-  reactive_cfbpct <- paste0(output_conc, '_CFBPCT_ranged')
-  reactive_mcfbpct <- paste0(output_conc, '_MEANCFBPCT_ranged')
-  reactive_nadirpct <- paste0(output_conc, '_NADIRPCT_ranged')
+  full <- conc_metrics(df$TIME, y, baseline)
+  win  <- window_rows(df, start_time, end_time)
+  rng  <- conc_metrics(win$TIME, win[[output_conc]], baseline)
 
-  zero_tlast_cmin <- paste0(output_conc, '_CMIN_tlast')
-  zero_tlast_cmax <- paste0(output_conc, '_CMAX_tlast')
-  zero_tlast_cavg <- paste0(output_conc, '_CAVG_tlast')
-  zero_tlast_tmax <- paste0(output_conc, '_TMAX_tlast')
-  zero_tlast_tmin <- paste0(output_conc, '_TMIN_tlast')
-  zero_tlast_cfbpct <- paste0(output_conc, '_CFBPCT_tlast')
-  zero_tlast_mcfbpct <- paste0(output_conc, '_MEANCFBPCT_tlast')
-  zero_tlast_nadirpct <- paste0(output_conc, '_NADIRPCT_tlast')
+  # Whole simulation ("_tlast"): one row per time point; only CFBPCT varies by row
+  out <- dplyr::select(df, -dplyr::any_of(c("ID", "tad", "TIMEADJ")))
+  out[[paste0(output_conc, "_CMIN_tlast")]]       <- full$CMIN
+  out[[paste0(output_conc, "_CMAX_tlast")]]       <- full$CMAX
+  out[[paste0(output_conc, "_CFBPCT_tlast")]]     <- full$CFBPCT
+  out[[paste0(output_conc, "_NADIRPCT_tlast")]]   <- full$NADIRPCT
+  out[[paste0(output_conc, "_TMAX_tlast")]]       <- full$TMAX
+  out[[paste0(output_conc, "_TMIN_tlast")]]       <- full$TMIN
+  out$AUC_tlast                                   <- full$AUC
+  out[[paste0(output_conc, "_CAVG_tlast")]]       <- full$CAVG
+  out[[paste0(output_conc, "_MEANCFBPCT_tlast")]] <- full$MEANCFBPCT
 
-  input_simulated_table$YVARNAME <- input_simulated_table[[output_conc]]
-  input_simulated_table <- order_dose_rows(input_simulated_table)
+  # Time window ("_ranged"): single values; % change is the value at the window's end
+  out[[paste0(output_conc, "_CMIN_ranged")]]       <- rng$CMIN
+  out[[paste0(output_conc, "_CMAX_ranged")]]       <- rng$CMAX
+  out[[paste0(output_conc, "_CAVG_ranged")]]       <- rng$CAVG
+  out[[paste0(output_conc, "_TMAX_ranged")]]       <- rng$TMAX
+  out[[paste0(output_conc, "_TMIN_ranged")]]       <- rng$TMIN
+  out$AUC_ranged                                   <- rng$AUC
+  out[[paste0(output_conc, "_CFBPCT_ranged")]]     <- dplyr::last(rng$CFBPCT)
+  out[[paste0(output_conc, "_MEANCFBPCT_ranged")]] <- rng$MEANCFBPCT
+  out[[paste0(output_conc, "_NADIRPCT_ranged")]]   <- rng$NADIRPCT
+  out
+}
 
-  if (debug) {
-    # message(head(input_simulated_table))
-    # message(paste0(max(input_simulated_table$YVARNAME)[1]))
-  }
+#-------------------------------------------------------------------------------
+#' @name conc_metrics
+#'
+#' @title Exposure metrics of one profile
+#'
+#' @description
+#' Cmin/Cmax (and the first time they occur), AUC by the linear trapezoidal rule,
+#' Cavg (AUC divided by the time span), % change from `baseline` at each time
+#' point, its nadir, and its time-weighted mean.
+#'
+#' @param time      sampling times, in increasing order
+#' @param y         values at those times
+#' @param baseline  reference value for the % change
+#'
+#' @returns a list; `CFBPCT` has one value per time point, the others are single values
+#' @noRd
+#-------------------------------------------------------------------------------
+conc_metrics <- function(time, y, baseline) {
+  cmin <- min(y, na.rm = TRUE)
+  cmax <- max(y, na.rm = TRUE)
+  cfb  <- pct_change_from(y, baseline)
+  auc  <- trapezoid_auc(time, y)
+  list(CMIN       = cmin,
+       CMAX       = cmax,
+       TMIN       = time[y == cmin][1],
+       TMAX       = time[y == cmax][1],
+       AUC        = auc,
+       CAVG       = time_averaged(auc, time, y),
+       CFBPCT     = cfb,
+       NADIRPCT   = safe_min(cfb),
+       MEANCFBPCT = if (all(is.na(cfb))) NA_real_ else time_averaged(trapezoid_auc(time, cfb), time, cfb))
+}
 
-  metrics_table <- input_simulated_table %>%
-    dplyr::mutate(CMIN = min(YVARNAME, na.rm = TRUE)[1],
-                  CMAX = max(YVARNAME, na.rm = TRUE)[1],  ### First element if multiple values found
-                  DVBL = dplyr::first(YVARNAME),
-                  CFBPCT = pct_change_from(YVARNAME, DVBL),
-                  NADIRPCT = safe_min(CFBPCT)
-    )
-
-  DVBL_overall <- metrics_table$DVBL[1] # Note: Baseline is always first ever TIME overall
-
-  metrics_table <- metrics_table %>%
-    dplyr::mutate(TMAX = .$TIME[.$CMAX[1] == YVARNAME][1],
-                  TMIN = .$TIME[.$CMIN[1] == YVARNAME][1])
-
-  metrics_table  <- metrics_table %>%
-    dplyr::mutate(YLAG       = dplyr::lag(YVARNAME ),
-                  XLAG       = dplyr::lag(TIME),
-                  dYVAR      = (YVARNAME  + YLAG) * (TIME - XLAG) * 0.5, # Area for trapezoid
-                  dYVAR      = dplyr::if_else(is.na(dYVAR), 0, dYVAR),
-                  AUC_tlast    = sum(dYVAR),
-                  CAVG         = time_averaged(AUC_tlast, TIME, YVARNAME),
-                  # Time-weighted mean % change (area under CFBPCT / time span),
-                  # so non-uniform sampling doesn't bias it
-                  dCFB         = (CFBPCT + dplyr::lag(CFBPCT)) * (TIME - XLAG) * 0.5,
-                  dCFB         = dplyr::if_else(is.na(dCFB), 0, dCFB),
-                  MEANCFBPCT   = if (all(is.na(CFBPCT))) NA_real_ else time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
-    dplyr::ungroup() %>%
-    dplyr::select(-ID, -tad, -TIMEADJ, -YLAG, -XLAG, -dYVAR, -dCFB, -DVBL)
-
-  if (debug) {
-    # message(start_time)
-    # message(end_time)
-    # tmp <- input_simulated_table %>% dplyr::filter(TIME >= start_time)
-    # message(dplyr::glimpse(tmp))
-    # tmp2 <- input_simulated_table %>% dplyr::filter(TIME <= start_time)
-    # message(dplyr::glimpse(tmp2))
-  }
-
-  ### Repeat metrics for time range # note that the time range is inclusive on both ends
-  # At a dose time on the window's end the pre-dose value is used, and on its start the post-dose value
-  metrics_table_time <- window_rows(input_simulated_table, start_time, end_time) %>%
-    dplyr::mutate(CMIN = min(YVARNAME, na.rm = TRUE)[1],
-                  CMAX = max(YVARNAME, na.rm = TRUE)[1], ### First element if multiple values found
-                  CFBPCT = pct_change_from(YVARNAME, DVBL_overall), # Note: Baseline is always first ever TIME overall
-                  NADIRPCT = safe_min(CFBPCT)
-    )
-
-  metrics_table_time <- metrics_table_time %>%
-    dplyr::mutate(TMAX = .$TIME[.$CMAX[1] == YVARNAME][1], ### First element if multiple values found
-                  TMIN = .$TIME[.$CMIN[1] == YVARNAME][1])
-
-  metrics_table_time  <- metrics_table_time %>%
-    dplyr::mutate(YLAG          = dplyr::lag(YVARNAME ),
-                  XLAG          = dplyr::lag(TIME),
-                  dYVAR         = (YVARNAME + YLAG) * (TIME - XLAG) * 0.5, # Area for trapezoid
-                  dYVAR         = dplyr::if_else(is.na(dYVAR), 0, dYVAR),
-                  AUC_ranged    = sum(dYVAR),
-                  CAVG          = time_averaged(AUC_ranged, TIME, YVARNAME),
-                  dCFB          = (CFBPCT + dplyr::lag(CFBPCT)) * (TIME - XLAG) * 0.5, # time-weighted, as above
-                  dCFB          = dplyr::if_else(is.na(dCFB), 0, dCFB),
-                  MEANCFBPCT    = if (all(is.na(CFBPCT))) NA_real_ else time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
-    dplyr::ungroup()
-
-  CMIN_time <-  metrics_table_time[["CMIN"]][1]
-  CMAX_time <-  metrics_table_time[["CMAX"]][1]
-  CAVG_time <-  metrics_table_time[["CAVG"]][1]
-  TMAX_time <-  metrics_table_time[["TMAX"]][1]
-  TMIN_time <-  metrics_table_time[["TMIN"]][1]
-  AUC_time  <-  metrics_table_time$AUC_ranged[1]
-  CFBPCT_time <- dplyr::last(metrics_table_time[["CFBPCT"]])
-  MCFBPCT_time <- if (is.finite(DVBL_overall) && DVBL_overall != 0) metrics_table_time[["MEANCFBPCT"]][1] else NA_real_ # undefined for a zero baseline (M29)
-  NADIRPCT_time <- metrics_table_time[["NADIRPCT"]][1]
-
-  metrics_table <- metrics_table %>%
-    dplyr::mutate(!!reactive_cmin := CMIN_time,
-                  !!reactive_cmax := CMAX_time,
-                  !!reactive_cavg := CAVG_time,
-                  !!reactive_tmax := TMAX_time,
-                  !!reactive_tmin := TMIN_time,
-                  AUC_ranged := AUC_time,
-                  !!reactive_cfbpct := CFBPCT_time,
-                  !!reactive_mcfbpct := MCFBPCT_time,
-                  !!reactive_nadirpct := NADIRPCT_time) %>%
-    dplyr::rename(!!zero_tlast_cmin := CMIN,
-                  !!zero_tlast_cmax := CMAX,
-                  !!zero_tlast_cavg := CAVG,
-                  !!zero_tlast_tmax := TMAX,
-                  !!zero_tlast_tmin := TMIN,
-                  !!zero_tlast_cfbpct := CFBPCT,
-                  !!zero_tlast_mcfbpct := MEANCFBPCT,
-                  !!zero_tlast_nadirpct := NADIRPCT) %>%
-    dplyr::select(-YVARNAME)
-
-  return(metrics_table)
+#-------------------------------------------------------------------------------
+#' @name trapezoid_auc
+#'
+#' @title Area under the curve by the linear trapezoidal rule
+#'
+#' @param time  times, in increasing order
+#' @param y     values at those times
+#'
+#' @returns a number; intervals with a missing value count as 0
+#' @noRd
+#-------------------------------------------------------------------------------
+trapezoid_auc <- function(time, y) {
+  sum((y + dplyr::lag(y)) * (time - dplyr::lag(time)) / 2, na.rm = TRUE)
 }
 
 #-------------------------------------------------------------------------------
@@ -476,33 +429,15 @@ pct_above_y_at_x <- function(model_is_valid = FALSE,
                              x_value = NA,
                              return_number_ids = FALSE) {
 
-  if(!model_is_valid | is.null(x_value) | is.null(y_value)) {
+  if (!isTRUE(model_is_valid) || length(x_value) != 1 || length(y_value) != 1 || is.na(x_value) || is.na(y_value)) {
     return(NA)
   }
 
-  if(model_is_valid & !is.na(y_value) & !is.na(x_value) ) {
+  input_df <- obs_only(input_df)
+  above    <- which(input_df[[y_name]] > y_value & input_df[[x_name]] == x_value)
+  n_above  <- length(unique(input_df$ID[above]))
 
-    input_df_filtered <- input_df %>%
-      dplyr::filter(!!dplyr::sym(y_name)  > y_value,
-                    !!dplyr::sym(x_name) == x_value)
-
-    # observation records only (dose records carry post-dose values)
-    if ("evid" %in% names(input_df)) {
-      input_df_filtered <- dplyr::filter(input_df_filtered, .data$evid == 0)
-    }
-
-    number_of_ids_in_df          <- length(unique(input_df$ID))
-    number_of_ids_in_df_filtered <- length(unique(input_df_filtered$ID))
-
-    if(return_number_ids) {
-      return(number_of_ids_in_df_filtered)
-    } else {
-      return(round(number_of_ids_in_df_filtered/number_of_ids_in_df * 100,1))
-    }
-
-  } else {
-    return(NA)
-  }
+  if (return_number_ids) n_above else round(n_above / length(unique(input_df$ID)) * 100, 1)
 }
 
 #-------------------------------------------------------------------------------
@@ -814,57 +749,22 @@ exposures_table <- function(input_simulated_table,
                             carry_out  = "ID", # would be replaced during function call
                             debug      = FALSE
 ) {
+  df <- obs_only(input_simulated_table)
+  df$YVARNAME <- df[[output_conc]]
 
-  input_simulated_table$YVARNAME <- input_simulated_table[[output_conc]]
-
-  base_columns      <- c("USUBJID", "ID", "YVARNAME", "TIME", "evid")
-  columns_to_select <- c(base_columns, carry_out)
-
-  input_simulated_table <- input_simulated_table %>%
-    dplyr::select(dplyr::any_of(columns_to_select))
-
-  # if (debug) {
-  #   message(start_time)
-  #   message(end_time)
-  #   tmp <- input_simulated_table %>% dplyr::filter(TIME >= start_time)
-  #   message(dplyr::glimpse(tmp))
-  #   tmp2 <- input_simulated_table %>% dplyr::filter(TIME <= start_time)
-  #   message(dplyr::glimpse(tmp2))
-  # }
-
-  # At a dose time on the window's end the pre-dose value is used, and on its start the post-dose value
-  metrics_table <- window_rows(input_simulated_table, start_time, end_time, id_cols = "USUBJID") %>%
+  # One row per subject; carry_out columns keep each subject's first value in the window
+  window_rows(df, start_time, end_time) %>%
     dplyr::group_by(USUBJID) %>%
-    dplyr::mutate(Cmin  = min(YVARNAME, na.rm = TRUE)[1],
-                  Cmax  = max(YVARNAME, na.rm = TRUE)[1], ### First element if multiple values found
-                  Clast = dplyr::last(YVARNAME, na_rm = TRUE)
-    ) %>%
-    dplyr::ungroup()
-
-  # Calculate TMAX in a separate table
-  tmax_table <- metrics_table %>%
-    dplyr::group_by(USUBJID) %>%
-    dplyr::summarise(Tmin = TIME[which.min(YVARNAME)[1]],
-                     Tmax = TIME[which.max(YVARNAME)[1]]) %>% # First element if multiple values found
-    dplyr::ungroup()
-
-  metrics_table <- left_join(metrics_table, tmax_table, by = "USUBJID") %>%
-    dplyr::group_by(USUBJID) %>%
-    dplyr::mutate(YLAG          = dplyr::lag(YVARNAME),
-                  XLAG          = dplyr::lag(TIME),
-                  dYVAR         = (YVARNAME + YLAG) * (TIME - XLAG) * 0.5, # Area for trapezoid
-                  dYVAR         = dplyr::if_else(is.na(dYVAR), 0, dYVAR),
-                  AUC           = sum(dYVAR),
-                  Cavg          = time_averaged(AUC, TIME, YVARNAME)) %>%
-    dplyr::ungroup()
-
-  list_of_exposures <- c("USUBJID", "ID", "Cmin", "Cmax", "Cavg", "Clast", "AUC", "Tmax", "Tmin")
-
-  metrics_table_id <- metrics_table %>%
-    dplyr::select(dplyr::any_of(c(list_of_exposures, carry_out))) %>%
+    dplyr::mutate(Cmin  = min(YVARNAME, na.rm = TRUE),
+                  Cmax  = max(YVARNAME, na.rm = TRUE),
+                  Clast = dplyr::last(YVARNAME, na_rm = TRUE),
+                  Tmin  = TIME[which.min(YVARNAME)[1]],
+                  Tmax  = TIME[which.max(YVARNAME)[1]],
+                  AUC   = trapezoid_auc(TIME, YVARNAME),
+                  Cavg  = time_averaged(AUC, TIME, YVARNAME)) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(dplyr::any_of(c("USUBJID", "ID", "Cmin", "Cmax", "Cavg", "Clast", "AUC", "Tmax", "Tmin", carry_out))) %>%
     dplyr::distinct(USUBJID, .keep_all = TRUE)
-
-  return(metrics_table_id)
 }
 
 #-------------------------------------------------------------------------------
@@ -876,23 +776,14 @@ exposures_table <- function(input_simulated_table,
 #' @param xvar            Name of x-axis variable to split by
 #' @param num_quantiles   Number of discrete quantiles
 #'
-#' @returns a dataframe containing the quantile limits
-#' @importFrom dplyr select mutate distinct starts_with
+#' @returns a one-row data frame of upper limits, columns Q1, Q2, ...
 #' @noRd
 #-------------------------------------------------------------------------------
 
 calculate_quantiles <- function(df, xvar, num_quantiles) {
-
-  probs <- seq(1/as.numeric(num_quantiles), 1, length.out = as.numeric(num_quantiles))
-
-  for (i in seq_along(probs)) {
-    df <- df %>%
-      dplyr::mutate(!!paste0("Q", i) := quantile(.data[[xvar]], probs = probs[i], na.rm = TRUE))
-  }
-
-  df %>%
-    dplyr::select(starts_with("Q")) %>%
-    dplyr::distinct()
+  n <- as.numeric(num_quantiles)
+  q <- stats::quantile(df[[xvar]], probs = seq(1 / n, 1, length.out = n), na.rm = TRUE, names = FALSE)
+  as.data.frame(as.list(stats::setNames(q, paste0("Q", seq_len(n)))))
 }
 
 #-------------------------------------------------------------------------------
@@ -956,53 +847,20 @@ nca_index <- function(concData, key) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name order_dose_rows
-#'
-#' @title Order simulated rows so that, at a dose time, the observation
-#'   (pre-dose value) comes before the dose record (post-dose value)
-#'
-#' @param df       simulated output with TIME (and optionally evid)
-#' @param id_cols  subject identifier column(s)
-#'
-#' @returns the ordered data frame
-#' @noRd
-#-------------------------------------------------------------------------------
-order_dose_rows <- function(df, id_cols = character()) {
-  if (!"evid" %in% names(df)) return(df)
-  df %>%
-    dplyr::arrange(dplyr::across(dplyr::any_of(id_cols)), .data$TIME, .data$evid != 0)
-}
-
-#-------------------------------------------------------------------------------
 #' @name window_rows
 #'
-#' @title Rows of simulated output that fall in a time window
+#' @title Rows of simulated output in a time window (inclusive on both ends)
 #'
-#' @description
-#' The window is inclusive on both ends. When a dose is given at the end of the
-#' window, the pre-dose (trough) value is used; when a dose is given at its
-#' start, the post-dose value is used. A one-point window keeps the pre-dose value.
-#'
-#' @param df          simulated output with TIME (and optionally evid)
+#' @param df          simulated output with TIME
 #' @param start_time  start of the window
 #' @param end_time    end of the window
-#' @param id_cols     subject identifier column(s)
 #'
-#' @returns the filtered, ordered data frame
+#' @returns the filtered data frame
 #' @noRd
 #-------------------------------------------------------------------------------
-window_rows <- function(df, start_time, end_time, id_cols = character()) {
+window_rows <- function(df, start_time, end_time) {
   warn_window_bounds(df$TIME, start_time, end_time)
-  df <- df %>% dplyr::filter(.data$TIME >= start_time, .data$TIME <= end_time)
-  if (!"evid" %in% names(df) || nrow(df) == 0) return(df)
-  df %>%
-    dplyr::group_by(dplyr::across(dplyr::any_of(c(id_cols, "TIME")))) %>%
-    dplyr::filter(
-      !(.data$TIME == end_time & .data$evid != 0 & any(.data$evid == 0)),
-      !(.data$TIME == start_time & .data$TIME < end_time & .data$evid == 0 & any(.data$evid != 0))
-    ) %>%
-    dplyr::ungroup() %>%
-    order_dose_rows(id_cols = id_cols)
+  dplyr::filter(df, TIME >= start_time, TIME <= end_time)
 }
 
 #-------------------------------------------------------------------------------
