@@ -130,7 +130,7 @@
 #' # App object, e.g. as the only line of an app.R file for deployment:
 #' app <- mvp_app(insert_watermark = FALSE)
 #' @note
-#' Adapted from \url{https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R}
+#' Adapted from the ShinyDemo package, \url{https://github.com/jbryer/ShinyDemo}
 #' @seealso
 #' \url{https://stevechoy.github.io/MVPapp/articles/supply-passwords.html}
 #' \url{https://stevechoy.github.io/MVPapp/articles/automatic-translation.html}
