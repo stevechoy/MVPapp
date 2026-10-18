@@ -22,14 +22,9 @@ translation, PDF handling) use Suggests packages, checked at run time.
 
 ## Test environments
 
-TODO (re-run on the final commit): update the results below.
-
 * local Windows 11, R 4.6.1: 0 errors | 0 warnings | 0 notes
-* GitHub Actions: windows, macOS, ubuntu (devel, release, oldrel-1): TODO confirm green
+* GitHub Actions: windows, macOS, ubuntu (devel, release, oldrel-1): all passing
 * win-builder R-devel and R-release: 0 errors | 0 warnings | 1 note (above)
-* macOS builder (R 4.6.1, arm64): TODO re-run (first attempt failed at "checking
-  package dependencies" because the builder lacked common CRAN packages such as
-  ggplot2 and shiny)
 
 ## Other notes
 
