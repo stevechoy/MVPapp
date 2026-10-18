@@ -277,3 +277,15 @@ test_that("the watermark is drawn with linear and log axes and left out of plotl
   # ggplotly does not know the watermark layer: it must be removed first, not warned about
   expect_no_warning(MVPapp:::convert_to_plotly_watermark(base + MVPapp:::add_watermark(TRUE)))
 })
+
+test_that("run_mvp() opens the browser unless launch.browser says otherwise", {
+  seen <- NULL
+  fake_run_app <- function() seen <<- as.list(match.call())[-1] # records the arguments it gets
+  formals(fake_run_app) <- formals(shiny::runApp)
+  testthat::with_mocked_bindings({
+    run_mvp()
+    expect_true(seen$launch.browser)
+    run_mvp(launch.browser = FALSE)
+    expect_false(seen$launch.browser)
+  }, runApp = fake_run_app, .package = "shiny")
+})

@@ -59,7 +59,10 @@
 #' @param page_title Character. Default NULL ("Model Visualization Platform (MVP)"). Title shown in the navbar. When
 #'   set, it is also used as the browser tab title.
 #' @param ... For `run_mvp()`, [shiny::runApp()] arguments (e.g. `launch.browser`,
-#'        `port`). Any other named arguments are passed to the app.
+#'        `port`). `launch.browser` defaults to `TRUE` here, so the app opens in your
+#'        web browser (also from RStudio, which would otherwise use its viewer pane);
+#'        use `launch.browser = FALSE` to turn that off. Any other named arguments are
+#'        passed to the app.
 #'
 #' @details
 #' **Objects kept for debugging.** MVPapp does not write to the global
@@ -115,7 +118,7 @@
 #'   run_mvp(insert_watermark = FALSE) # remove watermarks
 #'
 #'   # Other examples:
-#'   # run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to runApp)
+#'   # run_mvp(launch.browser = FALSE) # do not open a browser (argument passed to runApp)
 #'   # run_mvp(authentication_code = "some_password") # Password-lock the site,
 #'   #                                                # could be useful in deployment
 #'   # run_mvp(pw_models_path = "path/to/your/private/models.R") # see
@@ -202,6 +205,8 @@ run_mvp <- function() {
   # shiny::runApp() arguments and app settings
   args <- mget(setdiff(names(formals(mvp_app)), "..."), envir = environment())
   dots <- list(...)
+  # Open the system browser unless told otherwise (runApp() would use the RStudio viewer pane there)
+  if (!"launch.browser" %in% names(dots)) dots$launch.browser <- TRUE
   dot_names   <- names(dots) %||% character(length(dots))
   is_run_arg  <- dot_names %in% names(formals(shiny::runApp))
   app <- do.call(mvp_app, c(args, dots[!is_run_arg]))

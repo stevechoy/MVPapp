@@ -152,7 +152,10 @@ as the browser tab icon.}
 set, it is also used as the browser tab title.}
 
 \item{...}{For \code{run_mvp()}, \code{\link[shiny:runApp]{shiny::runApp()}} arguments (e.g. \code{launch.browser},
-\code{port}). Any other named arguments are passed to the app.}
+\code{port}). \code{launch.browser} defaults to \code{TRUE} here, so the app opens in your
+web browser (also from RStudio, which would otherwise use its viewer pane);
+use \code{launch.browser = FALSE} to turn that off. Any other named arguments are
+passed to the app.}
 }
 \value{
 \code{run_mvp()} is called for its side effect of launching the app and
@@ -225,7 +228,7 @@ if (interactive()) {
   run_mvp(insert_watermark = FALSE) # remove watermarks
 
   # Other examples:
-  # run_mvp(launch.browser = TRUE) # launch app in browser (argument passed to runApp)
+  # run_mvp(launch.browser = FALSE) # do not open a browser (argument passed to runApp)
   # run_mvp(authentication_code = "some_password") # Password-lock the site,
   #                                                # could be useful in deployment
   # run_mvp(pw_models_path = "path/to/your/private/models.R") # see
