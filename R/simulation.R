@@ -81,6 +81,8 @@ safely_mcode <- mvp_safely(mrgsolve::mcode)
 #' @param show_matches          Default FALSE, shows a notification when external databases found a matching name with model parameters
 #' @param parallel_sim          Default TRUE, uses the future and mrgsim.parallel packages !Not implemented live!
 #' @param parallel_n            The number of subjects required before parallelization is used !Not implemented live!
+#' @param event_store           Optional environment. With `save_events_as`, the event table is also stored here
+#'                              (as `event_store[[save_events_as]]`), so each app session keeps its own copy
 #' @param save_events_as        Optional label (e.g. "model_1"). When supplied, the event table used
 #'                              for this simulation is kept for that model's reproducible bundle download
 #'
@@ -110,7 +112,8 @@ run_single_sim <- function(input_model_object,
                            show_matches    = FALSE,
                            parallel_sim    = FALSE,
                            parallel_n      = 200,
-                           save_events_as  = NULL) {
+                           save_events_as  = NULL,
+                           event_store     = NULL) {
   
   if (is.null(input_model_object)) {
     if (debug) message("input_model_object is NULL")
@@ -228,7 +231,10 @@ run_single_sim <- function(input_model_object,
   
   ## Keep the events used, per model, for that model's reproducible bundle download
   if (!is.null(save_events_as)) {
-    .mvp_state$last_ev_df[[save_events_as]] <- ev_df
+    .mvp_state$last_ev_df[[save_events_as]] <- ev_df # last one in the process, for debugging
+    if (is.environment(event_store)) {
+      event_store[[save_events_as]] <- ev_df           # this session's own copy
+    }
   }
   
   return(solved_output)
@@ -297,7 +303,7 @@ sample_age_wt <- function(df_name     = "None",
     }
   } else {
     df.sexes <- df %>%
-      dplyr::filter(AGEMO >= lower.agemo, AGEMO < upper.agemo)
+      dplyr::filter(AGEMO >= lower.agemo, AGEMO <= upper.agemo)
   }
   
   df.sexes <- df.sexes %>%
@@ -309,7 +315,7 @@ sample_age_wt <- function(df_name     = "None",
       dplyr::filter(WT == lower.wt)
   } else {
     df.sexes <- df.sexes %>%
-      dplyr::filter(WT >= lower.wt, WT < upper.wt)
+      dplyr::filter(WT >= lower.wt, WT <= upper.wt)
   }
   
   if(lower.bmi == upper.bmi) { # Allows singular BMI
@@ -317,7 +323,7 @@ sample_age_wt <- function(df_name     = "None",
       dplyr::filter(BMI == lower.bmi)
   } else {
     df.sexes <- df.sexes %>%
-      dplyr::filter(BMI >= lower.bmi, BMI < upper.bmi)
+      dplyr::filter(BMI >= lower.bmi, BMI <= upper.bmi)
   }
 
   # Without enough matching subjects, slice_sample() silently returns fewer rows,
@@ -1063,16 +1069,16 @@ update_batch_run_table <- function(param_df,
   # A workaround is not found, perhaps due to circular logic?
   all_params_table <- starting_table %>%
     dplyr::mutate(
-      Lower = Reference * sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.1, display_error = TRUE),
-      Upper = Reference * sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.1, display_error = TRUE)
+      Lower = Reference * sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.5, display_error = TRUE),
+      Upper = Reference * sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)
     )
 
   # If last change was on a reference value. Only the corresponding upper/lower bounds should be updated
   # Switching models could introduce more than one last_change_ref_model_1() so we're also checking against that
   if(length(last_change_ref_index) == 1 && last_change_ref_index > 0) {
     all_params_table <- starting_table
-    all_params_table$Lower[last_change_ref_index] <- all_params_table$Reference[last_change_ref_index] * sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.1, display_error = TRUE)
-    all_params_table$Upper[last_change_ref_index] <- all_params_table$Reference[last_change_ref_index] * sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.1, display_error = TRUE)
+    all_params_table$Lower[last_change_ref_index] <- all_params_table$Reference[last_change_ref_index] * sanitize_numeric_input(lower_multiplier, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)
+    all_params_table$Upper[last_change_ref_index] <- all_params_table$Reference[last_change_ref_index] * sanitize_numeric_input(upper_multiplier, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)
   }
 
   # If last change was on a bound, don't update the entire table, however updating the table has some weird circular logic interaction

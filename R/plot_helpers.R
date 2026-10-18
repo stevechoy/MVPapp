@@ -120,6 +120,18 @@ log10_axis_label <- rep("", length(logbreaks_y_minor))
 log10_axis_label[seq(1, length(logbreaks_y_minor), 9)] <- as.character(logbreaks_y_minor)[seq(1, length(logbreaks_y_minor), 9)] # every 9th tick is labelled
 
 #-------------------------------------------------------------------------------
+#' Largest finite value of a column across several data frames (NULLs ignored)
+#'
+#' Used to pick axis breaks without the cost of `ggplot_build()`.
+#' @noRd
+max_x_of <- function(xvar, ...) {
+  vals <- unlist(lapply(list(...), function(d) {
+    if (is.data.frame(d) && xvar %in% names(d) && is.numeric(d[[xvar]])) d[[xvar]] else NULL
+  }), use.names = FALSE)
+  vals <- vals[is.finite(vals)]
+  if (length(vals) == 0) NA_real_ else max(vals)
+}
+
 #' @name smart_x_axis
 #'
 #' @title Function to improve default x-axis breaks
@@ -142,8 +154,9 @@ smart_x_axis <- function(p1,
                          debug  = FALSE) {
   
   if (is.null(max_x)) {
-    # ggplot_build() is expensive — only called when max_x not supplied
-    # x.range upper bound is expanded by ~5% by default, so we reverse that
+    # Fallback only: ggplot_build() is expensive, so callers should pass max_x
+    # (see max_x_of()). The x.range upper bound is expanded by ~5% by default,
+    # so we reverse that
     max_x <- ggplot2::ggplot_build(p1)$layout$panel_params[[1]]$x.range[[2]] / 1.05
   }
   
@@ -395,7 +408,7 @@ drawDetails.watermark <- function(x, ...) {
 
 create_facet_label <- function(df, sort_by) {
 
-  if(length(sort_by) == 1 && sort_by == "ID") { # Edge case
+  if (length(setdiff(sort_by, "ID")) == 0) { # Edge case: nothing but ID to label by
     df <- df %>%
       dplyr::mutate(facet_label = paste0("ID: ", ID))
   } else {

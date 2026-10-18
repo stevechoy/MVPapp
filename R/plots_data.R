@@ -348,16 +348,11 @@ do_data_page_plot <- function(nmd,
 #' @param x_axis X-axis for plot
 #' @param y_axis Y-axis for plot
 #' @param color_by Color by this column
-#' @param med_line When TRUE, will draw median line by equidistant X-axis bins
-#' @param med_line_by Column name to draw median line by
 #' @param boxplot Draws a geom_boxplot instead of geom_point and geom_line
 #' @param dolm Insert linear regression with formula on top of plot
-#' @param smoother Insert smoother
 #' @param facet_name variable to facet by
 #' @param logy Log Y-axis
-#' @param lby  Log breaks for Y-axis
 #' @param logx Log X-axis
-#' @param lbx  Log breaks for X-axis
 #' @param plot_title Optional plot title
 #' @param label_size font size for geom_text labels (N=x for boxplots or linear regressions)
 #' @param discrete_threshold Draws geom_count if there are <= this number of unique Y-values
@@ -395,15 +390,10 @@ do_data_page_ind_plot <- function(nmd,
                                   x_axis,
                                   y_axis,
                                   color_by,
-                                  med_line,
-                                  med_line_by,
                                   boxplot,
                                   dolm,
-                                  smoother,
                                   facet_name          = "ID",
                                   logy,
-                                  lby                 = logbreaks_y,
-                                  lbx                 = logbreaks_x,
                                   logx,
                                   plot_title,
                                   label_size          = 3,
@@ -716,7 +706,7 @@ do_data_page_ind_plot <- function(nmd,
   if (color_valid) a <- a + ggplot2::labs(color = color_by) # only when colour is mapped
   
   # ── && for scalar + data directly instead of ggplot_build ────
-  if (dolm && x_is_numeric && y_is_numeric && !boxplot) {
+  if (dolm && x_is_numeric && y_is_numeric && !boxplot && !logx && !logy) { # lm label is on the linear scale
     # One label per panel: panels are split by facet_label (one per individual)
     lm_facet <- if (facet_name != "" && facet_name != x_axis) "facet_label" else ""
     df_stats <- lm_eqn(df = nmd, facet_name = lm_facet, x = x_axis, y = y_axis)
@@ -1154,7 +1144,9 @@ plot_data_with_nm <- function(
       ggplot2::scale_x_log10(breaks = log_x_ticks, labels = log_x_labels, oob = scales::oob_squish_infinite) +
       ggplot2::annotation_logticks(sides = "b")
   } else {
-    p1 <- smart_x_axis(p1, xlabel = xlabel, debug = debug)
+    # Derive the axis maximum from the data rather than calling ggplot_build()
+    max_x_all <- max_x_of(xvar, input_dataset1, input_dataset2, nonmem_dataset)
+    p1 <- smart_x_axis(p1, xlabel = xlabel, max_x = if (is.finite(max_x_all)) max_x_all else NULL, debug = debug)
   }
   
   if (log_y_axis) {
@@ -1168,7 +1160,9 @@ plot_data_with_nm <- function(
     ggplot2::theme_bw() +
     ggplot2::labs(x = xlabel, y = ylabel) +
     ggplot2::ggtitle(title) +
-    ggplot2::theme(legend.position = if (use_color_by) "right" else "none")
+    ggplot2::theme(legend.position = if (use_color_by ||
+                                          (isTRUE(stat_summary_data_option) && !is.null(stat_summary_data_by) &&
+                                           nzchar(stat_summary_data_by))) "right" else "none")
   
   if (debug) message("plot_data_with_nm() OK")
   
@@ -1535,7 +1529,8 @@ plot_iiv_data_with_nm <- function(
       ggplot2::scale_x_log10(breaks = log_x_ticks, labels = log_x_labels, oob = scales::oob_squish_infinite) +
       ggplot2::annotation_logticks(sides = "b")
   } else {
-    p1 <- smart_x_axis(p1, xlabel = xlabel)
+    max_x_all <- max_x_of(xvar, input_dataset1, input_dataset2)
+    p1 <- smart_x_axis(p1, xlabel = xlabel, max_x = if (is.finite(max_x_all)) max_x_all else NULL)
   }
   
   if (log_y_axis)
@@ -1629,6 +1624,11 @@ plot_iiv_exp_data <- function(input_dataset,
                               xlab = '',
                               title = "") {
 
+  # Identical model names would merge both models into one box
+  if (identical(model_1_name, model_2_name)) {
+    model_1_name <- paste0(model_1_name, " (Model 1)")
+    model_2_name <- paste0(model_2_name, " (Model 2)")
+  }
   input_dataset$MODEL <- gsub("Model 1", model_1_name, input_dataset$MODEL)
   input_dataset$MODEL <- gsub("Model 2", model_2_name, input_dataset$MODEL)
   input_dataset$MODEL <- fct_inorder(input_dataset$MODEL)

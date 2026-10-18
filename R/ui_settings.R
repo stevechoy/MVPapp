@@ -192,7 +192,7 @@ label_x_axis          <- 'X-axis Label'
 label_y_axis          <- 'Y-axis Label'
 
 label_scale_x_axis    <- 'Scale X-axis (Divide by)'
-bspop_scale_x_axis    <- 'Hours, Days, Weeks, Months corresponds to dividing by 1 (no change), 24, 168, or 672 (Note: this assumes original time unit is in hours). <br><br>X-axis labels will be automatically changed. <br><br>Users can also insert their own custom scaling if desired (reminder: change the x-axis label accordingly).'
+bspop_scale_x_axis    <- 'Hours, Days, Weeks, Months corresponds to dividing by 1 (no change), 24, 168, or 672 (a "month" is 4 weeks; note: this assumes original time unit is in hours). <br><br>X-axis labels will be automatically changed. <br><br>Users can also insert their own custom scaling if desired (reminder: change the x-axis label accordingly).'
 bspop_x_axis_label    <- 'Automatic tick sizes will be provided if the labels match one of the following:<br><br>Time (hours), Time (days), Time (weeks), Time (months)<br><br>Note - change the label slightly if you do not want automatic tick sizes, e.g. "Time (h)" instead of "Time (hours)"'
 
 label_y_axis_sim_1    <- 'Select Y-axis for Model 1'

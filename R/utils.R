@@ -183,3 +183,24 @@ mvp_version <- function() {
   if (!is.null(v)) return(v)
   tryCatch(as.character(utils::packageVersion("MVPapp")), error = function(e) "unknown")
 }
+
+#-------------------------------------------------------------------------------
+#' @name message_object
+#'
+#' @title Sends the printed form of an object to the console as a message
+#'
+#' @description
+#' For debugging output: `print()` and `dplyr::glimpse()` write to stdout, and
+#' `message(glimpse(x))` prints twice. This keeps all debugging output on the
+#' message stream.
+#'
+#' @param x any object
+#'
+#' @returns `NULL`, invisibly
+#' @noRd
+#-------------------------------------------------------------------------------
+
+message_object <- function(x) {
+  message(paste(utils::capture.output(print(x)), collapse = "\n"))
+  invisible(NULL)
+}

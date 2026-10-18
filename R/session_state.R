@@ -7,8 +7,6 @@
 #' \code{\link{restore_session_state}}.
 #'
 #' @param input The Shiny \code{input} object from the current server session.
-#' @param rv A \code{\link[shiny]{reactiveValues}} object containing
-#'   server-side state not bound to UI inputs.
 #' @param uploaded_data The \code{uploaded_data} reactive. Wrapped in
 #'   \code{tryCatch} so \code{NULL} is stored gracefully if no file is loaded.
 #'
@@ -19,7 +17,7 @@
 #' @seealso \code{\link{restore_session_state}}
 #'
 #' @noRd
-get_session_state <- function(input, rv, uploaded_data) {
+get_session_state <- function(input, uploaded_data) {
   list(
     version = mvp_version(),  # tag with app version for forward-compat checks
     saved_at = Sys.time(),
@@ -374,13 +372,11 @@ get_session_state <- function(input, rv, uploaded_data) {
 #' @param input The Shiny \code{input} object from the current server session.
 #' @param session The Shiny \code{session} object passed to all
 #'   \code{updateXxx()} calls.
-#' @param rv A \code{\link[shiny]{reactiveValues}} object containing
-#'   server-side state not bound to UI inputs. Fields are overwritten directly.
 #' @param uploaded_data_override A \code{\link[shiny]{reactiveVal}} used to
 #'   inject the restored dataset into \code{uploaded_data()} without requiring
 #'   a file upload.
-#' @param show_note Logical. Whether to display a version compatibility
-#'   notification on restore. Default \code{TRUE}.
+#' @param show_note Logical (no default). Whether to display a version
+#'   compatibility notification on restore.
 #' @param selectize_choices Workaround for restoring nonmem_y_axis and color_data_by   
 #'
 #' @return \code{NULL} invisibly. Called for its side effects.
@@ -401,7 +397,7 @@ get_session_state <- function(input, rv, uploaded_data) {
 #' @seealso \code{\link{get_session_state}} for the complementary save function.
 #'
 #' @noRd
-restore_session_state <- function(state, input, session, rv, uploaded_data_override, show_note,
+restore_session_state <- function(state, input, session, uploaded_data_override, show_note,
                                   selectize_choices = NULL) {
   
   # --- Version compatibility check ---
@@ -622,6 +618,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput(session, "geom_point_data_option",   value    = state$sim$geom_point_data_option)
   
   # --- PSA ---
+  updateSelectInput(  session, "param_selector_model_1",       selected = state$psa$param_selector_model_1)
   updateNumericInput( session, "digits_model_1",                  value = state$psa$digits_model_1)
   updateCheckboxInput(session, "dp_checkbox_model_1",            value    = state$psa$dp_checkbox_model_1)
   shinyWidgets::updatePickerInput( session,  "min_nca_obs_time_model_1",       selected = state$psa$min_nca_obs_time_model_1)
@@ -637,6 +634,7 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateTextInput(    session, "plot_title_psa_model_1",         value    = state$psa$plot_title_psa_model_1)
   updateCheckboxInput(session, "do_psa_plotly_model_1",          value    = state$psa$do_psa_plotly_model_1)
   
+  updateSelectInput(  session, "param_selector_model_2",       selected = state$psa$param_selector_model_2)
   updateNumericInput( session, "digits_model_2",                  value = state$psa$digits_model_2)
   updateCheckboxInput(session, "dp_checkbox_model_2",            value    = state$psa$dp_checkbox_model_2)
   shinyWidgets::updatePickerInput( session,  "min_nca_obs_time_model_2",       selected = state$psa$min_nca_obs_time_model_2)
@@ -653,6 +651,8 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput(session, "do_psa_plotly_model_2",          value    = state$psa$do_psa_plotly_model_2)
   
   # --- Tornado - Model 1 ---
+  shinyWidgets::updatePickerInput( session, "min_tor_obs_time_model_1", selected = state$psa$min_tor_obs_time_model_1)
+  shinyWidgets::updatePickerInput( session, "max_tor_obs_time_model_1", selected = state$psa$max_tor_obs_time_model_1)
   updateNumericInput(  session, "tor_lower_model_1",          value    = state$psa$tor_lower_model_1)
   updateNumericInput(  session, "tor_upper_model_1",          value    = state$psa$tor_upper_model_1)
   updateSelectizeInput( session, "tor_fix_model_1",            selected = state$psa$tor_fix_model_1)
@@ -670,6 +670,8 @@ restore_session_state <- function(state, input, session, rv, uploaded_data_overr
   updateCheckboxInput( session, "do_tor_plotly_model_1",      value    = state$psa$do_tor_plotly_model_1)
   
   # --- Tornado - Model 2 ---
+  shinyWidgets::updatePickerInput( session, "min_tor_obs_time_model_2", selected = state$psa$min_tor_obs_time_model_2)
+  shinyWidgets::updatePickerInput( session, "max_tor_obs_time_model_2", selected = state$psa$max_tor_obs_time_model_2)
   updateNumericInput(  session, "tor_lower_model_2",          value    = state$psa$tor_lower_model_2)
   updateNumericInput(  session, "tor_upper_model_2",          value    = state$psa$tor_upper_model_2)
   updateSelectizeInput( session, "tor_fix_model_2",            selected = state$psa$tor_fix_model_2)

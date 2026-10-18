@@ -266,10 +266,10 @@ quantile_output <- function(iiv_sim_input,
 ) {
   iiv_sim_input <- iiv_sim_input %>%
     dplyr::group_by(TIME) %>%
-    dplyr::mutate(median_yvar   = quantile(.data[[yvar]], probs = 0.5) %>% round(digits = dp),
-                  mean_yvar     = mean(.data[[yvar]]) %>% round(digits = dp),
-                  lower_yvar    = quantile(.data[[yvar]], probs = lower_quartile) %>% round(digits = dp),
-                  upper_yvar    = quantile(.data[[yvar]], probs = upper_quartile) %>% round(digits = dp)) %>%
+    dplyr::mutate(median_yvar   = quantile(.data[[yvar]], probs = 0.5, na.rm = TRUE) %>% round(digits = dp),
+                  mean_yvar     = mean(.data[[yvar]], na.rm = TRUE) %>% round(digits = dp),
+                  lower_yvar    = quantile(.data[[yvar]], probs = lower_quartile, na.rm = TRUE) %>% round(digits = dp),
+                  upper_yvar    = quantile(.data[[yvar]], probs = upper_quartile, na.rm = TRUE) %>% round(digits = dp)) %>%
     dplyr::ungroup()
 }
 
@@ -504,26 +504,34 @@ tblNCA_progress <- function (concData, key = "Subject", colTime = "Time", colCon
     stop("Count of dose does not match with number of NCAs!")
   }
   res_list = vector("list", nID) # filled per subject, bound once (rbind in a loop is quadratic)
-  withProgress(message = "Calculating NCA", value = 0, {
+  row_index = nca_index(concData, key) # rows of each subject, split once
+  calc_all = function() {
     for (i in 1:nID) {
       if(show_progress) {setProgress(value = i / nID, detail = paste0("Subject ", i, "/", nID))}
       strHeader = paste(paste0(key, "=", vapply(IDs[i, , drop = FALSE], as.character, "")), collapse = ", ")
-      tData = nca_subset(concData, key, IDs[i, , drop = FALSE])
+      tData = nca_subset(concData, key, IDs[i, , drop = FALSE], index = row_index)
       if (nrow(tData) > 0) {
         tRes = NonCompart::sNCA(tData[, colTime], tData[, colConc], dose = dose[i],
                     adm = adm, dur = dur, doseUnit = doseUnit, timeUnit = timeUnit,
                     concUnit = concUnit, R2ADJ = R2ADJ, down = down,
                     MW = MW, SS = SS, iAUC = iAUC, Keystring = strHeader,
                     excludeDelta = excludeDelta)
-        res_list[[i]] = tRes
+        res_list[[i]] <<- tRes
       }
     }
-  })
+  }
+  # withProgress() needs a running Shiny session, so only use it when asked to
+  if (show_progress) {
+    withProgress(message = "Calculating NCA", value = 0, calc_all())
+  } else {
+    calc_all()
+  }
   Res = do.call(rbind, res_list) # NULL entries (subjects without data) are dropped
   Res = cbind(IDs, Res)
   rownames(Res) = NULL
   colnames(Res)[1:nKey] = key
-  attr(Res, "units") = c(rep("", nKey), attr(tRes, "units"))
+  res_done = Filter(Negate(is.null), res_list)
+  attr(Res, "units") = c(rep("", nKey), if (length(res_done) > 0) attr(res_done[[1]], "units"))
   return(Res)
 }
 
@@ -634,15 +642,24 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
   }
 
   class(concData) = "data.frame"
-  defPar = par(no.readonly = TRUE)
-  on.exit(par(defPar), add = TRUE)
   old_width <- options("width")
   on.exit(options(old_width), add = TRUE)
 
   if(debug_msg) {
     message("Trying to open pdf device")
   }
+  # Open the PDF device first: par() with no device open would create
+  # Rplots.pdf in the working directory and leave that device open
   nca_prep_pdf(fileName)
+  pdf_device <- grDevices::dev.cur()
+  on.exit({
+    # also closes the device if an error stops the report half-way
+    if (pdf_device %in% grDevices::dev.list()) {
+      grDevices::dev.set(pdf_device)
+      grDevices::dev.off()
+    }
+  }, add = TRUE)
+  defPar = par(no.readonly = TRUE)
 
   nca_add_page()
   nca_text1(1, 1, "Individual Noncompartmental Analysis Result (Non-Validated)",
@@ -659,12 +676,13 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
   else if (length(dose) != nID) {
     stop("Count of dose does not match with number of NCAs!")
   }
+  row_index = nca_index(concData, key) # rows of each subject, split once
   for (i in 1:nID) {
     if(show_progress) {
       shiny::incProgress(1/nID, detail = paste("Subject ", i, "/", nID))
     }
     strHeader = paste(paste0(key, "=", vapply(IDs[i, , drop = FALSE], as.character, "")), collapse = ", ")
-    tData = nca_subset(concData, key, IDs[i, , drop = FALSE])
+    tData = nca_subset(concData, key, IDs[i, , drop = FALSE], index = row_index)
     if (nrow(tData) > 0) {
       x = tData[, colTime]
       y = tData[, colConc]
@@ -862,11 +880,48 @@ calculate_quantiles <- function(df, xvar, num_quantiles) {
 #' @returns The matching rows of `concData`.
 #' @noRd
 #-------------------------------------------------------------------------------
-nca_subset <- function(concData, key, id_values) {
+nca_subset <- function(concData, key, id_values, index = NULL) {
+  if (!is.null(index)) {
+    rows <- index[[nca_key_string(lapply(seq_along(key), function(j) id_values[[j]]))]]
+    return(concData[rows, , drop = FALSE]) # NULL rows give zero rows
+  }
   rows <- Reduce(`&`, lapply(seq_along(key), function(j) {
     as.character(concData[[key[j]]]) == as.character(id_values[[j]])
   }))
   concData[rows, , drop = FALSE]
+}
+
+#-------------------------------------------------------------------------------
+#' @name nca_key_string
+#'
+#' @title One string per row from the key values (for matching subjects)
+#'
+#' @param cols list of key columns (vectors of equal length)
+#'
+#' @returns character vector
+#' @noRd
+#-------------------------------------------------------------------------------
+nca_key_string <- function(cols) {
+  do.call(paste, c(lapply(cols, as.character), sep = "\r"))
+}
+
+#-------------------------------------------------------------------------------
+#' @name nca_index
+#'
+#' @title Row numbers of each subject in an NCA dataset
+#'
+#' @description Splitting once is much faster than comparing every row for
+#'   every subject (subjects x rows), e.g. for 2000 subjects.
+#'
+#' @param concData Concentration dataset.
+#' @param key Character vector of key column names.
+#'
+#' @returns A list of row numbers named by the subjects' key strings, for the
+#'   `index` argument of [nca_subset()].
+#' @noRd
+#-------------------------------------------------------------------------------
+nca_index <- function(concData, key) {
+  split(seq_len(nrow(concData)), nca_key_string(lapply(key, function(k) concData[[k]])))
 }
 
 #-------------------------------------------------------------------------------
@@ -906,6 +961,7 @@ order_dose_rows <- function(df, id_cols = character()) {
 #' @noRd
 #-------------------------------------------------------------------------------
 window_rows <- function(df, start_time, end_time, id_cols = character()) {
+  warn_window_bounds(df$TIME, start_time, end_time)
   df <- df %>% dplyr::filter(.data$TIME >= start_time, .data$TIME <= end_time)
   if (!"evid" %in% names(df) || nrow(df) == 0) return(df)
   df %>%
@@ -916,6 +972,45 @@ window_rows <- function(df, start_time, end_time, id_cols = character()) {
     ) %>%
     dplyr::ungroup() %>%
     order_dose_rows(id_cols = id_cols)
+}
+
+#-------------------------------------------------------------------------------
+#' @name warn_window_bounds
+#'
+#' @title Warn when a time window's start or end has no sample
+#'
+#' @description
+#' Window metrics use only the sampled rows inside the window (no interpolation),
+#' so a bound without a sample shortens the window actually used: e.g. [24, 30]
+#' with samples at 24 and 36 only covers 24, giving an AUC of 0. In a running
+#' app this shows a notification (replaced, not repeated, on recalculation);
+#' otherwise it is a warning.
+#'
+#' @param times       sampling times of the simulated output
+#' @param start_time  start of the window
+#' @param end_time    end of the window
+#'
+#' @returns `NULL`, invisibly
+#' @noRd
+#-------------------------------------------------------------------------------
+warn_window_bounds <- function(times, start_time, end_time) {
+  times <- times[is.finite(times)]
+  if (length(times) == 0 || !is.finite(start_time) || !is.finite(end_time)) return(invisible(NULL))
+  has_time <- function(x) any(abs(times - x) <= 1e-8 * max(1, abs(x)))
+  missing_bounds <- c(start = !has_time(start_time), end = !has_time(end_time))
+  if (!any(missing_bounds)) return(invisible(NULL))
+
+  msg <- paste0("The ", paste(names(missing_bounds)[missing_bounds], collapse = " and "),
+                " of the time window [", start_time, ", ", end_time,
+                "] ", if (sum(missing_bounds) > 1) "have" else "has",
+                " no sampled value. Metrics (AUC, Cmax, Cavg, ...) use only the samples inside the window ",
+                "without interpolation, so the window actually used is shorter.")
+  if (!is.null(shiny::getDefaultReactiveDomain())) {
+    shiny::showNotification(msg, type = "warning", duration = 10, id = "window_bounds_warning")
+  } else {
+    warning(msg, call. = FALSE)
+  }
+  invisible(NULL)
 }
 
 #-------------------------------------------------------------------------------

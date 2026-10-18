@@ -14,7 +14,7 @@ Description: An interactive 'shiny' application for exploring
     model translation. For design considerations of the app, see Choy et al.
     (2025) <doi:10.1002/psp4.70023>.
 License: GPL (>= 3)
-URL: https://github.com/stevechoy/MVPapp, https://stevechoy.github.io/MVPapp/, https://ascpt.onlinelibrary.wiley.com/doi/10.1002/psp4.70023
+URL: https://github.com/stevechoy/MVPapp, https://stevechoy.github.io/MVPapp/
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports: bslib (>= 0.5.1), 
@@ -83,6 +83,7 @@ Collate: "utils-pipe.R"
          "session_state.R"
          "repro_bundle.R"
          "run_mvp.R"
+         "zzz.R"
          "data.R"
 VignetteBuilder: knitr
 Config/testthat/edition: 3

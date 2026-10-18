@@ -36,7 +36,9 @@ if (!exists("run_single_sim", mode = "function")) {
     deps <- trimws(strsplit(gsub("\\s+", " ", deps), ",")[[1]])
     pkg  <- trimws(sub("\\(.*", "", deps))
     ver  <- ifelse(grepl(">=", deps), trimws(sub(".*>=\\s*([^)]+)\\).*", "\\1", deps)), NA)
-    base_pkgs <- rownames(utils::installed.packages(priority = "base"))
+    # Base/recommended-with-R packages that are always present (avoids installed.packages(), which scans every library)
+    base_pkgs <- c("base", "compiler", "datasets", "graphics", "grDevices", "grid",
+                   "methods", "parallel", "splines", "stats", "stats4", "tcltk", "tools", "utils")
     needed <- character()
     for (k in seq_along(pkg)) {
       if (pkg[k] %in% base_pkgs) next
@@ -242,7 +244,7 @@ ui <- shiny::navbarPage(
                                   p(tags$span('This feature is experimental (based on the ',
                                               tags$a('"NonCompart" and "ncar"', href = "https://asancpt.github.io/book-ncar-en/methods.html#r-packages-noncompart-and-ncar", target ="_blank"),
                                               ' R packages) and assumes that the dataset contains one dose per subject in a single compartment only.', style = "color: red; font-weight: bold;")),
-                                  p(tags$span('All results are provided for exploratory purposes only and is not a substitute for a GxP-compliant NCA!', style = "color: red; font-weight: bold;")),
+                                  p(tags$span('All results are provided for exploratory purposes only and are not a substitute for a GxP-compliant NCA!', style = "color: red; font-weight: bold;")),
                                   fluidRow(
                                     shinydashboard::box(width = 12,
                                                         title = tags$span("Define Options for NCA", help_popover("Define Options for NCA", bspop_nca_tooltip, placement = "right")),
@@ -423,7 +425,7 @@ ui <- shiny::navbarPage(
                                                           column(width = 2,
                                                                  selectizeInput('highlight_var', label_highlight, NULL, multiple = FALSE)#,
                                                                  #shinyBS::bsPopover('highlight_var',  label_highlight, content = bspop_highlight_var, placement = 'left', trigger = 'hover')#,
-                                                                 #update_resistant_popover('highlight_var', title = label_highlight, content = bspop_highlight_var, trigger = 'left', placement = 'hover') # overlays the choices, disable for now
+                                                                 #update_resistant_popover('highlight_var', title = label_highlight, content = bspop_highlight_var, trigger = 'hover', placement = 'left') # overlays the choices, disable for now
                                                           ),
                                                           column(width = 2,
                                                                  selectizeInput('highlight_var_values', label_highlight_values, NULL, multiple = TRUE)#,
@@ -434,12 +436,12 @@ ui <- shiny::navbarPage(
                                                           column(width = 2,
                                                                  selectizeInput('lloq_colname', label_lloq_colname, NULL, multiple = FALSE),
                                                                  shinyBS::bsPopover('lloq_colname',  label_lloq_colname, content = bspop_lloq_colname, placement = 'left', trigger = 'hover'),
-                                                                 update_resistant_popover('lloq_colname', title = label_lloq_colname, content = bspop_lloq_colname, trigger = 'left', placement = 'hover')
+                                                                 update_resistant_popover('lloq_colname', title = label_lloq_colname, content = bspop_lloq_colname, trigger = 'hover', placement = 'left')
                                                           ),
                                                           column(width = 2,
                                                                  selectizeInput('ind_dose_colname', label_dose_colname, NULL, multiple = FALSE),
                                                                  shinyBS::bsPopover('ind_dose_colname',  label_dose_colname, content = bspop_dose_colname, placement = 'left', trigger = 'hover'),
-                                                                 update_resistant_popover('ind_dose_colname', title = label_dose_colname, content = bspop_dose_colname, trigger = 'left', placement = 'hover')),
+                                                                 update_resistant_popover('ind_dose_colname', title = label_dose_colname, content = bspop_dose_colname, trigger = 'hover', placement = 'left')),
                                                           column(width = 2,
                                                                  textInput('dose_units', label_dose_units, value = "", placeholder = "(Optional)"),
                                                                  shinyBS::bsPopover('dose_units',  label_dose_units, content = bspop_dose_units, placement = 'top', trigger = 'hover')),
@@ -509,7 +511,7 @@ ui <- shiny::navbarPage(
                                                         fluidRow(
                                                           column(width = 6,
                                                                  textInput('plotlydi_all_filename', plotly_filename_all_label, value = paste0(today_numeric(), '_ind_plot_all')),
-                                                                 shinyBS::bsPopover('plotlydi_filename_all', title = plotly_filename_all_label, content = bspop_plotly_file_name_all_label, placement = 'left', trigger = "focus")
+                                                                 shinyBS::bsPopover('plotlydi_all_filename', title = plotly_filename_all_label, content = bspop_plotly_file_name_all_label, placement = 'left', trigger = "focus")
                                                           ),
                                                           column(width = 2,
                                                                  selectInput('plotlydi_all_format', label = plotly_format_all_label,
@@ -801,7 +803,7 @@ ui <- shiny::navbarPage(
                                                                           title = 'Options', status = 'primary', solidHeader = TRUE, collapsible = TRUE,
                                                                           id = "options_panel",
                                                                           tabPanel(title = "Additional Options",
-                                                                                   textInput('password', label = "Enter Password:", placeholder = placeholder_password),
+                                                                                   passwordInput('password', label = "Enter Password:", placeholder = placeholder_password),
                                                                                    shinyBS::bsPopover('password', 'Locked Models' ,
                                                                                                       content = case_when(internal_version  ~ bspop_password,
                                                                                                                           !internal_version ~ bspop_password_github
@@ -1958,7 +1960,7 @@ ui <- shiny::navbarPage(
                                                                              shinyBS::bsPopover('download_demog_data_model_1_b', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover"),
                                                                       ),
                                                                       column(width = 6,
-                                                                             numericInput('n_subj_model_1', label = 'Number of Subjects', value = 20, min = 1, max = 3000, step = 1),
+                                                                             numericInput('n_subj_model_1', label = 'Number of Subjects', value = 20, min = 1, max = max_sim_n, step = 1),
                                                                              shinyBS::bsPopover('n_subj_model_1',  'Number of Subjects', content = bspop_nsubj_warning, placement = 'right', trigger = 'focus'),
                                                                              update_resistant_popover('n_subj_model_1',  'Number of Subjects', content = bspop_nsubj_warning, placement = 'right', trigger = 'focus')
                                                                       ),
@@ -2103,7 +2105,7 @@ ui <- shiny::navbarPage(
                                                                       shinyBS::bsPopover('download_demog_data_model_2_b', 'Download Demographics' , content = bspop_download_demog, placement = "right", trigger = "hover"),
                                                                ),
                                                                column(width = 6,
-                                                                      numericInput('n_subj_model_2', label = 'Number of Subjects', value = 20, min = 1, max = 3000, step = 1),
+                                                                      numericInput('n_subj_model_2', label = 'Number of Subjects', value = 20, min = 1, max = max_sim_n, step = 1),
                                                                       shinyBS::bsPopover('n_subj_model_2',  'Number of Subjects', content = bspop_nsubj_warning, placement = 'right', trigger = 'focus'),
                                                                       update_resistant_popover('n_subj_model_2',  'Number of Subjects', content = bspop_nsubj_warning, placement = 'right', trigger = 'focus')
                                                                ),
@@ -2445,7 +2447,7 @@ ui <- shiny::navbarPage(
                                    tags$li("Subplots for Individual Plots may become unevenly sized for interactive plots."),
                                    tags$li("Using 'outvars' would sometimes fail to display the plot. A current workaround is to re-define the outvars to a compartment name and then switching back."),
                                    tags$li("Model will crash if model code contains 'R_' pattern which does not refer to modelling rate."),
-                                   tags$li("When 'Model Duration' is checked and then a dose is inserted into a compartment where the appropriate syntax (e.g. 'D_[CMT]') is not present, the app will crash. Workaround with providing a miniscule amount to D_[CMT] (e.g. D_GUT = 0.0001)"),
+                                   tags$li("When 'Model Duration' is checked and then a dose is inserted into a compartment where the appropriate syntax (e.g. 'D_[CMT]') is not present, the app will crash. Workaround with providing a minuscule amount to D_[CMT] (e.g. D_GUT = 0.0001)"),
                                    tags$li("Graphical issues when using the Show AUC option with the Log Y axis option."),
                                    tags$li("Recommended minimum resolution: >= 1920 * 1080 pixels at 100% size.")
                                  )
@@ -2534,14 +2536,9 @@ ui <- shiny::navbarPage(
 # server ----
 server <- function(input, output, session) {
   
-  ## Popup workarounds
-  session$onFlushed(function() {
-    shinyBS::addPopover(session, "bspop_select_model_1",
-                        title = "Select Model",
-                        content = "TEST",
-                        placement = "right", trigger = "hover",
-                        options = list(container = "body"))
-  }, once = TRUE)
+  # Dosing events of each model's latest simulation, for the bundle download.
+  # Kept per session: MVPapp:::.mvp_state is shared by every session in the process.
+  session_events <- new.env(parent = emptyenv())
   
   ### Interactive plotly plots incompatibility check
   observe({
@@ -2585,7 +2582,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       tryCatch({
-        saveRDS(get_session_state(input, rv, uploaded_data), file)
+        saveRDS(get_session_state(input, uploaded_data), file)
       }, error = function(e) {
         showNotification(paste("Save failed:", e$message), type = "error", duration = 10)
         saveRDS(list(error = e$message), file)  # saves something so browser doesn't hang
@@ -2599,7 +2596,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       tryCatch({
-        saveRDS(get_session_state(input, rv, uploaded_data), file)
+        saveRDS(get_session_state(input, uploaded_data), file)
       }, error = function(e) {
         showNotification(paste("Save failed:", e$message), type = "error", duration = 10)
         saveRDS(list(error = e$message), file)  # saves something so browser doesn't hang
@@ -2621,7 +2618,7 @@ server <- function(input, output, session) {
     
     stored_session_state(state)
     pending_session_restore(TRUE)
-    restore_session_state(stored_session_state(), input, session, rv, uploaded_data_override, 
+    restore_session_state(stored_session_state(), input, session, uploaded_data_override, 
                           show_note = TRUE)
     
     # Generate dataset and model AFTER a small delay to allow inputs to invalidate properly
@@ -2639,7 +2636,7 @@ server <- function(input, output, session) {
     shiny::req(pending_session_restore())
     shiny::req(model_1_checkpoint$sim_generated_model_1 | model_2_checkpoint$sim_generated_model_2)
     
-    restore_session_state(stored_session_state(), input, session, rv, uploaded_data_override, 
+    restore_session_state(stored_session_state(), input, session, uploaded_data_override, 
                           show_note = FALSE,
                           # no dataset loaded -> no choices (req() would otherwise stop this
                           # observer and leave the restore pending)
@@ -2657,7 +2654,7 @@ server <- function(input, output, session) {
     show_auth_modal <- function() {
       showModal(modalDialog(
         title = "Authentication",
-        textInput("auth_code", "Enter password:"),
+        passwordInput("auth_code", "Enter password:"),
         footer = tagList(
           actionButton("submit_code", " Submit",
                        icon = icon("key"))
@@ -2911,6 +2908,11 @@ server <- function(input, output, session) {
   }, label = 'de_selectized_data')
   
   ### Enable auto completion with live ----
+  # aceAutocomplete() registers a new observer on every call and returns it, so
+  # create it once and suspend/resume it with the checkbox
+  ace_autocomplete_observer <- shinyAce::aceAutocomplete('codes')
+  ace_autocomplete_observer$suspend()
+  
   observe({
     autoComplete <- if (input$enableAutocomplete) {
       'live'
@@ -2918,8 +2920,9 @@ server <- function(input, output, session) {
       'disabled'
     }
     if (input$enableAutocomplete) {
-      mutateOb <- shinyAce::aceAutocomplete('codes')
-      mutateOb$resume()
+      ace_autocomplete_observer$resume()
+    } else {
+      ace_autocomplete_observer$suspend()
     }
     shinyAce::updateAceEditor(session, 'codes', autoComplete = autoComplete)
   }, label = 'ShinyAce autocompletion')
@@ -2933,11 +2936,8 @@ server <- function(input, output, session) {
   # Integrated data selection between built_in_filtered_data and de_selectized_data:
   ## nmdata() ----
   nmdata <- reactive({
-    tmp_data <- uploaded_data()
+    tmp_data <- built_in_filtered_data()
     
-    if (!is.null(input$EVID_filter | input$BLQ_filter)) {
-      tmp_data <- built_in_filtered_data()
-    }
     if (!is.null(input$column)) {
       tmp_data <- de_selectized_data()
     }
@@ -3052,9 +3052,9 @@ server <- function(input, output, session) {
           }
           
           if("EVID" %in% names(nonmem_dataset)) {
-            shiny::showNotification(paste0("Absolute and % CFB columns (DV_CFB and DV_CFBPCT) has been created using the first EVID == 0 value from the DV column, per ID and CMT."), type = "message", duration = 15)  
+            shiny::showNotification(paste0("Absolute and % CFB columns (DV_CFB and DV_CFBPCT) have been created using the first EVID == 0 value from the DV column, per ID and CMT."), type = "message", duration = 15)  
           } else {
-            shiny::showNotification(paste0("Absolute and % CFB columns (DV_CFB and DV_CFBPCT) has been created using the first value from the DV column, per ID and CMT."), type = "message", duration = 15)  
+            shiny::showNotification(paste0("Absolute and % CFB columns (DV_CFB and DV_CFBPCT) have been created using the first value from the DV column, per ID and CMT."), type = "message", duration = 15)  
           }
           
         } else {
@@ -3322,7 +3322,7 @@ server <- function(input, output, session) {
                            selected = dplyr::case_when("DOSE" %in% names(nmdataset_for_plot()) ~ "DOSE",
                                                        "DOSEMG" %in% names(nmdataset_for_plot()) ~ "DOSEMG",
                                                        "AMT" %in% names(nmdataset_for_plot()) ~ "AMT",
-                                                       "AMTNM" %in% names(nmdataset_for_plot()) ~ "AMT",
+                                                       "AMTNM" %in% names(nmdataset_for_plot()) ~ "AMTNM",
                                                        TRUE                                        ~ "")
       )
       
@@ -3375,7 +3375,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(nmdataset_for_plot(), file, quote = FALSE, row.names = FALSE)
-      data.table::fwrite(nmdataset_for_plot(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(nmdataset_for_plot(), file, quote = "auto", row.names = FALSE)
     })
   
   # table output of nmdata with code evaluation
@@ -3429,7 +3429,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(data_summary_stats(), file, quote = FALSE, row.names = FALSE)
-      data.table::fwrite(data_summary_stats(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(data_summary_stats(), file, quote = "auto", row.names = FALSE)
     })
   
   ## UI: output$descriptive_stats ----
@@ -3443,8 +3443,8 @@ server <- function(input, output, session) {
         shiny::showNotification("Only retaining observations (EVID == 0) for NCA.", type = "message", duration = 10)
       }
       
-      if(input$mw_value == 0) {
-        shiny::showNotification("WARNING: Set Molecular Weight to a non-zero value to get Clearance and Volume estimates.", type = "warning", duration = 10)
+      if(!isTRUE(input$mw_value > 0)) {
+        shiny::showNotification("WARNING: Set Molecular Weight to a positive value to get Clearance and Volume estimates.", type = "warning", duration = 10)
       }
       
       if(length(unique(nmdataset_for_nca$CMT)) > 1) {
@@ -3480,7 +3480,7 @@ server <- function(input, output, session) {
                       MW = input$mw_value) %>%
         dplyr::select(where(~any(!is.na(.)))) ## Remove columns with NA's if inputs are non-sensible
     } else {
-      shiny::showNotification(paste0("ERROR: Please install 'ncar' and 'NonCompart' R packages to use ths feature."), type = "error", duration = 10)
+      shiny::showNotification(paste0("ERROR: Please install 'ncar' and 'NonCompart' R packages to use this feature."), type = "error", duration = 10)
       return(NULL)
     }
     
@@ -3531,7 +3531,7 @@ server <- function(input, output, session) {
     
     if(show_debugging_msg) {
       message(rename_vectors_exist)
-      dplyr::glimpse(stat_table_renamed)
+      message_object(stat_table_renamed)
     }
     
     list_of_nca <- calc_summary_stats_as_list(stat_table_renamed,
@@ -3595,7 +3595,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(stat_table(), file, quote = FALSE, row.names = FALSE)
-      data.table::fwrite(stat_table(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(stat_table(), file, quote = "auto", row.names = FALSE)
     })
   
   output$download_nca_report <- downloadHandler(
@@ -3834,16 +3834,11 @@ server <- function(input, output, session) {
                                  x_axis      = input$x_axis,
                                  y_axis      = input$y_axis,
                                  color_by    = input$color,
-                                 med_line    = input$median_line_data,
-                                 med_line_by = input$median_line_by,
                                  boxplot     = input$do_boxplot,
                                  dolm        = input$insert_lm_eqn,
-                                 smoother    = input$insert_smoother,
                                  #facet_name  = input$facet_by,
                                  logy        = input$log_y_axis_data,
                                  logx        = input$log_x_axis_data,
-                                 lby         = logbreaks_y,
-                                 lbx         = logbreaks_x,
                                  plot_title  = d_plot_title_ind(),
                                  label_size  = as.numeric(input$select_label_size),
                                  highlight_var = input$highlight_var,
@@ -3964,16 +3959,11 @@ server <- function(input, output, session) {
             x_axis      = input$x_axis,
             y_axis      = input$y_axis,
             color_by    = input$color,
-            med_line    = input$median_line_data,
-            med_line_by = input$median_line_by,
             boxplot     = input$do_boxplot,
             dolm        = input$insert_lm_eqn,
-            smoother    = input$insert_smoother,
             #facet_name  = input$facet_by,
             logy        = input$log_y_axis_data,
             logx        = input$log_x_axis_data,
-            lby         = logbreaks_y,
-            lbx         = logbreaks_x,
             plot_title  = d_plot_title_ind(),
             label_size  = as.numeric(input$select_label_size),
             highlight_var = input$highlight_var,
@@ -3987,12 +3977,12 @@ server <- function(input, output, session) {
             add_watermark(watermark_toggle = insert_watermark)
         }
         
-        pdf(file = file, width = input$plotlydi_all_width, height = input$plotlydi_all_height)
+        grDevices::pdf(file = file, width = input$plotlydi_all_width, height = input$plotlydi_all_height)
+        on.exit(grDevices::dev.off(), add = TRUE) # also closes the device if a page fails
         for(m in seq_along(p_ind_all)) {
           setProgress(value = 0.2 + (m/length(p_ind_all) * 0.8), message = 'Compiling PDF', detail = paste0("page ", m, "/", length(p_ind_all)))
           print(p_ind_all[[m]])
         }
-        dev.off()
       })
     }
   )
@@ -4154,12 +4144,12 @@ server <- function(input, output, session) {
       }
       
       if(requireNamespace("nonmem2rx", quietly = TRUE) && llm_settings_model_1$nonmem2rx) {
-        accept_single <- c(llm_accept_single_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
-        accept_multi  <- c(llm_accept_multi_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
+        accept_single <- unique(c(llm_accept_single_types, nonmem2rx_file_types))
+        accept_multi  <- unique(c(llm_accept_multi_types, nonmem2rx_file_types))
       }
       
       # Determine accepted file types based on llm choice
-      accept_types <- if (llm_settings_model_1$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
+      accept_types <- if (llm_settings_model_1$llm_choices %in% dify_services) {
         accept_single  # Dify supports text too
       } else {
         accept_multi  # default for other providers (PDF or text-equivalent)
@@ -4245,7 +4235,7 @@ server <- function(input, output, session) {
   output$api_upload_ui_model_1 <- renderUI({
     shiny::req(input$llm_model_1) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_1 == "PMx Co-Modeler" | input$llm_model_1 == "EXP") {
+    if (input$llm_model_1 %in% dify_services) {
       # textInput('api_upload_model_1',
       #           label = "API Upload URL",
       #           value = llm_settings_model_1$api_upload,
@@ -4269,7 +4259,7 @@ server <- function(input, output, session) {
   output$user_id_ui_model_1 <- renderUI({
     shiny::req(input$llm_model_1) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_1 != "PMx Co-Modeler" & input$llm_model_1 != "EXP") {
+    if (!(input$llm_model_1 %in% dify_services)) {
       textInput('user_id_model_1',
                 label = "User ID",
                 value = llm_settings_model_1$user_id
@@ -4280,7 +4270,7 @@ server <- function(input, output, session) {
   output$temperature_ui_model_1 <- renderUI({
     shiny::req(input$llm_model_1) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_1 != "PMx Co-Modeler" & input$llm_model_1 != "EXP") {
+    if (!(input$llm_model_1 %in% dify_services)) {
       sliderInput('temperature_model_1',
                   label = llm_temp_label,
                   value = llm_settings_model_1$temperature,
@@ -4294,7 +4284,7 @@ server <- function(input, output, session) {
   output$llm_seed_ui_model_1 <- renderUI({
     shiny::req(input$llm_model_1) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_1 != "PMx Co-Modeler" & input$llm_model_1 != "EXP") {
+    if (!(input$llm_model_1 %in% dify_services)) {
       numericInput('llm_seed_model_1',
                    label = llm_seed_label,
                    value = llm_settings_model_1$llm_seed
@@ -4305,7 +4295,7 @@ server <- function(input, output, session) {
   output$deep_pdfscan_ui_model_1 <- renderUI({
     shiny::req(input$llm_model_1) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_1 == "PMx Co-Modeler" | input$llm_model_1 == "EXP") {
+    if (input$llm_model_1 %in% dify_services) {
       checkboxInput('deep_pdfscan_model_1',
                     label = llm_deep_pdfscan_label,
                     value = llm_settings_model_1$deep_pdfscan
@@ -4316,7 +4306,7 @@ server <- function(input, output, session) {
   output$force_parse_ui_model_1 <- renderUI({
     shiny::req(input$llm_model_1) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_1 == "PMx Co-Modeler" | input$llm_model_1 == "EXP") {
+    if (input$llm_model_1 %in% dify_services) {
       checkboxInput('force_parse_model_1',
                     label = llm_force_parse_label,
                     value = llm_settings_model_1$force_parse
@@ -4400,7 +4390,7 @@ server <- function(input, output, session) {
         footer = tagList(
           actionButton("reset_llm_model_1", "Reset", class = "btn-warning"),
           actionButton("apply_model_1", "Apply", class = "btn-success"),
-          modalButton("OK")
+          modalButton("Close")
         )
       )
     )
@@ -4439,6 +4429,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "model_lang_model_1",             selected = default_llm_settings$model_lang)
     updateCheckboxInput(session, "deep_pdfscan_model_1",            value = default_llm_settings$deep_pdfscan)
     updateCheckboxInput(session, "force_parse_model_1",             value = default_llm_settings$force_parse)
+    updateCheckboxInput(session, "locally_parse_model_1",           value = default_llm_settings$locally_parse)
     
     # More general modals
     updateTextInput(session, "api_upload_model_1",                  value = default_llm_settings$api_upload)
@@ -4493,7 +4484,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "llm_model_1",                    selected = llm_settings_model_1$llm_choices)
     updateSelectInput(session, "max_retries_model_1",            selected = llm_settings_model_1$max_retries)
     updateSelectInput(session, "model_lang_model_1",             selected = llm_settings_model_1$model_lang)
-    if(llm_settings_model_1$llm_choices == "PMx Co-Modeler" | llm_settings_model_1$llm_choices == "EXP") {
+    if(llm_settings_model_1$llm_choices %in% dify_services) {
       updateCheckboxInput(session, "deep_pdfscan_model_1",          value = llm_settings_model_1$deep_pdfscan)
       updateCheckboxInput(session, "force_parse_model_1",           value = llm_settings_model_1$force_parse)
     }
@@ -4571,7 +4562,7 @@ server <- function(input, output, session) {
     }
     shiny::req(input$pdffile_model_1, api_key)
     
-    if(llm_service == "OpenAI-Compatible" && is.na(api_chat)) {
+    if(llm_service == "OpenAI-Compatible" && !(is.character(api_chat) && length(api_chat) == 1 && !is.na(api_chat) && nzchar(api_chat))) {
       showNotification("ERROR: Please specify 'api_chat' URL as an argument when using OpenAI-Compatible.", type = "error", duration = 10)
       return(NULL)
     }
@@ -4745,14 +4736,18 @@ server <- function(input, output, session) {
     # Always show the initial translation in the editor
     update_editor(current_code$answer)
     
-    # ── 2. Initial Internal Test Compilation (always runs) ────────────────────
+    # rxode2/NONMEM output can't be compiled by mrgsolve, so a test compile would
+    # only fail and waste time
+    if (model_lang != "mrgsolve") return()
+    
+    # ── 2. Initial Internal Test Compilation (mrgsolve output only) ───────────
     compilation <- compile_code(current_code$answer, suffix = "orig")
     
     if (mrgsolve::is.mrgmod(compilation$result)) {
       # Success on first pass — notify, update editor, and stop
       shiny::showNotification(llm_compile_success, type = "message", duration = 10)
       
-      if(reuse_context && (llm_service == "PMx Co-Modeler" | llm_service == "EXP")) {
+      if(reuse_context && (llm_service %in% dify_services)) {
         # Relay success to PMx Co-Modeler
         if(show_debugging_msg) message("Relaying success")
         relay_success <- refine_model_code(
@@ -4778,7 +4773,7 @@ server <- function(input, output, session) {
           display_info               = FALSE,
           temperature                = temperature,
           seed                       = llm_seed,
-          attempt                    = attempt,
+          attempt                    = 0, # the retry loop below defines `attempt`
           deep_pdfscan               = FALSE, # not relevant
           force_parse                = FALSE, # not relevant
           system_prompt              = mrgsolve_refine_system_prompt,
@@ -4797,7 +4792,7 @@ server <- function(input, output, session) {
     
     # ── 3. Initial compilation failed ─────────────────────────────────────────
     error_msg <- get_error_msg(compilation)
-    if (show_debugging_msg) print(paste0("Initial compilation error: ", error_msg))
+    if (show_debugging_msg) message("Initial compilation error: ", paste(error_msg, collapse = "\n"))
     
     if (max_retries == 0 & model_lang == "mrgsolve") {
       # No retries configured — surface the error and stop
@@ -4866,7 +4861,7 @@ server <- function(input, output, session) {
         shiny::showNotification(llm_compile_success, type = "message", duration = 10)
         
         # Relay success to PMx Co-Modeler
-        if(reuse_context && (llm_service == "PMx Co-Modeler" | llm_service == "EXP")) {
+        if(reuse_context && (llm_service %in% dify_services)) {
           if(show_debugging_msg) message("Relaying success")
           relay_success <- refine_model_code(
             model_code                 = current_code$answer,
@@ -4910,7 +4905,7 @@ server <- function(input, output, session) {
       
       # Still failing — capture error for next iteration's notification
       error_msg <- get_error_msg(compilation)
-      if (show_debugging_msg) print(paste0("Attempt ", attempt, " error: ", error_msg))
+      if (show_debugging_msg) message("Attempt ", attempt, " error: ", paste(error_msg, collapse = "\n"))
     }
     
     # ── 5. All retries exhausted without success ───────────────────────────────
@@ -4935,12 +4930,12 @@ server <- function(input, output, session) {
       }
       
       if(requireNamespace("nonmem2rx", quietly = TRUE) && llm_settings_model_2$nonmem2rx) {
-        accept_single <- c(llm_accept_single_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
-        accept_multi  <- c(llm_accept_multi_types, ".lst", ".cov", ".phi", ".xml", ".ext", ".grd")
+        accept_single <- unique(c(llm_accept_single_types, nonmem2rx_file_types))
+        accept_multi  <- unique(c(llm_accept_multi_types, nonmem2rx_file_types))
       }
       
       # Determine accepted file types based on llm choice
-      accept_types <- if (llm_settings_model_2$llm_choices %in% c("PMx Co-Modeler", "EXP")) {
+      accept_types <- if (llm_settings_model_2$llm_choices %in% dify_services) {
         accept_single  # Dify supports text too
       } else {
         accept_multi  # default for other providers (PDF or text-equivalent)
@@ -5026,7 +5021,7 @@ server <- function(input, output, session) {
   output$api_upload_ui_model_2 <- renderUI({
     shiny::req(input$llm_model_2) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_2 == "PMx Co-Modeler" | input$llm_model_2 == "EXP") {
+    if (input$llm_model_2 %in% dify_services) {
       # textInput('api_upload_model_2',
       #           label = "API Upload URL",
       #           value = llm_settings_model_2$api_upload,
@@ -5050,7 +5045,7 @@ server <- function(input, output, session) {
   output$user_id_ui_model_2 <- renderUI({
     shiny::req(input$llm_model_2) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_2 != "PMx Co-Modeler" & input$llm_model_2 != "EXP") {
+    if (!(input$llm_model_2 %in% dify_services)) {
       textInput('user_id_model_2',
                 label = "User ID",
                 value = llm_settings_model_2$user_id
@@ -5061,7 +5056,7 @@ server <- function(input, output, session) {
   output$temperature_ui_model_2 <- renderUI({
     shiny::req(input$llm_model_2) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_2 != "PMx Co-Modeler" & input$llm_model_2 != "EXP") {
+    if (!(input$llm_model_2 %in% dify_services)) {
       sliderInput('temperature_model_2',
                   label = llm_temp_label,
                   value = llm_settings_model_2$temperature,
@@ -5075,7 +5070,7 @@ server <- function(input, output, session) {
   output$llm_seed_ui_model_2 <- renderUI({
     shiny::req(input$llm_model_2) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_2 != "PMx Co-Modeler" & input$llm_model_2 != "EXP") {
+    if (!(input$llm_model_2 %in% dify_services)) {
       numericInput('llm_seed_model_2',
                    label = llm_seed_label,
                    value = llm_settings_model_2$llm_seed
@@ -5086,7 +5081,7 @@ server <- function(input, output, session) {
   output$deep_pdfscan_ui_model_2 <- renderUI({
     shiny::req(input$llm_model_2) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_2 == "PMx Co-Modeler" | input$llm_model_2 == "EXP") {
+    if (input$llm_model_2 %in% dify_services) {
       checkboxInput('deep_pdfscan_model_2',
                     label = llm_deep_pdfscan_label,
                     value = llm_settings_model_2$deep_pdfscan
@@ -5097,7 +5092,7 @@ server <- function(input, output, session) {
   output$force_parse_ui_model_2 <- renderUI({
     shiny::req(input$llm_model_2) # use the live modal input, not the saved reactive
     
-    if (input$llm_model_2 == "PMx Co-Modeler" | input$llm_model_2 == "EXP") {
+    if (input$llm_model_2 %in% dify_services) {
       checkboxInput('force_parse_model_2',
                     label = llm_force_parse_label,
                     value = llm_settings_model_2$force_parse
@@ -5181,7 +5176,7 @@ server <- function(input, output, session) {
         footer = tagList(
           actionButton("reset_llm_model_2", "Reset", class = "btn-warning"),
           actionButton("apply_model_2", "Apply", class = "btn-success"),
-          modalButton("OK")
+          modalButton("Close")
         )
       )
     )
@@ -5220,6 +5215,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "model_lang_model_2",             selected = default_llm_settings$model_lang)
     updateCheckboxInput(session, "deep_pdfscan_model_2",            value = default_llm_settings$deep_pdfscan)
     updateCheckboxInput(session, "force_parse_model_2",             value = default_llm_settings$force_parse)
+    updateCheckboxInput(session, "locally_parse_model_2",           value = default_llm_settings$locally_parse)
     
     # More general modals
     updateTextInput(session, "api_upload_model_2",                  value = default_llm_settings$api_upload)
@@ -5274,7 +5270,7 @@ server <- function(input, output, session) {
     updateSelectInput(session, "llm_model_2",                    selected = llm_settings_model_2$llm_choices)
     updateSelectInput(session, "max_retries_model_2",            selected = llm_settings_model_2$max_retries)
     updateSelectInput(session, "model_lang_model_2",             selected = llm_settings_model_2$model_lang)
-    if(llm_settings_model_2$llm_choices == "PMx Co-Modeler" | llm_settings_model_2$llm_choices == "EXP") {
+    if(llm_settings_model_2$llm_choices %in% dify_services) {
       updateCheckboxInput(session, "deep_pdfscan_model_2",          value = llm_settings_model_2$deep_pdfscan)
       updateCheckboxInput(session, "force_parse_model_2",           value = llm_settings_model_2$force_parse)
     }
@@ -5352,7 +5348,7 @@ server <- function(input, output, session) {
     }
     shiny::req(input$pdffile_model_2, api_key)
     
-    if(llm_service == "OpenAI-Compatible" && is.na(api_chat)) {
+    if(llm_service == "OpenAI-Compatible" && !(is.character(api_chat) && length(api_chat) == 1 && !is.na(api_chat) && nzchar(api_chat))) {
       showNotification("ERROR: Please specify 'api_chat' URL as an argument when using OpenAI-Compatible.", type = "error", duration = 10)
       return(NULL)
     }
@@ -5527,14 +5523,18 @@ server <- function(input, output, session) {
     # Always show the initial translation in the editor
     update_editor(current_code$answer)
     
-    # ── 2. Initial Internal Test Compilation (always runs) ────────────────────
+    # rxode2/NONMEM output can't be compiled by mrgsolve, so a test compile would
+    # only fail and waste time
+    if (model_lang != "mrgsolve") return()
+    
+    # ── 2. Initial Internal Test Compilation (mrgsolve output only) ───────────
     compilation <- compile_code(current_code$answer, suffix = "orig")
     
     if (mrgsolve::is.mrgmod(compilation$result)) {
       # Success on first pass — notify, update editor, and stop
       shiny::showNotification(llm_compile_success, type = "message", duration = 10)
       
-      if(reuse_context && (llm_service == "PMx Co-Modeler" | llm_service == "EXP")) {
+      if(reuse_context && (llm_service %in% dify_services)) {
         # Relay success to PMx Co-Modeler
         if(show_debugging_msg) message("Relaying success")
         relay_success <- refine_model_code(
@@ -5560,7 +5560,7 @@ server <- function(input, output, session) {
           display_info               = FALSE,
           temperature                = temperature,
           seed                       = llm_seed,
-          attempt                    = attempt,
+          attempt                    = 0, # the retry loop below defines `attempt`
           deep_pdfscan               = FALSE, # not relevant
           force_parse                = FALSE, # not relevant
           system_prompt              = mrgsolve_refine_system_prompt,
@@ -5579,7 +5579,7 @@ server <- function(input, output, session) {
     
     # ── 3. Initial compilation failed ─────────────────────────────────────────
     error_msg <- get_error_msg(compilation)
-    if (show_debugging_msg) print(paste0("Initial compilation error: ", error_msg))
+    if (show_debugging_msg) message("Initial compilation error: ", paste(error_msg, collapse = "\n"))
     
     if (max_retries == 0 & model_lang == "mrgsolve") {
       # No retries configured — surface the error and stop
@@ -5648,7 +5648,7 @@ server <- function(input, output, session) {
         shiny::showNotification(llm_compile_success, type = "message", duration = 10)
         
         # Relay success to PMx Co-Modeler
-        if(reuse_context && (llm_service == "PMx Co-Modeler" | llm_service == "EXP")) {
+        if(reuse_context && (llm_service %in% dify_services)) {
           if(show_debugging_msg) message("Relaying success")
           relay_success <- refine_model_code(
             model_code                 = current_code$answer,
@@ -5692,7 +5692,7 @@ server <- function(input, output, session) {
       
       # Still failing — capture error for next iteration's notification
       error_msg <- get_error_msg(compilation)
-      if (show_debugging_msg) print(paste0("Attempt ", attempt, " error: ", error_msg))
+      if (show_debugging_msg) message("Attempt ", attempt, " error: ", paste(error_msg, collapse = "\n"))
     }
     
     # ── 5. All retries exhausted without success ───────────────────────────────
@@ -5784,7 +5784,7 @@ server <- function(input, output, session) {
         cat("\n")
         print(dosing_regimen_model_1())
         cat("\nModel Code:\n")
-        cat(mrgsolve:::code(changed_reacted_param_model_1()), sep = "\n")
+        cat(changed_reacted_param_model_1()$code, sep = "\n")
       }
     }
   }) %>% bindEvent(changed_reacted_param_model_1(), dosing_regimen_model_1(), safely_inputted_model_1(), model_1_is_valid())
@@ -5852,7 +5852,7 @@ server <- function(input, output, session) {
     
     if (show_debugging_msg) {
       message('created_param_input')
-      print(final_dataframe)
+      message_object(final_dataframe)
     }
     model_1_checkpoint$param_input_generated_model_1 <- TRUE
     param_input_model_1(final_dataframe)
@@ -6070,6 +6070,7 @@ server <- function(input, output, session) {
             run_single_sim(
               input_model_object = changed_reacted_param_model_1(),
               save_events_as     = "model_1", # kept for this model's bundle download
+              event_store        = session_events,
               wt_based_dosing    = input$wt_based_dosing_checkbox,
               wt_name            = input$wt_based_dosing_name,
               pred_model         = model_1_is_pred(),
@@ -6165,7 +6166,7 @@ server <- function(input, output, session) {
         cat("\n")
         print(dosing_regimen_model_2())
         cat("\nModel Code:\n")
-        cat(mrgsolve:::code(changed_reacted_param_model_2()), sep = "\n")
+        cat(changed_reacted_param_model_2()$code, sep = "\n")
       }
     }
   }) %>% bindEvent(changed_reacted_param_model_2(), dosing_regimen_model_2(), safely_inputted_model_2())
@@ -6234,7 +6235,7 @@ server <- function(input, output, session) {
     
     if (show_debugging_msg) {
       message('created_param_input')
-      print(final_dataframe2)
+      message_object(final_dataframe2)
     }
     model_2_checkpoint$param_input_generated_model_2 <- TRUE
     param_input_model_2(final_dataframe2)
@@ -6450,6 +6451,7 @@ server <- function(input, output, session) {
             run_single_sim(
               input_model_object = changed_reacted_param_model_2(),
               save_events_as     = "model_2", # kept for this model's bundle download
+              event_store        = session_events,
               wt_based_dosing    = input$wt_based_dosing_checkbox_2,
               wt_name            = input$wt_based_dosing_name_2,
               pred_model         = model_2_is_pred(),
@@ -6496,10 +6498,9 @@ server <- function(input, output, session) {
   }, label = 'eval_custom_time')
   
   # Only evaluate and return a non-error message (presumably a vector)
-  custom_time <- NULL
   custom_time <- reactive({
     if(!is(eval_custom_time(),"try-error")) {
-      sanitized_times <- eval(parse(text=paste0("c(", d_custom_sampling_time_text(), ")")))
+      sanitized_times <- eval_custom_time() # already evaluated above
       if(is.numeric(sanitized_times)) {
         return(sanitized_times)
       } else {
@@ -6552,7 +6553,7 @@ server <- function(input, output, session) {
       cmt_filtered <- nmdataset_for_plot() %>% dplyr::filter(CMT %in% input$filter_cmt)
       
       if(show_debugging_msg) {
-        message(dplyr::glimpse(cmt_filtered))
+        message_object(cmt_filtered)
       }
       
       if("TIME" %in% names(cmt_filtered)) {
@@ -6715,9 +6716,17 @@ server <- function(input, output, session) {
     plot + add_watermark(watermark_toggle = insert_watermark)
   }, label = 'simulation_page_plot_final')
   
+  # Depend on whether a plot exists, not on the plot itself: otherwise the
+  # container is rebuilt on every change (flicker, and plotly zoom is lost)
+  # (a reactiveVal only invalidates its readers when the value changes)
+  simulation_plot_exists <- reactiveVal(FALSE)
+  observe({
+    simulation_plot_exists(isTRUE(tryCatch(!is.null(simulation_page_plot()), error = function(e) FALSE)))
+  }, label = 'simulation_plot_exists')
+  
   output$simulation_plot_output <- renderUI({
     div(style = "height:600px",
-        if (!is.null(simulation_page_plot())) {
+        if (simulation_plot_exists()) {
           if (input$do_sim_plotly) {
             plotly::plotlyOutput("sim_plotly", height = '600px') %>%
               shinycssloaders::withSpinner(type = 8, hide.ui = FALSE, color = mvp_navy)
@@ -6763,7 +6772,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(combine_sim_download_data(), file, quote = FALSE, row.names = FALSE)
-      data.table::fwrite(combine_sim_download_data(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(combine_sim_download_data(), file, quote = "auto", row.names = FALSE)
     }
   )
   
@@ -6813,7 +6822,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_1(),
         event_data_orig    = dosing_regimen_model_1(),  # pre-transform ev(), straight from the reactive
-        event_data_post    = .mvp_state$last_ev_df[["model_1"]],
+        event_data_post    = session_events[["model_1"]],
         sampling_times     = sampling_options(),
         custom_sampling_time = input$custom_sampling_time_cb,
         tend               = tend(),
@@ -6827,7 +6836,7 @@ server <- function(input, output, session) {
         model_dur          = model_duration_argument_model_1(),
         model_rate         = model_rate_argument_model_1(),
         pred_model         = model_1_is_pred(),
-        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df[["model_1"]])) database_model_1() else NULL,
+        covariate_db       = if('ID' %in% names(session_events[["model_1"]])) database_model_1() else NULL,
         seed               = d_seed_number_model_1()
       )
     },
@@ -6851,7 +6860,7 @@ server <- function(input, output, session) {
         zip_path           = file,
         input_model_object = changed_matrix_model_2(),
         event_data_orig    = dosing_regimen_model_2(),  # pre-transform ev(), straight from the reactive
-        event_data_post    = .mvp_state$last_ev_df[["model_2"]],
+        event_data_post    = session_events[["model_2"]],
         sampling_times     = sampling_options(),
         custom_sampling_time = input$custom_sampling_time_cb,
         tend               = tend(),
@@ -6865,7 +6874,7 @@ server <- function(input, output, session) {
         model_dur          = model_duration_argument_model_2(),
         model_rate         = model_rate_argument_model_2(),
         pred_model         = model_2_is_pred(),
-        covariate_db       = if('ID' %in% names(.mvp_state$last_ev_df[["model_2"]])) database_model_2() else NULL,
+        covariate_db       = if('ID' %in% names(session_events[["model_2"]])) database_model_2() else NULL,
         seed               = d_seed_number_model_2()
       )
     },
@@ -7551,7 +7560,7 @@ server <- function(input, output, session) {
   d_xlab_tor_model_1           <- debounce(reactive({ input$xlab_tor_model_1 }), debounce_timer_slow)
   d_trim_tor_model_1           <- debounce(reactive({ input$trim_tor_model_1 }), debounce_timer_slow)
   #slowed_lower_model_1         <- throttle(reactive({sanitize_numeric_input(input$tor_lower_model_1, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)}), debounce_timer_fast)
-  #slowed_upper_model_1         <- throttle(reactive({sanitize_numeric_input(input$tor_upper_model_1, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)}), debounce_timer_fast)
+  #slowed_upper_model_1         <- throttle(reactive({sanitize_numeric_input(input$tor_upper_model_1, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)}), debounce_timer_fast)
   
   observeEvent(inputted_model_1(), {
     updateSelectInput(session,
@@ -7670,7 +7679,7 @@ server <- function(input, output, session) {
     batch_runs_model_1(batch_runs)
     
     if(show_debugging_msg) {
-      glimpse(batch_runs_model_1())
+      message_object(batch_runs_model_1())
     }
   })
   
@@ -7849,7 +7858,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(rhandsontable::hot_to_r(input$tor_table_model_1), file, row.names = FALSE)
-      data.table::fwrite(rhandsontable::hot_to_r(input$tor_table_model_1), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(rhandsontable::hot_to_r(input$tor_table_model_1), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -7859,7 +7868,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_batch_run_summary_model_1_", input$tor_var_model_1, ".csv")
     },
     content = function(file) {
-      data.table::fwrite(tor_summary_model_1(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(tor_summary_model_1(), file, quote = "auto", row.names = FALSE)
     }
   )
   
@@ -7868,7 +7877,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_batch_run_results_model_1.csv")
     },
     content = function(file) {
-      data.table::fwrite(batch_runs_model_1(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(batch_runs_model_1(), file, quote = "auto", row.names = FALSE)
     }
   )
   
@@ -7885,7 +7894,7 @@ server <- function(input, output, session) {
   d_xlab_tor_model_2           <- debounce(reactive({ input$xlab_tor_model_2 }), debounce_timer_slow)
   d_trim_tor_model_2           <- debounce(reactive({ input$trim_tor_model_2 }), debounce_timer_slow)
   #slowed_lower_model_2         <- throttle(reactive({sanitize_numeric_input(input$tor_lower_model_2, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)}), debounce_timer_fast)
-  #slowed_upper_model_2         <- throttle(reactive({sanitize_numeric_input(input$tor_upper_model_2, allow_zero = FALSE, return_value = 0.5, display_error = TRUE)}), debounce_timer_fast)
+  #slowed_upper_model_2         <- throttle(reactive({sanitize_numeric_input(input$tor_upper_model_2, allow_zero = FALSE, return_value = 1.5, display_error = TRUE)}), debounce_timer_fast)
   
   observeEvent(inputted_model_2(), {
     updateSelectInput(session,
@@ -8004,7 +8013,7 @@ server <- function(input, output, session) {
     batch_runs_model_2(batch_runs)
     
     if(show_debugging_msg) {
-      glimpse(batch_runs_model_2())
+      message_object(batch_runs_model_2())
     }
   })
   
@@ -8022,7 +8031,7 @@ server <- function(input, output, session) {
     }
     
     return(tor_summary)
-  }, label = "batch runs summary data model 1")
+  }, label = "batch runs summary data model 2")
   
   ## tor_page_plot_model_2() ----
   tor_page_plot_model_2 <- reactive({
@@ -8184,7 +8193,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(rhandsontable::hot_to_r(input$tor_table_model_2), file, row.names = FALSE)
-      data.table::fwrite(rhandsontable::hot_to_r(input$tor_table_model_2), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(rhandsontable::hot_to_r(input$tor_table_model_2), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -8194,7 +8203,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_batch_run_summary_model_2_", input$tor_var_model_2, ".csv")
     },
     content = function(file) {
-      data.table::fwrite(tor_summary_model_2(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(tor_summary_model_2(), file, quote = "auto", row.names = FALSE)
     }
   )
   
@@ -8203,7 +8212,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_batch_run_results_model_2.csv")
     },
     content = function(file) {
-      data.table::fwrite(batch_runs_model_2(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(batch_runs_model_2(), file, quote = "auto", row.names = FALSE)
     }
   )
   
@@ -8237,7 +8246,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_mid_metrics_model_1.csv")
     },
     content = function(file) {
-      data.table::fwrite(react_metrics_mid_model_1(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(react_metrics_mid_model_1(), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -8247,7 +8256,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_mid_metrics_model_2.csv")
     },
     content = function(file) {
-      data.table::fwrite(react_metrics_mid_model_2(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(react_metrics_mid_model_2(), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -8373,7 +8382,7 @@ server <- function(input, output, session) {
                shinyBS::bsPopover('custom_cov_1_catvalue1_model_1', title = 'Category 1 Value', content = bspop_catvalue1, trigger = 'hover', placement = 'right')),
         column(width = 3,
                numericInput('custom_cov_1_catvalue2_model_1', 'Category 2 Value',  value = 0),
-               shinyBS::bsPopover('custom_cov_1_catvalue2_model_1', title = 'Category 2 Value', content = bspop_catvalue1, trigger = 'hover', placement = 'right'))
+               shinyBS::bsPopover('custom_cov_1_catvalue2_model_1', title = 'Category 2 Value', content = bspop_catvalue2, trigger = 'hover', placement = 'right'))
       )
     }
   }) # end of custom_cov_1_ui_model_1 renderUI
@@ -8913,7 +8922,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(database_model_1(), file, row.names = FALSE)
-      data.table::fwrite(database_model_1(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(database_model_1(), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -8924,7 +8933,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(database_model_1(), file, row.names = FALSE)
-      data.table::fwrite(database_model_1(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(database_model_1(), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -9068,6 +9077,7 @@ server <- function(input, output, session) {
       run_single_sim(
         input_model_object = changed_matrix_model_1(),
         save_events_as     = "model_1", # kept for this model's bundle download
+        event_store        = session_events,
         pred_model         = model_1_is_pred(),
         wt_based_dosing    = input$wt_based_dosing_checkbox,
         wt_name            = input$wt_based_dosing_name,
@@ -9129,26 +9139,17 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(combine_iiv_download_data(), file, quote = FALSE, row.names = FALSE)
-      data.table::fwrite(combine_iiv_download_data(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(combine_iiv_download_data(), file, quote = "auto", row.names = FALSE)
     }
   )
-  
-  simtime_text_model_1 <- reactive({
-    tmp <- x1
-    return(tmp)
-  })
-  
-  output$simtime_model_1 <- renderUI({
-    htmltools::HTML(paste("<b>", simtime_text_model_1()))
-  })
   
   ## MODEL 2 ----
   extracted_omega_model_2 <- reactiveVal()
   extracted_sigma_model_2 <- reactiveVal()
   
   n_subj_model_2_clean <- reactive({
-    if(sanitize_numeric_input(d_n_subj_model_2(), allow_zero = FALSE, as_integer = TRUE) > 5000) {
-      general_warning_modal(title = "Error", text_description = "Maximum number of subjects cannot exceed 5000. Reverting to using 20.")
+    if(sanitize_numeric_input(d_n_subj_model_2(), allow_zero = FALSE, as_integer = TRUE) > max_sim_n) {
+      general_warning_modal(title = "Error", text_description = max_sim_n_error)
       updateNumericInput(session, "n_subj_model_2", value = 20)
       return(20)
     } else {
@@ -9234,7 +9235,7 @@ server <- function(input, output, session) {
                shinyBS::bsPopover('custom_cov_1_catvalue1_model_2', title = 'Category 1 Value', content = bspop_catvalue1, trigger = 'hover', placement = 'right')),
         column(width = 3,
                numericInput('custom_cov_1_catvalue2_model_2', 'Category 2 Value',  value = 0),
-               shinyBS::bsPopover('custom_cov_1_catvalue2_model_2', title = 'Category 2 Value', content = bspop_catvalue1, trigger = 'hover', placement = 'right'))
+               shinyBS::bsPopover('custom_cov_1_catvalue2_model_2', title = 'Category 2 Value', content = bspop_catvalue2, trigger = 'hover', placement = 'right'))
       )
     }
   }) # end of custom_cov_1_ui_model_2 renderUI
@@ -9776,7 +9777,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(database_model_2(), file, row.names = FALSE)
-      data.table::fwrite(database_model_2(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(database_model_2(), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )
@@ -9787,7 +9788,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       #write.csv(database_model_2(), file, row.names = FALSE)
-      data.table::fwrite(database_model_2(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(database_model_2(), file, quote = "auto", row.names = FALSE)
     },
     contentType = "text/csv"
   )  
@@ -9934,6 +9935,7 @@ server <- function(input, output, session) {
       run_single_sim(
         input_model_object = changed_matrix_model_2(),
         save_events_as     = "model_2", # kept for this model's bundle download
+        event_store        = session_events,
         pred_model         = model_2_is_pred(),
         wt_based_dosing    = input$wt_based_dosing_checkbox_2,
         wt_name            = input$wt_based_dosing_name_2,
@@ -10140,7 +10142,7 @@ server <- function(input, output, session) {
                                       inputId = 'x_value_threshold',
                                       label = NULL,
                                       choices = sort(unique(sampling_options())),
-                                      select = dplyr::last(unique(sampling_options()))
+                                      selected = dplyr::last(unique(sampling_options()))
       )      
     }
   }, label = 'update x value selection proportion')
@@ -10200,104 +10202,61 @@ server <- function(input, output, session) {
   })
   
   ### Update input$exp_time_range ----
+  # Both models share the same two exposure-window pickers, so their choices are
+  # built from the union of both models' times (previously whichever model's
+  # observer ran last overwrote the other's choices and selection)
+  exp_window_times <- reactive({
+    times_1 <- tryCatch(simulation_output_model_1()$TIME, error = function(e) NULL)
+    times_2 <- tryCatch(simulation_output_model_2()$TIME, error = function(e) NULL)
+    times   <- sort(unique(c(times_1, times_2)))
+    shiny::req(length(times) > 0)
+    times
+  }, label = 'exp_window_times')
+  
   observe({
-    (shiny::req(simulation_output_model_1()))
+    times <- exp_window_times()
     if(isolate(pending_session_restore())) {
       shinyWidgets::updatePickerInput(session,
                                       inputId = 'min_exp_obs_time_model',
                                       label = NULL,
-                                      choices = sort(unique(simulation_output_model_1()$TIME)))      
+                                      choices = times)
+      shinyWidgets::updatePickerInput(session,
+                                      inputId = 'max_exp_obs_time_model',
+                                      label = NULL,
+                                      choices = times)
     } else {
       shinyWidgets::updatePickerInput(session,
                                       inputId = 'min_exp_obs_time_model',
                                       label = NULL,
-                                      choices = sort(unique(simulation_output_model_1()$TIME)),
-                                      select = min(unique(simulation_output_model_1()$TIME))
-      )
-    }
-    
-    if(isolate(pending_session_restore())) {
+                                      choices = times,
+                                      selected = min(times))
       shinyWidgets::updatePickerInput(session,
                                       inputId = 'max_exp_obs_time_model',
                                       label = NULL,
-                                      choices = sort(unique(simulation_output_model_1()$TIME))) 
-    } else {
-      shinyWidgets::updatePickerInput(session,
-                                      inputId = 'max_exp_obs_time_model',
-                                      label = NULL,
-                                      choices = sort(unique(simulation_output_model_1()$TIME)),
-                                      select = max(unique(simulation_output_model_1()$TIME))
-      )
+                                      choices = times,
+                                      selected = max(times))
     }
   }, label = 'update exp time selection')
   
   observeEvent(input$min_exp_obs_time_model, {
+    times <- exp_window_times()
     shinyWidgets::updatePickerInput(session,
                                     inputId = 'max_exp_obs_time_model',
                                     label = NULL,
-                                    choices = unique(sort(simulation_output_model_1()$TIME[simulation_output_model_1()$TIME > as.numeric(input$min_exp_obs_time_model)])),
+                                    choices = times[times > as.numeric(input$min_exp_obs_time_model)],
                                     selected = input$max_exp_obs_time_model
     )
   }, label = 'update exp time selection (Max)')
   
   observeEvent(input$max_exp_obs_time_model, {
+    times <- exp_window_times()
     shinyWidgets::updatePickerInput(session,
                                     inputId = 'min_exp_obs_time_model',
                                     label = NULL,
-                                    choices = unique(sort(simulation_output_model_1()$TIME[simulation_output_model_1()$TIME < as.numeric(input$max_exp_obs_time_model)])),
+                                    choices = times[times < as.numeric(input$max_exp_obs_time_model)],
                                     selected = input$min_exp_obs_time_model
     )
   }, label = 'update exp time selection (Min)')
-  
-  # Model 2
-  observe({
-    (shiny::req(simulation_output_model_2()))
-    if(isolate(pending_session_restore())) {
-      shinyWidgets::updatePickerInput(session,
-                                      inputId = 'min_exp_obs_time_model',
-                                      label = NULL,
-                                      choices = sort(unique(simulation_output_model_2()$TIME)))      
-    } else {
-      shinyWidgets::updatePickerInput(session,
-                                      inputId = 'min_exp_obs_time_model',
-                                      label = NULL,
-                                      choices = sort(unique(simulation_output_model_2()$TIME)),
-                                      select = min(unique(simulation_output_model_2()$TIME))
-      )
-    }
-    
-    if(isolate(pending_session_restore())) {
-      shinyWidgets::updatePickerInput(session,
-                                      inputId = 'max_exp_obs_time_model',
-                                      label = NULL,
-                                      choices = sort(unique(simulation_output_model_2()$TIME))) 
-    } else {
-      shinyWidgets::updatePickerInput(session,
-                                      inputId = 'max_exp_obs_time_model',
-                                      label = NULL,
-                                      choices = sort(unique(simulation_output_model_2()$TIME)),
-                                      select = max(unique(simulation_output_model_2()$TIME))
-      )
-    }
-  }, label = 'update exp time selection model 2')
-  
-  observeEvent(input$min_exp_obs_time_model, {
-    shinyWidgets::updatePickerInput(session,
-                                    inputId = 'max_exp_obs_time_model',
-                                    label = NULL,
-                                    choices = unique(sort(simulation_output_model_2()$TIME[simulation_output_model_2()$TIME > as.numeric(input$min_exp_obs_time_model)])),
-                                    selected = input$max_exp_obs_time_model
-    )
-  }, label = 'update exp time selection (Max) model 2')
-  
-  observeEvent(input$max_exp_obs_time_model, {
-    shinyWidgets::updatePickerInput(session,
-                                    inputId = 'min_exp_obs_time_model',
-                                    label = NULL,
-                                    choices = unique(sort(simulation_output_model_2()$TIME[simulation_output_model_2()$TIME < as.numeric(input$max_exp_obs_time_model)])),
-                                    selected = input$min_exp_obs_time_model
-    )
-  }, label = 'update exp time selection (Min) model 2')
   
   # exposure_data
   exposure_data <- reactive({
@@ -10341,7 +10300,7 @@ server <- function(input, output, session) {
       paste0(today_numeric(), "_exposures_data.csv")
     },
     content = function(file) {
-      data.table::fwrite(exposure_data(), file, quote = FALSE, row.names = FALSE)
+      data.table::fwrite(exposure_data(), file, quote = "auto", row.names = FALSE)
     }
   )
   
@@ -10432,12 +10391,22 @@ server <- function(input, output, session) {
   )
 } # end of server
 
-# Global options are set when the app starts and restored when it stops
+# Global options and the random-number state are set when the app starts and
+# restored when it stops (the app calls set.seed() for reproducible simulations)
 shinyApp(ui, server, onStart = function() {
+  had_seed <- exists(".Random.seed", envir = globalenv(), inherits = FALSE)
+  old_seed <- if (had_seed) get(".Random.seed", envir = globalenv(), inherits = FALSE)
   old_options <- options(
     scipen = 3, # avoid scientific notation, good up until 3e-07 / 1e+08
     DT.options = list(pageLength = 20, language = list(search = 'Filter:'), scrollX = TRUE), # dataTable options
     shiny.maxRequestSize = max_dataset_size * 1024^2 # Maximum file upload size
   )
-  shiny::onStop(function() options(old_options))
+  shiny::onStop(function() {
+    options(old_options)
+    if (had_seed) {
+      assign(".Random.seed", old_seed, envir = globalenv())
+    } else if (exists(".Random.seed", envir = globalenv(), inherits = FALSE)) {
+      rm(".Random.seed", envir = globalenv())
+    }
+  })
 })

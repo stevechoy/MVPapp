@@ -58,7 +58,7 @@ tornado_plot <- function(df,
                   delta_lower = Lower - reference_value,
                   del = abs(delta_upper) +  abs(delta_lower)) %>%
     tidyr::pivot_longer(cols = c(Lower, Upper), names_to = "Level", values_to = "output_pretransform") %>%
-    dplyr::arrange(del) %>%
+    dplyr::arrange(!is.na(del), del) %>% # a failed bound run (del = NA) ranks as least sensitive, not most
     dplyr::select(Parameter, Level, output_pretransform)
 
   if(filter_rows != "" & is.numeric(filter_rows)) {

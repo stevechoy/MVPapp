@@ -1388,7 +1388,7 @@ TVBASET:   10      :  Total Receptor at Baseline (nM)
 TVKDEG :   0.01    :  Degradation rate constant of free receptor (1/h) 
 
 // Drug-Receptor Complex parameters;
-TVKD   :   0.1     :  Equilibrium dissociation rate constant (1/h)
+TVKD   :   0.1     :  Equilibrium dissociation constant (nM)
 TVKINT :   0.01    :  Internalization rate constant of complex (1/h) 
 
 $MAIN
@@ -1441,7 +1441,7 @@ while(PK <0 && i < 100){
 double Complex   = RC ; // Concentration of complex (nM)
 double FreeR     = RTOT*KD/(KD+L); // Concentration of free receptor (nM)
 double RO        = Complex/RTOT * 100 ; // Receptor occupancy (%)
-double Lfrac     = L / LTOT * 100 ; 
+double Lfrac     = (LTOT > 0) ? L / LTOT * 100 : 100 ; // Free fraction of total drug (%)
 
 $CAPTURE
 PK FreeR Complex RO Lfrac

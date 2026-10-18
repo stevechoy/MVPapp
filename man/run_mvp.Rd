@@ -167,7 +167,7 @@ dependencies are installed:
 \code{shiny::runGitHub("MVPapp", "stevechoy", subdir = "inst/shiny")}.
 }
 \note{
-Adapted from https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R
+Adapted from \url{https://github.com/jbryer/ShinyDemo/blob/master/R/run_shiny_app.R}
 }
 \examples{
 if (interactive()) {

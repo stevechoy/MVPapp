@@ -165,7 +165,7 @@ translate_model_code <- function(ready_path,
     short_user_prompt <- rxode2_short_user_prompt    
   }
   
-  if(service == "PROD" | service == "EXP" | service == "PMx Co-Modeler" | service == "Fast") {
+  if(service %in% dify_services) {
     instruction_prompt <- short_user_prompt
   } else {
     instruction_prompt <- long_user_prompt
@@ -212,7 +212,7 @@ translate_model_code <- function(ready_path,
         instruction_prompt <- paste0(
           instruction_prompt,
           "\n\n--- FILE CONTENT START ---\n",
-          extract_file_content(file_path, file_name, detected_type, instruction_prompt, debug),
+          extract_file_content(file_path, file_name, detected_type, debug),
           "\n--- FILE CONTENT END ---"
         )
         
@@ -223,7 +223,7 @@ translate_model_code <- function(ready_path,
       start_time <- Sys.time()
       safely_incProgress(0.3, detail = paste0("Generating ", model_lang, " code using ", model_name, " (please be patient, takes ~1 min)..."))
 
-      branch_result <- if (service == "PROD" | service == "EXP" | service == "PMx Co-Modeler" | service == "Fast") {
+      branch_result <- if (service %in% dify_services) {
         
         if(debug) message("translate_model_code: 3) Dify branch")
         run_dify_chat(
@@ -450,7 +450,7 @@ refine_model_code <- function(model_code,
     segment_width <- 0 # Setting progress bar to 0 when relaying success messages
   }
 
-  if(service == "PROD" | service == "EXP" | service == "Fast" | service == "PMx Co-Modeler") {
+  if(service %in% dify_services) {
     instruction_prompt <- short_user_prompt
   } else {
     instruction_prompt <- long_user_prompt
@@ -501,7 +501,7 @@ refine_model_code <- function(model_code,
       start_time <- Sys.time()
       
       # --- BRANCH A: DIFY (Manual httr2 Logic) ---
-      branch_result <- if(service == "PROD" | service == "EXP" | service == "Fast" | service == "PMx Co-Modeler") {
+      branch_result <- if(service %in% dify_services) {
         run_dify_chat(
           conversation_id    = if(reuse_context) context$conversation_id else NULL,
           instruction_prompt = retry_prompt,
@@ -662,30 +662,24 @@ clean_llm_response <- function(final_answer) {
 #-------------------------------------------------------------------------------
 #' @name extract_file_content
 #'
-#' @title Extract text content from a local file (pdf or text) and append to a prompt
+#' @title Extract text content from a local file (pdf or text)
 #'
 #' @description
-#' Reads a local PDF or plain text file and appends the extracted content to the
-#' provided instruction prompt, wrapped in delimiters. For PDFs, text is
+#' Reads a local PDF or plain text file and returns its text. For PDFs, text is
 #' extracted using \code{pdftools::pdf_text()}. For plain text files (including
 #' \code{.txt}, \code{.mod}, and \code{.ctl}), lines are read with
-#' \code{readLines()}. The resulting prompt is returned and intended to be passed
-#' directly as the user message to the LLM.
+#' \code{readLines()}. The caller wraps the text in delimiters and appends it to
+#' the user prompt.
 #'
 #' @param file_path Path to the local file to extract text from
 #' @param file_name Original filename including extension, used for debug
 #'   messaging only
 #' @param detected_type MIME type of the file. Use \code{"application/pdf"} for
 #'   PDF files and \code{"text/plain"} for all plain text formats
-#' @param instruction_prompt Base instruction prompt string to which the
-#'   extracted file content will be appended
-#' @param debug If \code{TRUE}, prints the extracted character count to the
-#'   console
+#' @param debug If \code{TRUE}, prints the file name and the extracted
+#'   character count to the console
 #'
-#' @returns A single character string containing \code{instruction_prompt}
-#'   followed by the extracted file content wrapped in
-#'   \code{--- FILE CONTENT START ---} and \code{--- FILE CONTENT END ---}
-#'   delimiters
+#' @returns A single character string containing the extracted text
 #'
 #' @noRd
 #-------------------------------------------------------------------------------
@@ -693,10 +687,9 @@ clean_llm_response <- function(final_answer) {
 extract_file_content <- function(file_path,
                                  file_name,
                                  detected_type,
-                                 instruction_prompt,
                                  debug = TRUE) {
   
-  if(debug) message("extract_file_content: parsing file locally")
+  if(debug) message("extract_file_content: parsing '", file_name, "' locally")
   
   extracted_text <- if(detected_type == "application/pdf") {
     rlang::check_installed("pdftools", reason = "to extract text from PDF files.")
@@ -708,12 +701,6 @@ extract_file_content <- function(file_path,
   if(debug) message(paste0("Extracted text length: ", nchar(extracted_text), " characters"))
   
   return(extracted_text)
-  # paste0(
-  #   instruction_prompt,
-  #   "\n\n--- FILE CONTENT START ---\n",
-  #   extracted_text,
-  #   "\n--- FILE CONTENT END ---"
-  # )
 }
 
 #-------------------------------------------------------------------------------
@@ -854,6 +841,18 @@ run_dify_chat <- function(instruction_prompt,
     )
   )
 }
+
+#-------------------------------------------------------------------------------
+# Services that talk to a Dify-style endpoint (internal deployment only); every
+# service check in this package uses this one vector
+#-------------------------------------------------------------------------------
+dify_services <- c("PROD", "EXP", "PMx Co-Modeler", "Fast")
+
+#-------------------------------------------------------------------------------
+# File extensions nonmem2rx can use (control stream / listing plus supporting
+# files); shared by the upload widgets and prepare_uploaded_files()
+#-------------------------------------------------------------------------------
+nonmem2rx_file_types <- c(".ctl", ".mod", ".lst", ".ext", ".phi", ".cov", ".cor", ".coi", ".xml", ".grd", ".shk")
 
 #-------------------------------------------------------------------------------
 #' @name run_ellmer_chat
@@ -1089,7 +1088,7 @@ prepare_uploaded_files <- function(files,
                                    multi_file_types) {
   
   # Determine accepted file types based on llm choice
-  accept_types <- if (llm_service %in% c("PMx Co-Modeler", "EXP")) {
+  accept_types <- if (llm_service %in% dify_services) {
     single_file_types  # Dify supports text too
   } else {
     multi_file_types  # default for other providers (PDF or text-equivalent)
@@ -1099,7 +1098,7 @@ prepare_uploaded_files <- function(files,
     accept_types <- c(accept_types, ".ext")
   }
   
-  nonmem2rx_types <- c(".ctl", ".mod", ".lst", ".ext", ".phi", ".cov", ".cor", ".coi", ".xml", ".grd", ".shk")
+  nonmem2rx_types <- nonmem2rx_file_types
   use_rx <- model_lang == "rxode2" && use_nonmem2rx && nonmem2rx_available()
   if (use_rx) {
     accept_types <- unique(c(accept_types, nonmem2rx_types))
@@ -1156,6 +1155,18 @@ prepare_uploaded_files <- function(files,
 
   # ── Single file ───────────────────────────────────────────────────────────────
   if (nrow(files) == 1) {
+    
+    # A supporting file (.ext, .phi, ...) is only useful together with its
+    # control stream; on its own it would be sent to the provider as a binary file
+    supporting_only <- setdiff(nonmem2rx_types, c(".ctl", ".mod", ".lst", single_file_types, multi_file_types))
+    if (exts %in% supporting_only) {
+      safely_showNotification(
+        paste0("A '", exts, "' file can only be uploaded together with its NONMEM control stream (.ctl/.mod) or listing (.lst) of the same name."),
+        type     = "error",
+        duration = NULL
+      )
+      return(invisible(NULL))
+    }
     
     if (!exts %in% accept_types) {
       safely_showNotification(

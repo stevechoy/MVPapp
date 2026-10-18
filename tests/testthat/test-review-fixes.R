@@ -173,7 +173,7 @@ test_that("individual plots show one regression label per panel", {
   p <- with_mock_session(MVPapp:::do_data_page_ind_plot(
     nmd = d, rownums = 2, colnums = 2, pagenum = 1, filter_id = "", filter_cmt = "NULL", sort_by = "ID",
     strat_by = "", highlight_range = "None", x_axis = "TIME", y_axis = "DV", color_by = "",
-    med_line = FALSE, med_line_by = "", boxplot = FALSE, dolm = TRUE, smoother = FALSE,
+    boxplot = FALSE, dolm = TRUE,
     logy = FALSE, logx = FALSE, plot_title = "", label_size = 3, highlight_var = "",
     highlight_var_values = "", plot_dosing = FALSE, dose_col = "", dose_units = "", lloq_name = ""))
   labels <- Filter(function(l) inherits(l$geom, "GeomText"), p$layers)[[1]]$data
@@ -271,4 +271,45 @@ $CAPTURE Y
   expect_equal(pk$Y_MEANCFBPCT_tlast[1],  (pk$Y_CAVG_tlast[1]  - 10) / 10 * 100, tolerance = 1e-6)
   obs <- out[out$evid == 0, ]
   expect_false(isTRUE(all.equal(pk$Y_MEANCFBPCT_ranged[1], mean((obs$Y - 10) / 10 * 100))))
+})
+
+# Low-severity findings from the final pre-CRAN review --------------------------
+
+test_that("sample_age_wt() upper bounds are inclusive (L40)", {
+  lo <- min(MVPapp::cdc.expand$AGEMO); hi <- max(MVPapp::cdc.expand$AGEMO)
+  d <- suppressMessages(MVPapp:::sample_age_wt(df_name = "CDC", nsubj = 400, lower.agemo = hi, upper.agemo = hi,
+                                               lower.wt = 0, upper.wt = 500, prop.male = 0.5, seed.number = 1))
+  expect_true(all(d$AGEMO == hi))
+})
+
+test_that("code templates carry the installed mrgsolve version (L41)", {
+  v <- as.character(utils::packageVersion("mrgsolve"))
+  expect_match(MVPapp:::code_preamble, paste0("mrgsolve [v", v, "]"), fixed = TRUE)
+  expect_match(MVPapp:::one_cmt, paste0("mrgsolve [v", v, "]"), fixed = TRUE)
+  expect_match(MVPapp:::model_code_2cmt_QE_TMDD, "Equilibrium dissociation constant (nM)", fixed = TRUE)
+})
+
+test_that("individual plots no longer take unused arguments and skip lm on log axes (L42)", {
+  expect_false(any(c("med_line", "med_line_by", "smoother", "lby", "lbx") %in%
+                     names(formals(MVPapp:::do_data_page_ind_plot))))
+  d <- data.frame(ID = rep(1:4, each = 5), TIME = rep(1:5, 4), DV = rep(1:4, each = 5) + c(0.3, 0.1, 0.5, 0.2, 0.4)[rep(1:5, 4)],
+                  EVID = 0, CMT = 1)
+  mk <- function(logy) with_mock_session(MVPapp:::do_data_page_ind_plot(
+    nmd = d, rownums = 2, colnums = 2, pagenum = 1, filter_id = "", filter_cmt = "NULL", sort_by = "ID",
+    strat_by = "", highlight_range = "None", x_axis = "TIME", y_axis = "DV", color_by = "",
+    boxplot = FALSE, dolm = TRUE, logy = logy, logx = FALSE, plot_title = "", label_size = 3,
+    highlight_var = "", highlight_var_values = "", plot_dosing = FALSE, dose_col = "", dose_units = "", lloq_name = ""))
+  has_text <- function(p) any(vapply(p$layers, function(l) inherits(l$geom, "GeomText"), logical(1)))
+  expect_true(has_text(mk(FALSE)))
+  expect_false(has_text(mk(TRUE)))
+})
+
+test_that("facet labels, axis maxima and exposure model names (L43)", {
+  d <- data.frame(ID = c(1, 1, 2), X = 1:3)
+  expect_equal(MVPapp:::create_facet_label(d, character(0))$facet_label, c("ID: 1", "ID: 1", "ID: 2"))
+  expect_equal(MVPapp:::max_x_of("TIME", data.frame(TIME = c(1, 5)), NULL, data.frame(TIME = c(2, 9, NA))), 9)
+  expect_true(is.na(MVPapp:::max_x_of("TIME", NULL)))
+  ex <- data.frame(MODEL = rep(c("Model 1", "Model 2"), each = 10), AUC = c(1:10, 11:20))
+  p <- MVPapp:::plot_iiv_exp_data(ex, yvar = "AUC", model_1_name = "Same", model_2_name = "Same", show_stats = FALSE)
+  expect_equal(length(unique(p$data$MODEL)), 2)
 })

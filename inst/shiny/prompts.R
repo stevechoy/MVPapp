@@ -23,7 +23,7 @@
 #'
 #' * rxode2_translation_system_prompt
 #' * rxode2_translation_long_user_prompt
-#' * roxde2_translation_short_user_prompt
+#' * rxode2_translation_short_user_prompt
 #'
 #' By default, both long and short user prompts are equivalent. A different long
 #' user prompt may be used if the model does not support system prompts, or a
