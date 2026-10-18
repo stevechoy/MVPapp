@@ -20,13 +20,6 @@ feasibility' note, which contains the points below)
   describing the app.
 * Suggests or Enhances not in mainstream repositories: nonmem2mrgsolve
   (see below; available via `Additional_repositories`).
-* Imports includes 26 non-default packages: MVPapp is a full 'shiny'
-  application and every Import is used (see "Notes on dependencies" below).
-* Possibly invalid URL https://lagom.shinyapps.io/MVPapp/ (status 500):
-  this is a live demo of the app hosted on shinyapps.io. It works in a
-  browser, but the server returns an error to automated checks while the
-  app is waking up from sleep. TODO: delete this bullet if the latest
-  win-builder / `urlchecker::url_check()` run no longer reports it.
 
 ### Notes on dependencies
 
@@ -50,8 +43,9 @@ TODO: re-run all of these on the final commit and update the results and dates.
   TODO: result of the final `devtools::check()`
 * GitHub Actions: windows-latest (release), macos-latest (release),
   ubuntu-latest (devel, release, oldrel-1): TODO: confirm all five are green
-* win-builder: R-devel (TODO: version and date) and R-release:
-  TODO: result (expected: 0 errors | 0 warnings | 1 note, the new-submission note above)
+* win-builder: R-devel (2026-10-17 r90697 ucrt, checked 2026-10-18):
+  0 errors | 0 warnings | 1 note (the new-submission note above)
+* win-builder: R-release: TODO result (run `devtools::check_win_release()`)
 * macOS builder (`check_mac_release()`): TODO result
 
 ## Other notes
