@@ -7424,7 +7424,7 @@ server <- function(input, output, session) {
     shiny::req(!is.null(sig))
     now <- tryCatch(batch_signature_now_model_1(), error = function(e) NULL)
     if (!is.null(now) && !identical(now, sig)) {
-      showNotification("Batch run results (tornado/spider) are out of date: the model, dosing or sampling changed since they were generated. Click 'Generate Batch' again.",
+      showNotification("Batch run results (tornado/spider) are out of date: the model, dosing or sampling changed since they were generated. Click 'Batch Run' again.",
                        type = "warning", duration = NULL, id = "batch_stale_model_1")
     } else {
       removeNotification("batch_stale_model_1")
@@ -7784,7 +7784,7 @@ server <- function(input, output, session) {
     shiny::req(!is.null(sig))
     now <- tryCatch(batch_signature_now_model_2(), error = function(e) NULL)
     if (!is.null(now) && !identical(now, sig)) {
-      showNotification("Batch run results (tornado/spider) are out of date: the model, dosing or sampling changed since they were generated. Click 'Generate Batch' again.",
+      showNotification("Batch run results (tornado/spider) are out of date: the model, dosing or sampling changed since they were generated. Click 'Batch Run' again.",
                        type = "warning", duration = NULL, id = "batch_stale_model_2")
     } else {
       removeNotification("batch_stale_model_2")
