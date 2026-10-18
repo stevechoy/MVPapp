@@ -213,6 +213,10 @@ convert_to_plotly_watermark <- function(ggplot_object,
     message("Converting ggplot object to plotly")
   }
   
+  # plotly gets its own watermark below; the ggplot watermark layer is not
+  # supported by ggplotly (it would only warn)
+  ggplot_object$layers <- Filter(function(l) !inherits(l$geom, "GeomWatermark"), ggplot_object$layers)
+  
   if(try_tooltip) {
     tmp <- plotly::ggplotly(ggplot_object, tooltip = "text")
   } else {
@@ -250,6 +254,14 @@ convert_to_plotly_watermark <- function(ggplot_object,
   
   return(tmp)
 }
+
+#------------------------------------------------------------------------------
+# Layer that draws a grob over the whole panel, whatever the axis scales are
+#' @noRd
+GeomWatermark <- ggplot2::ggproto("GeomWatermark", ggplot2::Geom,
+  draw_panel = function(data, panel_params, coord, grob) grob,
+  draw_key   = ggplot2::draw_key_blank
+)
 
 #------------------------------------------------------------------------------
 #' @name add_watermark
@@ -292,8 +304,12 @@ add_watermark <- function(watermark_toggle = TRUE,
       col = col, alpha = alpha, fontface = fontface,
       rot = rot, width = width, pos = pos, align = align
     )
-    ggplot2::annotation_custom(xmin = -Inf, ymin = -Inf, xmax = Inf, ymax = Inf,
-                               watermark_grob)
+    # Own layer instead of annotation_custom(): that one places the grob with
+    # -Inf/Inf data coordinates, which depend on the scale transformation and
+    # lost the watermark on log axes. This layer draws in the panel as is.
+    ggplot2::layer(geom = GeomWatermark, stat = "identity", data = data.frame(.watermark = 1),
+                   mapping = NULL, position = "identity", show.legend = FALSE,
+                   inherit.aes = FALSE, params = list(grob = watermark_grob))
   } else {
     ggplot2::geom_blank()
   }

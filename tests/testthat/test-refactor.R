@@ -258,3 +258,20 @@ test_that("a short last PDF page keeps the panel size of a full page", {
   txt <- paste(readLines(f, warn = FALSE), collapse = "\n")
   expect_equal(lengths(gregexpr("/Type /Page[^s]", txt, useBytes = TRUE)), 2L)
 })
+
+test_that("the watermark is drawn with linear and log axes and left out of plotly", {
+  d <- data.frame(x = c(1, 10, 100), y = c(1, 10, 100))
+  base <- ggplot2::ggplot(d, ggplot2::aes(x, y)) + ggplot2::geom_point()
+  has_watermark <- function(x) {
+    if (inherits(x, "watermark")) return(TRUE)
+    kids <- if (inherits(x, "gtable")) x$grobs else if (inherits(x, "gTree")) x$children else list()
+    any(vapply(kids, has_watermark, logical(1)))
+  }
+  drawn <- function(p) has_watermark(ggplot2::ggplotGrob(p))
+  expect_true(drawn(base + MVPapp:::add_watermark(TRUE)))
+  expect_true(drawn(MVPapp:::add_log_axes(base, logx = TRUE, logy = TRUE) + MVPapp:::add_watermark(TRUE)))
+  expect_false(drawn(MVPapp:::add_log_axes(base, logy = TRUE) + MVPapp:::add_watermark(FALSE)))
+  skip_if_not_installed("plotly")
+  # ggplotly does not know the watermark layer: it must be removed first, not warned about
+  expect_no_warning(MVPapp:::convert_to_plotly_watermark(base + MVPapp:::add_watermark(TRUE)))
+})
