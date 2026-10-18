@@ -193,15 +193,17 @@ be inserted.
     using the “Select ID(s)” option. When any subjects are selected this
     way, the page, row and column options will be ignored.
 5.  (Optional) The “Flag Variable” option allows the user to select a
-    variable, and any of its associated values, to be flagged as an red
-    asterix (**`*`**) on the plot, for further visualization beyond the
+    variable, and any of its associated values, to be flagged as a red
+    asterisk (**`*`**) on the plot, for further visualization beyond the
     “Color by” option.
 6.  (Optional) The “Flag Outliers” option allows the user to select a
     stratification group, and combined with the “Outlier Threshold”
     option, **potential outliers will be automatically highlighted in
     their subplot ID label**. The method of determining whether a
-    subject is an outlier is done by deriving the arithmetic mean of all
-    Y-axis values, and compare it to the entire group’s arithmetic mean.
+    subject is an outlier is done by deriving the arithmetic mean of the
+    subject’s Y-axis values, and compare it to the entire group’s
+    arithmetic mean. Only observation records are used (i.e. `EVID == 0`
+    when an `EVID` column is present), and missing values are ignored.
     If the subject’s mean value is above/below X% of the group, the
     subject will be considered an outlier.
 
@@ -220,8 +222,9 @@ Options” box on the bottom right side of the page.
 Correlation between variables can be quickly assessed in this tab, using
 the
 [`GGally::ggpairs`](https://ggobi.github.io/ggally/reference/ggpairs.html)
-function. It is recommended to keep the number of variables \<7 as the
-plot may become too bunched up.
+function (this requires the optional ‘GGally’ package:
+`install.packages("GGally")`). It is recommended to keep the number of
+variables \<7 as the plot may become too bunched up.
 
 💡 Any variables with more than \<=10 unique values are assumed to be
 categorical and converted into a factor for plotting.

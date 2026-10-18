@@ -37,16 +37,22 @@ drop-down list when they select models, and is stored as a vector of
 characters called `model_examples_list`. There are two functions related
 to model selection:
 
-- [`model_switch_conditions()`](https://stevechoy.github.io/MVPapp/reference/model_switch_conditions.md)
-  pastes the relevant model code into the code editor within the App
-  when the user selects a matching model title from the drop-down
-  list.  
-- [`update_model_choices()`](https://stevechoy.github.io/MVPapp/reference/update_model_choices.md)
-  stores model-specific information such as dosing regimens, MW, axis
-  labels and scaling (i.e. any Shiny Inputs) associated with a password.
+- `model_switch_conditions()` pastes the relevant model code into the
+  code editor within the App when the user selects a matching model
+  title from the drop-down list.  
+- `update_model_choices()` stores model-specific information such as
+  dosing regimens, MW, axis labels and scaling (i.e. any Shiny Inputs)
+  associated with a password.
 
 **When both of these functions are re-defined by an external R script,
 additional password-protected models become available in MVP.**
+
+The external script is evaluated inside the app’s own environment, so
+the internal objects it refers to (e.g. `model_examples_list`,
+`code_preamble`, `code_postamble` and `create_alert()`) are available
+directly by name, even though they are not exported from `MVPapp`.
+Outside the app they can be inspected with the `:::` operator,
+e.g. `MVPapp:::model_examples_list`.
 
 An example external file is provided in
 `/shiny/passworded_models_example.R`. The user is recommended to copy
@@ -57,12 +63,10 @@ i.e. `run_mvp(pw_models_path = "path/to/your/private/models.R")`.
 
 ## Re-defining `model_switch_conditions()`
 
-The structure of
-[`model_switch_conditions()`](https://stevechoy.github.io/MVPapp/reference/model_switch_conditions.md)
-is relatively straightforward - each model is provided as a key-value
-pair, where the left-hand side (LHS) is the title of the model, and the
-right-hand side (RHS) is the code to be pasted when the associated title
-is selected.
+The structure of `model_switch_conditions()` is relatively
+straightforward - each model is provided as a key-value pair, where the
+left-hand side (LHS) is the title of the model, and the right-hand side
+(RHS) is the code to be pasted when the associated title is selected.
 
 - the LHS title must match exactly with your eventual passworded model’s
   title.
@@ -85,11 +89,9 @@ model, both public and private.**
 
 ## Re-defining `update_model_choices()`
 
-The structure of
-[`update_model_choices()`](https://stevechoy.github.io/MVPapp/reference/update_model_choices.md)
-looks a bit more complicated, however none of the arguments nor its
-return value is of importance for the user. The only relevant part is
-the following:
+The structure of `update_model_choices()` looks a bit more complicated,
+however none of the arguments nor its return value is of importance for
+the user. The only relevant part is the following:
 
 ``` r
 
@@ -112,10 +114,9 @@ if (input_password == "test") {
   characters that are valid passwords.  
 - `(input_password == "test")` should be edited to contain password(s)
   associated with the model(s) that the user wishes to be unlocked.  
-- [`create_alert()`](https://stevechoy.github.io/MVPapp/reference/create_alert.md)
-  optional, this creates a pop-up notifying the user that the model is
-  now unlocked (requires `shinyalert` package). The first name, last
-  name and email should be changed accordingly.
+- `create_alert()` optional, this creates a pop-up notifying the user
+  that the model is now unlocked (requires `shinyalert` package). The
+  first name, last name and email should be changed accordingly.
 - `new_choices` should be edited to insert the **matching** title(s)
   associated with the model(s), and added to the original
   model_examples_list.  
@@ -124,7 +125,17 @@ if (input_password == "test") {
   Input, `"YYY"` is the id name associated with the Input, and `ZZZ` is
   the new default value.
   - Example: To update the default dose amount for model 1, regimen 1,
-    it would be: `updateNumericInput(session, "amt1", value = 1000)`.
+    it would be: `updateNumericInput(session, "amt1", value = 1000)`.  
+- Keep the final part of the template unchanged: it updates the model
+  lists while keeping each model’s current selection.
+
+⚠️ If your external script was copied from a version of MVP before
+1.0.0, please replace the block after
+`# Update the selectInput with the new choices` (at the end of
+`update_model_choices()`) with the one in the current
+`passworded_models_example.R`. Older copies reset both model selections
+(and any edited model code) while typing in the password box
+([\#36](https://github.com/stevechoy/MVPapp/issues/36)).
 
 As almost all Shiny Inputs can be updated this way and there are far too
 many to list, the most common Input `id` names are included below for
@@ -178,9 +189,8 @@ reference:
 | Add Sampling at Time 0   | updateCheckboxInput | “add_time_zero”             |
 
 - Custom sampling schedules can be further defined inside the script
-  (outside of the
-  [`update_model_choices()`](https://stevechoy.github.io/MVPapp/reference/update_model_choices.md)
-  function) as an object and then referenced accordingly, e.g.:
+  (outside of the `update_model_choices()` function) as an object and
+  then referenced accordingly, e.g.:
 
 ``` r
 
@@ -234,12 +244,10 @@ If the user wishes to update other Inputs that are not listed above,
 please refer to the source code for `shiny/app.R`.
 
 **Note:** If the additional model(s) do not need to be password-gated,
-the entire
-[`update_model_choices()`](https://stevechoy.github.io/MVPapp/reference/update_model_choices.md)
-function can be removed from the external script (i.e. do not need to be
-re-defined), and only
-[`model_switch_conditions()`](https://stevechoy.github.io/MVPapp/reference/model_switch_conditions.md)
-needs to be changed to include the additional models.
+the entire `update_model_choices()` function can be removed from the
+external script (i.e. do not need to be re-defined), and only
+`model_switch_conditions()` needs to be changed to include the
+additional models.
 
 ## Supplying Model Code
 
@@ -260,8 +268,7 @@ model_name <- paste0(code_preamble, '
 
 - `model_name` refers to the user-defined name for the model, i.e. the R
   object that will be used on the RHS to match the corresponding LHS
-  title in
-  [`model_switch_conditions()`](https://stevechoy.github.io/MVPapp/reference/model_switch_conditions.md).  
+  title in `model_switch_conditions()`.  
 - `code_premable` and `code_postamble` are boilerplate code to remind
   users the model should be in character form surrounded by double
   quotation marks, and to assign it to the `model_object` within the

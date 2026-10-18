@@ -96,10 +96,11 @@ the LLM-specific arguments:
   e.g. `model_openai` for ChatGPT, or `model_anthropic` for Claude, etc.
   Please check each provider for the latest list of accepted model
   names.  
-- `api_chat`: URL path if you are using an OpenAI-Compatible provider,
+- `api_chat`: Base URL if you are using an OpenAI-Compatible provider,
   which feeds into the `base_url` argument during
   [`ellmer::chat_openai_compatible()`](https://ellmer.tidyverse.org/reference/chat_openai_compatible.html)
-  call  
+  call. Give the base URL only (e.g. ending in `/v1`):
+  `/chat/completions` is appended automatically.  
 - `api_upload`: URL path if you are using a Dify-style provider for the
   upload location of files  
 - `temperature`: Temperature setting, ranging from 0 (more
@@ -121,7 +122,7 @@ For example, if you want to use Moonshot AI’s Kimi K2.5 model as default
 (after configuring the corresponding `OPENAI_COMPATIBLE_API_KEY` field
 in .Renviron):
 
-`run_mvp(llm_choices = "OpenAI-Compatible", model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1/chat/completions")`
+`run_mvp(llm_choices = "OpenAI-Compatible", model_openai_compatible = "kimi-k2.5", api_chat = "https://api.moonshot.ai/v1")`
 
 In a second example, if you already have Claude API access, and just
 want to change the default model, you could try something like:
@@ -142,7 +143,7 @@ default options may become outdated and deprecated.
 From the Model Selection drop-down list, choose the option called
 “Upload File (AI Translation)”. Next, all you need to do is to upload a
 file (or multiple files, we currently support PDF or text files
-`.txt/.mod/.ctl`), click the “Send” button, and then wait for the
+`.txt/.mod/.ctl/.cpp`), click the “Send” button, and then wait for the
 results to be generated, which takes about a minute.
 
 When the results become available, the code editor will be updated and
@@ -216,9 +217,12 @@ deterministic translation will be triggered when:
 
 - nonmem2mrgsolve - If the user uploads **EXACTLY** 2 files: the NONMEM
   (`.ctl/.mod`) file **AND** the corresponding `.ext` file.  
-- nonmem2rx - If the user uploads **AT LEAST** the NONMEM
-  (`.ctl/.mod/.lst/.xml`) file, and optionally **ANY** number of
-  supporting files (`.phi/.ext/.cov/.xml/.grd`).
+- nonmem2rx - If the user uploads **EXACTLY** 1 NONMEM control stream
+  (`.ctl/.mod`) or, without one, **EXACTLY** 1 listing file (`.lst`),
+  optionally together with **ANY** number of supporting files
+  (`.lst/.ext/.phi/.cov/.cor/.coi/.xml/.grd/.shk`). Supporting files
+  should share the control stream’s base name (e.g. `run1.ctl`,
+  `run1.ext`, `run1.phi`) so that nonmem2rx can find them.
 
 💡 Automatic retries can still happen when using nonmem2mrgsolve, as
 internal compilation checks can still be performed. However, no
@@ -248,7 +252,7 @@ for the user’s information.
   trial-and-error, and may change in newer versions to improve first-try
   success rates based on user feedback. It is recommended that users
   make a copy of the file before making adjustments.  
-- A seed of `42` and a temperature setting of `0` is used by default.
+- A seed of `42` and a temperature setting of `1` is used by default.
   Please note that the use of a seed or setting a temperature to 0 may
   not necessarily guarantee reproducibility (depending on the provider).
   It is also important to note that from mid-2026, most “thinking”
@@ -261,9 +265,15 @@ for the user’s information.
   which is set to `mrgsolve` by default. For testing purposes, `nonmem`
   and `rxode2` is also available (MVP app does not support executing
   NONMEM or RxODE2, so retries will be automatically set to 0).  
-- If the launch argument `show_debugging_msg = TRUE`, the responses will
-  be saved as the R objects `llm_result` (for initial translation) and
-  `llm_refine` (for retries) in the global environment for review.
+- If the launch argument `show_debugging_msg = TRUE`, the responses are
+  kept for review inside MVPapp (not in the global environment): after
+  closing the app, run `ls(MVPapp:::.mvp_state)` to list them,
+  e.g. `MVPapp:::.mvp_state$llm_result` (initial translation),
+  `MVPapp:::.mvp_state$llm_refine` (a retry that still failed) and
+  `MVPapp:::.mvp_state$llm_success` (with Dify and `reuse_context`, the
+  reply when told the code compiled). See
+  [`?run_mvp`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)
+  for the full list.
 
 ## Performance Evaluation
 
@@ -292,7 +302,7 @@ The spreadsheet containing results per journal article, and
 miscellaneous notes is available
 [here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/LLM_Results.xlsx),
 and the translated code are available
-[here](https://github.com/stevechoy/MVPapp/blob/master/llm-eval/List_Of_Papers_Results_Only)
+[here](https://github.com/stevechoy/MVPapp/tree/master/llm-eval/List_Of_Papers_Results_Only)
 (after being re-formatted with mrgsolve’s `mwrite_cpp` function).
 
 In summary, successful compilation and correct translation of fixed

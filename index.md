@@ -27,8 +27,8 @@ parameters
 - Automatic PK/PD metrics using a user-defined time range  
 - Variability assessment using external databases such as the
 [NHANES](https://wwwn.cdc.gov/nchs/nhanes/Default.aspx),
-[WHO](https://www.who.int/childgrowth/standards/weight_for_age/en/), and
-[CDC](https://www.cdc.gov/growthcharts/percentile_data_files.htm)
+[WHO](https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age),
+and [CDC](https://www.cdc.gov/growthcharts/percentile_data_files.htm)
 virtual patients  
 - Custom covariate distributions to further assess variability  
 - Saving and restoring sessions, and off-the-shelf **100% reproducible
@@ -60,16 +60,23 @@ run_mvp()
 
 ## Alternatively, launch the app without watermarks
 ## see ?run_mvp for more options
-# run_mvp(insert_watermarks = FALSE)
+# run_mvp(insert_watermark = FALSE)
 ```
 
-Alternatively, you may run `MVPapp` directly *without* installation
-(note: may require additional packages):
+Alternatively, if installing packages is restricted, you may run the
+development version of `MVPapp` directly from GitHub *without*
+installing it. Its dependencies (see the `Imports` field of the
+[DESCRIPTION](https://github.com/stevechoy/MVPapp/blob/master/DESCRIPTION)
+file) must already be installed; the app checks this on launch and lists
+anything missing:
 
 ``` r
 
 shiny::runGitHub("MVPapp", username = "stevechoy", subdir = "inst/shiny", launch.browser = TRUE)
 ```
+
+Note that this runs the latest code on GitHub, which may include changes
+that are not yet in the CRAN release.
 
 ## Getting Started
 
@@ -83,7 +90,7 @@ whenever they change certain aspects of the model. This page should be
 the **homepage** as other pages of the app inherit settings from this
 page (e.g. dosing and axis choices).
 
-![](www/simtab1.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/simtab1.png)
 
 1.  Navigate to the “Select Model 1” box on the left hand side and
     choose a template model from the drop-down list, or upload your own
@@ -132,7 +139,7 @@ page (e.g. dosing and axis choices).
       appearance. Click on the “+” icon on the right hand side to expand
       it.
 
-![](www/2models1.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/2models1.png)
 
 7.  In general, most plots can be interactive (using the `plotly`
     package), which allows zooming, panning, drawing etc, controlled
@@ -150,7 +157,7 @@ page (e.g. dosing and axis choices).
       with a simulation-ready R script for 100% reproducibility** if
       required.
 
-![](www/plotlytoolbar.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/plotlytoolbar.png)
 
 ### Uploading Datasets and Data Exploration
 
@@ -177,7 +184,7 @@ rename these columns using the code editor.
     Results and plots per subject can be downloaded by the buttons at
     the bottom of the page.
 
-![](www/ncaexample.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/ncaexample.png)
 
 4.  Quick data exploration are provided by the “General Plot”, “Ind.
     Plot”, “Corr. Plot”, and “Covariate Histograms” tabs (tip: clicking
@@ -188,7 +195,7 @@ General plots are flexible plots that can handle continuous/continuous,
 continuous/discrete (Box plot option), and discrete/discrete (Box plot
 option) types of data.
 
-![](www/facet_plot.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/facet_plot.png)
 
 Settings from General Plots will be carried over to the “Ind. Plot”,
 where users can explore individual profiles in more detail. Dosing
@@ -197,24 +204,24 @@ each plot when the Dose Column is provided. There are also options to
 highlight values and automatically identify potential outliers according
 to a stratification group. LLOQ information can also be inserted.
 
-![](www/ind_plot.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/ind_plot.png)
 
 Correlation plots are grouped by ID and are useful to explore potential
 correlations between covariates.
 
-![](www/corr_plot.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/corr_plot.png)
 
 Covariate histogram plots are a quick way to check for outliers in the
 datasets (plots are distinct by ID, which usually displays the
 baseline).
 
-![](www/hist.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/hist.png)
 
 **Note: once a dataset is uploaded, its display can be toggled on other
 pages by checking the “Overlay Dataset” checkbox in the “Plotting
 Options” in each respective page!**
 
-![](www/overlayexp.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/overlayexp.png)
 
 ### Parameter Sensitivity Analysis
 
@@ -246,7 +253,7 @@ previously defined model settings and making them available (i.e. in
 6.  Simulations of the middle profile, in addition to its derived
     metrics can be downloaded in the Table page.
 
-![](www/psaexample.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/psaexample.png)
 
 #### Assessing All Structural Parameters
 
@@ -286,7 +293,7 @@ e.g. PBPK or QSP models.
     - A new set of Batch Runs should be generated whenever the Batch Run
       Parameter Table is changed.
 
-![](www/tornado3.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/tornado3.png)
 
 For spider plots (right hand side tab), make sure that the “Gradients”
 option on the left hand side is checked. 6 additional simulations per
@@ -296,7 +303,7 @@ sensitivity. If the user has large ranges between the upper and lower
 bound, or has manually edited any parameter value, the “Normalize Fold
 Change” option may be used for improved visuals.
 
-![](www/spider.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/spider.png)
 
 ### Simulations with Variability
 
@@ -332,7 +339,7 @@ live)!
       simulations.  
     - Histogram of weight and age can be viewed in the “Plots” sub-tab.
 
-![](www/demog1.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/demog1.png)
 
 2.  Custom covariate distributions can be defined (e.g. `EGFR`) and
     inserted similarly together with the database shown in step 1). Up
@@ -359,7 +366,7 @@ live)!
       covariates which found a match in the model code (thus are
       replaced accordingly).
 
-![](www/egfrexample2.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/egfrexample2.png)
 
 #### Assessing Variability
 
@@ -382,7 +389,7 @@ matrices has reverted to its last known state.
     - By default, the last time is used. However this can be changed
       using the “At Time (Original Scale)” option.
 
-![](www/varplot.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/varplot.png)
 
 #### Comparing Exposure Differences
 
@@ -402,14 +409,16 @@ demographics. 
     available to further customize the plot, allowing great
     “off-the-shelf” graphics to be downloaded for presentations.
 
-![](www/expplot.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/expplot.png)
 
 #### Saving and Restoring Sessions
 
 The current model and settings can be saved as a .rds file to be stored
 locally, and re-loaded at any time for convenience, which includes
 support of any uploaded datasets and filtering options. The buttons are
-located below the main code editor.
+located below the main code editor. Loading a session restores and runs
+its model code and data-filtering code automatically, so only load
+session files from sources you trust.
 
 #### Reproducible Simulation Code
 
@@ -418,7 +427,7 @@ local execution to fully reproduce the simulations. A built-in R script
 is also provided for ease of transfer into the user’s preferred
 workflow, allowing it to be easily QC’d. 
 
-![](www/session.png)
+![](https://raw.githubusercontent.com/stevechoy/MVPapp/master/man/figures/readme/session.png)
 
 ## Extended Features and Vignettes
 
@@ -447,27 +456,42 @@ or access the vignette on this topic in R
 ([`vignette("data-exploration", package = "MVPapp")`](https://stevechoy.github.io/MVPapp/articles/data-exploration.md))
 for a short guide on using MVP to perform quick EDA.
 
-### Run MVP as a regular Shiny App
+### Deploy MVP (e.g. Posit Connect, shinyapps.io)
 
-To run MVP without calling
-[`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md),
-navigate to the path of the installed `MVPapp` package (path can be
-obtained by running `system.file(package = 'MVPapp')`), open
-`shiny/app.R`, and set `standalone_mode <- TRUE`. Then you would be able
-to run the App as-is. Change back to `standalone_mode <- FALSE` to allow
-passing of options via
+[`mvp_app()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)
+takes the same arguments as
 [`run_mvp()`](https://stevechoy.github.io/MVPapp/reference/run_mvp.md)
-again. This is especially useful if you wish to deploy MVP, in which
-case you may also want to have a copy of the following files to be
-sourced locally, in the same directory:  
-- External database files: `nhanes.filtered.rda`, `who.expand.rda`,
-`cdc.expand.rda`  
-- MVPapp internal files: `ui_settings.R`, `code_templates.R`,
-`functions.R`, `prompts.R`
+but returns the app instead of launching it. To deploy MVP, install
+`MVPapp` and use an `app.R` file containing a single line, for example:
 
-Some example code (commented out by default) inside the standalone mode
-code block (near the top of the script) is provided to help you get
-started.
+``` r
+
+MVPapp::mvp_app(authentication_code = "some_password")
+```
+
+The deployment then records the installed `MVPapp` version like any
+other package dependency.
+
+### Company branding
+
+For a company deployment, the title, colour, logo and favicon can be set
+at launch without editing any package files. All arguments are optional;
+the default (`NULL`) keeps the standard look.
+
+``` r
+
+MVPapp::mvp_app(
+  brand_color   = "#F36633",                 # navbar, active tab, panel and table headers, spinners
+  brand_logo    = "path/to/company_logo.png", # shown in the navbar in front of the title
+  brand_favicon = "path/to/favicon.png",      # browser tab icon
+  page_title    = "Company Model Visualization Platform"
+)
+```
+
+Image files are read from where they are (they do not need to be inside
+the package) and a web URL also works. White or black text is chosen
+automatically for readability on `brand_color`; use `brand_text_color`
+to override it.
 
 ### Sources for patient databases
 

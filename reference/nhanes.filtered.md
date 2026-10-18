@@ -1,8 +1,10 @@
-# NHANES 1999-2023 (https://wwwn.cdc.gov/nchs/nhanes/Default.aspx) ID, WT, SEX, AGEYR are retained by default. Insert citation notes here in the future
+# NHANES population (1999-2023)
 
-NHANES 1999-2023 (https://wwwn.cdc.gov/nchs/nhanes/Default.aspx) ID, WT,
-SEX, AGEYR are retained by default. Insert citation notes here in the
-future
+Sex, age, body weight and height of participants in the US National
+Health and Nutrition Examination Survey (NHANES), cycles 1999-2000 to
+2021-2023, aged 2 years and older. Used by the app to sample age, weight
+and height when the "NHANES" database is selected for variability
+simulations.
 
 ## Usage
 
@@ -12,13 +14,43 @@ nhanes.filtered
 
 ## Format
 
-### `nhanes.filtered`
+A data frame with 101,400 rows and 5 columns:
 
-'data.frame': 101400 obs. of 5 variables: SEX : num 1 0 1 0 1 1 0 1 0 0
-... AGEMO: num 24 924 120 588 228 708 156 132 516 180 ... AGEYR: num 2
-77 10 49 19 59 13 11 43 15 ... WT : num 12.5 75.4 32.9 92.5 59.2 ... HT
-: num 91.6 174 136.6 178.3 162 ...
+- SEX:
+
+  Sex: 0 = male, 1 = female.
+
+- AGEMO:
+
+  Age (months), derived from `AGEYR`.
+
+- AGEYR:
+
+  Age (years).
+
+- WT:
+
+  Body weight (kg).
+
+- HT:
+
+  Standing height (cm).
 
 ## Source
 
-<https://wwwn.cdc.gov/nchs/nhanes/Default.aspx>
+Centers for Disease Control and Prevention (CDC), National Center for
+Health Statistics, National Health and Nutrition Examination Survey:
+<https://wwwn.cdc.gov/nchs/nhanes/Default.aspx>.
+
+## Details
+
+Demographics and body measures files were merged by participant and only
+complete records were kept. Age is recorded in whole years, so `AGEMO`
+is `AGEYR * 12`. See `data-raw/databases.R` in the [GitHub
+repository](https://github.com/stevechoy/MVPapp/tree/master/data-raw)
+for the code.
+
+## See also
+
+[cdc.expand](https://stevechoy.github.io/MVPapp/reference/cdc.expand.md),
+[who.expand](https://stevechoy.github.io/MVPapp/reference/who.expand.md)

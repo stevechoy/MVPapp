@@ -1,12 +1,9 @@
-# CDC weight-for-age (https://www.cdc.gov/growthcharts/percentile_data_files.htm) Weight-for-age charts, 0 to 20 years, LMS parameters and selected smoothed weight percentiles in kilograms, by sex and age Stature-for-age charts, 0 to 20 years, LMS parameters and selected smoothed weight percentiles in cm, by sex and age Insert citation notes here in the future
+# CDC pediatric virtual population
 
-CDC weight-for-age
-(https://www.cdc.gov/growthcharts/percentile_data_files.htm)
-Weight-for-age charts, 0 to 20 years, LMS parameters and selected
-smoothed weight percentiles in kilograms, by sex and age Stature-for-age
-charts, 0 to 20 years, LMS parameters and selected smoothed weight
-percentiles in cm, by sex and age Insert citation notes here in the
-future
+A virtual pediatric population (birth to 20 years) simulated from the US
+Centers for Disease Control and Prevention (CDC) growth charts. Used by
+the app to sample age, weight and height when the "CDC" database is
+selected for variability simulations.
 
 ## Usage
 
@@ -16,14 +13,49 @@ cdc.expand
 
 ## Format
 
-### `cdc.expand`
+A data frame with 97,177 rows and 6 columns:
 
-data.frame': 97177 obs. of 6 variables: \$ SEX : num 0 0 0 0 0 0 0 0 0 0
-... \$ AGEMO: num 0 0.5 1.5 2.5 3.5 4.5 5.5 6.5 7.5 8.5 ... \$ AGEYR:
-num 0 0.0417 0.125 0.2083 0.2917 ... \$ WT : num 2.6 3.8 4.9 4.9 6.5 7.6
-7.2 8.4 8.8 7.2 ... \$ HT : num 45.7 51.8 56.6 57 62.5 65.9 64.8 68.5
-69.9 65.8 ... \$ BMI : num 12.4 14.2 15.3 15.1 16.6 ...
+- SEX:
+
+  Sex: 0 = male, 1 = female.
+
+- AGEMO:
+
+  Age (months).
+
+- AGEYR:
+
+  Age (years).
+
+- WT:
+
+  Body weight (kg).
+
+- HT:
+
+  Length/stature (cm).
+
+- BMI:
+
+  Body mass index (kg/m\\^2\\).
 
 ## Source
 
-<https://www.cdc.gov/growthcharts/percentile_data_files.htm>
+CDC growth charts, percentile data files with LMS values:
+<https://www.cdc.gov/growthcharts/percentile_data_files.htm>.
+
+## Details
+
+Body weight and stature were simulated from the published LMS parameters
+(Box-Cox power, median and coefficient of variation) of the
+weight-for-age and stature-for-age charts for each sex and month of age,
+by drawing standard normal Z-scores and applying \\X = M (1 + L S
+Z)^{1/L}\\. Rows with implausible BMI (outside 10 to 50 kg/m\\^2\\) were
+removed. See `data-raw/databases.R` in the [GitHub
+repository](https://github.com/stevechoy/MVPapp/tree/master/data-raw)
+for the code.
+
+## See also
+
+[nhanes.filtered](https://stevechoy.github.io/MVPapp/reference/nhanes.filtered.md),
+[who.expand](https://stevechoy.github.io/MVPapp/reference/who.expand.md)

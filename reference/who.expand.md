@@ -1,10 +1,9 @@
-# World Health Organization Pediatric Data
+# WHO pediatric virtual population
 
-WHO weight-for-age
-(https://www.who.int/childgrowth/standards/weight_for_age/en/) from
-birth to 10 yo in boys and girls Individual files are stacked together
-to create one overall dataframe 'who' Insert citation notes here in the
-future
+A virtual pediatric population (birth to 10 years) simulated from the
+World Health Organization (WHO) Child Growth Standards and Growth
+Reference. Used by the app to sample age, weight and height when the
+"WHO" database is selected for variability simulations.
 
 ## Usage
 
@@ -14,24 +13,58 @@ who.expand
 
 ## Format
 
-### `who.expand`
+A data frame with 77,744 rows and 6 columns:
 
-A data frame with 77744 rows and 6 columns SEX, AGEMO, AGEYR, WT, HT
-(approx. 80k virtual subjects)
+- SEX:
+
+  Sex: 0 = male, 1 = female.
+
+- AGEMO:
+
+  Age (months).
+
+- AGEYR:
+
+  Age (years).
+
+- WT:
+
+  Body weight (kg).
+
+- HT:
+
+  Length/height (cm).
+
+- BMI:
+
+  Body mass index (kg/m\\^2\\).
 
 ## Source
 
-<https://www.who.int/childgrowth/standards/weight_for_age/en/>
+WHO Child Growth Standards:
+<https://www.who.int/toolkits/child-growth-standards/standards/weight-for-age>,
+<https://www.who.int/toolkits/child-growth-standards/standards/length-height-for-age>.
+WHO Growth Reference 5-19 years:
+<https://www.who.int/toolkits/growth-reference-data-for-5to19-years/indicators/height-for-age>.
 
 ## Details
 
-WHO length/height for age
-(https://www.who.int/childgrowth/standards/height_for_age/en/) from
-birth to 5 yo in boys and girls Individual files are stacked together to
-create one overall dataframe 'who.ht'
+Body weight and height were simulated from the published LMS parameters
+(Box-Cox power, median and coefficient of variation) for each sex and
+month of age, by drawing standard normal Z-scores and applying \\X = M
+(1 + L S Z)^{1/L}\\. Sources:
 
-WHO length/height for age from birth to 5 yo in boys and girls
-(https://www.who.int/childgrowth/standards/height_for_age/en/) WHO
-growth reference 5-19 yo in boys and girls
-(https://www.who.int/growthref/who2007_height_for_age/en/) Individual
-files are stacked together to create one overall dataframe 'who.ht'
+- Weight-for-age, 0 to 10 years.
+
+- Length/height-for-age, 0 to 5 years (Child Growth Standards) and 5 to
+  10 years (Growth Reference 5-19 years).
+
+Rows with implausible BMI (outside 10 to 50 kg/m\\^2\\) were removed.
+See `data-raw/databases.R` in the [GitHub
+repository](https://github.com/stevechoy/MVPapp/tree/master/data-raw)
+for the code.
+
+## See also
+
+[cdc.expand](https://stevechoy.github.io/MVPapp/reference/cdc.expand.md),
+[nhanes.filtered](https://stevechoy.github.io/MVPapp/reference/nhanes.filtered.md)
