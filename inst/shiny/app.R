@@ -121,6 +121,7 @@ ui_title     <- brand_title(page_title, brand_logo)
 
 # UI ----
 ui <- shiny::navbarPage(
+  id = 'main_nav', # lets the server know which page is open
   title = ui_title,
   windowTitle = page_title, # plain text; the tab title previously showed the raw <div> markup
   selected = 'Simulation',
@@ -1297,6 +1298,7 @@ ui <- shiny::navbarPage(
   ## Page 3 Parameter Sensitivity Analysis ----
   tabPanel('Parameter Sensitivity Analysis', icon = icon('magnifying-glass-chart'),
            bslib::navset_pill(
+             id = 'psa_pill',
              tabPanel(title = 'Model 1',
                       sidebarLayout(
                         sidebarPanel(width = sidebar_width,
@@ -7410,6 +7412,14 @@ server <- function(input, output, session) {
                      dosing_regimen_model_1(), sampling_options()))
   }
   observe({
+    # Only warn while the batch plots are on screen (not while editing parameters on the
+    # Simulation page); the warning appears when the user opens the tab and goes when they leave
+    on_batch_tab <- identical(input$main_nav, 'Parameter Sensitivity Analysis') &&
+      identical(input$psa_pill, 'Model 1 (All Parameters)')
+    if (!on_batch_tab) {
+      removeNotification("batch_stale_model_1")
+      return()
+    }
     sig <- batch_signature_model_1()
     shiny::req(!is.null(sig))
     now <- tryCatch(batch_signature_now_model_1(), error = function(e) NULL)
@@ -7762,6 +7772,14 @@ server <- function(input, output, session) {
                      dosing_regimen_model_2(), sampling_options()))
   }
   observe({
+    # Only warn while the batch plots are on screen (not while editing parameters on the
+    # Simulation page); the warning appears when the user opens the tab and goes when they leave
+    on_batch_tab <- identical(input$main_nav, 'Parameter Sensitivity Analysis') &&
+      identical(input$psa_pill, 'Model 2 (All Parameters)')
+    if (!on_batch_tab) {
+      removeNotification("batch_stale_model_2")
+      return()
+    }
     sig <- batch_signature_model_2()
     shiny::req(!is.null(sig))
     now <- tryCatch(batch_signature_now_model_2(), error = function(e) NULL)
