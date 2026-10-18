@@ -47,7 +47,10 @@ TODO: re-run all of these on the final commit and update the results and dates.
   0 errors | 0 warnings | 1 note (the new-submission note above)
 * win-builder: R-release 4.6.1 (2026-06-24 ucrt, checked 2026-10-18):
   0 errors | 0 warnings | 1 note (the new-submission note above)
-* macOS builder (`check_mac_release()`): TODO result
+* macOS builder (`check_mac_release()`, R 4.6.1, arm64): TODO re-run. The first
+  attempt (2026-10-18) stopped at "checking package dependencies" because the
+  builder's library lacked ggplot2, shiny, knitr, testthat and other widely
+  available CRAN packages; this is a builder problem, not a package problem.
 
 ## Other notes
 
