@@ -190,11 +190,11 @@ answers before cleaning) and \code{ellmer_chat_response} /
 launching, without editing any package files. Each is optional; with all of them left at
 \code{NULL} the app looks as it always did.
 
-\preformatted{run_mvp(brand_color   = "#F36633",
+\if{html}{\out{<div class="sourceCode">}}\preformatted{run_mvp(brand_color   = "#F36633",
         brand_logo    = "path/to/company_logo.png",
         brand_favicon = "path/to/favicon.png",
         page_title    = "Company Model Visualization Platform")
-}
+}\if{html}{\out{</div>}}
 
 Image files are read from where they are and served by the app, so they do not need to be
 inside the package (a web URL also works). A logo with a transparent background and a
