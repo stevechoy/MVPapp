@@ -85,6 +85,10 @@ safely_mcode <- mvp_safely(mrgsolve::mcode)
 #'                              (as `event_store[[save_events_as]]`), so each app session keeps its own copy
 #' @param save_events_as        Optional label (e.g. "model_1"). When supplied, the event table used
 #'                              for this simulation is kept for that model's reproducible bundle download
+#' @param keep_dose_records     Default FALSE: only observation records (evid == 0) are returned, which is
+#'                              what plots and metrics use. TRUE also keeps the dose records at sampled
+#'                              times (for the downloadable simulated data); filter with `obs_only()` before
+#'                              plotting or summarising
 #'
 #' @returns a df
 #'
@@ -113,7 +117,8 @@ run_single_sim <- function(input_model_object,
                            parallel_sim    = FALSE,
                            parallel_n      = 200,
                            save_events_as  = NULL,
-                           event_store     = NULL) {
+                           event_store     = NULL,
+                           keep_dose_records = FALSE) {
   
   if (is.null(input_model_object)) {
     if (debug) message("input_model_object is NULL")
@@ -223,19 +228,24 @@ run_single_sim <- function(input_model_object,
                     USUBJID = as.factor(paste0(append_id_text, ID))) %>%
       dplyr::relocate(USUBJID, .before = ID)
     
-    # Dosing records written out by realize_dose_records() can fall after the
-    # last sampling time (e.g. 12 doses q12h with a 72 h maximum); they would
-    # extend plots and offer time points that were never sampled
-    # Dose records are kept only at sampled times (where they give the
-    # pre-/post-dose pair); records at unsampled times would otherwise be
-    # plotted and feed AUC/Cmax/etc. with values that were never sampled
-    t_samp <- tryCatch(as.numeric(mrgsolve::stime(sampling_times)),
-                       error = function(e) suppressWarnings(as.numeric(sampling_times)))
-    t_samp <- t_samp[is.finite(t_samp)]
-    if ("evid" %in% names(solved_output) && length(t_samp) > 0) {
-      solved_output <- dplyr::filter(
-        solved_output,
-        .data$evid == 0 | round(.data$TIME, 6) %in% round(!!t_samp, 6))
+    # Plots and metrics use observation records only. Dose records are kept
+    # (keep_dose_records = TRUE) just for the downloadable simulated data, and
+    # only at sampled times: records written out by realize_dose_records() can
+    # fall after the last sampling time (e.g. 12 doses q12h with a 72 h
+    # maximum) and would extend the time range with values never sampled
+    if ("evid" %in% names(solved_output)) {
+      if (isTRUE(keep_dose_records)) {
+        t_samp <- tryCatch(as.numeric(mrgsolve::stime(sampling_times)),
+                           error = function(e) suppressWarnings(as.numeric(sampling_times)))
+        t_samp <- t_samp[is.finite(t_samp)]
+        if (length(t_samp) > 0) {
+          solved_output <- dplyr::filter(
+            solved_output,
+            .data$evid == 0 | round(.data$TIME, 6) %in% round(!!t_samp, 6))
+        }
+      } else {
+        solved_output <- dplyr::filter(solved_output, .data$evid == 0)
+      }
     }
   } else {
     shiny::showNotification(

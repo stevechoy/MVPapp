@@ -222,6 +222,23 @@ sampled_times <- function(sim_out) {
 }
 
 #-------------------------------------------------------------------------------
+#' @name obs_only
+#'
+#' Observation records of a simulation output
+#'
+#' Plots and derived metrics use observation records (evid == 0) only; the
+#' downloadable simulated data keeps every record (see `keep_dose_records` in
+#' `run_single_sim()`).
+#'
+#' @param sim_out simulated output (data frame, or NULL)
+#' @noRd
+#-------------------------------------------------------------------------------
+obs_only <- function(sim_out) {
+  if (!is.data.frame(sim_out) || !"evid" %in% names(sim_out)) return(sim_out)
+  sim_out[!is.na(sim_out$evid) & sim_out$evid == 0, , drop = FALSE]
+}
+
+#-------------------------------------------------------------------------------
 #' @name new_model_suffix
 #'
 #' Unique suffix for compiled mrgsolve model names

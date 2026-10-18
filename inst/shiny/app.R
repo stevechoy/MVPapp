@@ -6125,6 +6125,7 @@ server <- function(input, output, session) {
               input_model_object = changed_reacted_param_model_1(),
               save_events_as     = "model_1", # kept for this model's bundle download
               event_store        = session_events,
+              keep_dose_records  = TRUE, # all records for the download; plots/metrics use obs_only()
               wt_based_dosing    = input$wt_based_dosing_checkbox,
               wt_name            = input$wt_based_dosing_name,
               pred_model         = model_1_is_pred(),
@@ -6506,6 +6507,7 @@ server <- function(input, output, session) {
               input_model_object = changed_reacted_param_model_2(),
               save_events_as     = "model_2", # kept for this model's bundle download
               event_store        = session_events,
+              keep_dose_records  = TRUE, # all records for the download; plots/metrics use obs_only()
               wt_based_dosing    = input$wt_based_dosing_checkbox_2,
               wt_name            = input$wt_based_dosing_name_2,
               pred_model         = model_2_is_pred(),
@@ -6682,7 +6684,7 @@ server <- function(input, output, session) {
     if (model_1_checkpoint$sim_generated_model_1) {
       if (input$yaxis_name %in% colnames(simulation_output_model_1())) {
         if (input$show_model_1) {
-          tmp <- simulation_output_model_1()
+          tmp <- obs_only(simulation_output_model_1())
         }}}
     return(tmp)
   }, label = 'sim_1_dataset_arg')
@@ -6693,7 +6695,7 @@ server <- function(input, output, session) {
     if (model_2_checkpoint$sim_generated_model_2) {
       if (input$yaxis_name_model_2 %in% colnames(simulation_output_model_2())) {
         if (input$show_model_2) {
-          tmp2 <- simulation_output_model_2()
+          tmp2 <- obs_only(simulation_output_model_2())
         }}}
     return(tmp2)
   }, label = 'sim_2_dataset_arg')

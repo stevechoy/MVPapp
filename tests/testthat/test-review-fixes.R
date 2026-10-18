@@ -126,28 +126,32 @@ test_that("nonmem2rx uploads: control stream or listing plus supporting files", 
   expect_null(prep(upload(c("run1.ext", "run1.phi"))))   # no control stream: not nonmem2rx
 })
 
-test_that("window metrics use pre-dose values at the window end and post-dose at its start", {
+test_that("plots and window metrics use observation records only (dose records only on request)", {
   m <- mrgsolve::update(mrgsolve::param(mrgsolve::house(), CL = 1, VC = 20), digits = 8)
   e <- as.data.frame(mrgsolve::ev(amt = 100, ii = 24, addl = 2, cmt = 2))
-  out <- with_mock_session(MVPapp:::run_single_sim(m, ev_df = e, sampling_times = mrgsolve::tgrid(0, 72, 1)))
-  # every dose time has the pre-dose observation followed by the post-dose record
-  at24 <- out[out$TIME == 24, ]
-  expect_equal(at24$evid, c(0, 1))
-  expect_lt(at24$CP[1], at24$CP[2])
+  st <- mrgsolve::tgrid(0, 72, 1)
+  out  <- with_mock_session(MVPapp:::run_single_sim(m, ev_df = e, sampling_times = st))
+  full <- with_mock_session(MVPapp:::run_single_sim(m, ev_df = e, sampling_times = st, keep_dose_records = TRUE))
 
-  trough <- 5 * exp(-24 / 20)
+  # default: observations only; full output also has the dose records at sampled dose times
+  expect_true(all(out$evid == 0))
+  expect_equal(nrow(MVPapp:::obs_only(full)), nrow(out))
+  expect_equal(full$evid[full$TIME == 24], c(0, 1))
+  expect_equal(MVPapp:::obs_only(full)$CP, out$CP)
+  expect_null(MVPapp:::obs_only(NULL))
+
+  # metrics only see sampled observations (the post-dose peak is not a sample)
+  w <- out[out$TIME >= 0 & out$TIME <= 24, ]
   pk <- MVPapp:::pknca_table(out, "CP", 0, 24)
-  expect_equal(pk$CP_CMAX_ranged[1], 5)
-  expect_equal(pk$CP_TMAX_ranged[1], 0)
-  expect_equal(pk$CP_CMIN_ranged[1], trough, tolerance = 1e-6)
-  expect_equal(pk$AUC_ranged[1], 100 * (1 - exp(-24 / 20)), tolerance = 1e-3)  # exact 69.88
+  expect_equal(pk$CP_CMAX_ranged[1], max(w$CP))
+  expect_equal(pk$CP_TMAX_ranged[1], w$TIME[which.max(w$CP)])
+  expect_equal(pk$CP_CMIN_ranged[1], min(w$CP))
   expect_equal(pk$CP_CAVG_ranged[1], pk$AUC_ranged[1] / 24)
 
   ex <- MVPapp:::exposures_table(out, "CP", 24, 48)
-  expect_equal(ex$Cmax, 5 + trough, tolerance = 1e-6)          # post-dose at the start
-  expect_equal(ex$Clast, (5 + trough) * exp(-24 / 20), tolerance = 1e-6) # pre-dose at the end
-  expect_equal(ex$Tmax, 24)
-  expect_equal(MVPapp:::exposures_table(out, "CP", 24, 24)$Cmax, trough, tolerance = 1e-6)
+  w2 <- out[out$TIME >= 24 & out$TIME <= 48, ]
+  expect_equal(ex$Cmax, max(w2$CP))
+  expect_equal(ex$Clast, w2$CP[w2$TIME == 48])
 })
 
 test_that("ADDL doses are written out as separate records", {
@@ -320,7 +324,7 @@ test_that("dosing records after the last sampling time are not in the output, no
   mod <- mvp_test_model()
   ev  <- data.frame(ID = 1, time = 0, amt = 50, cmt = 1, evid = 1, ii = 12, addl = 11, rate = 0, tinf = 0)
   st  <- seq(0, 72, by = 1)
-  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st))
+  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st, keep_dose_records = TRUE))
   expect_lte(max(out$TIME), 72)
   expect_true(all(out$TIME[out$evid != 0] <= 72))
   # dose at 12 h intervals inside the range are still kept
@@ -336,7 +340,7 @@ test_that("dose records only at sampled times; statistics use observation rows o
   mod <- mvp_test_model()
   ev  <- data.frame(ID = 1, time = 0, amt = 50, cmt = 1, evid = 1, ii = 12, addl = 2, rate = 0, tinf = 0)
   st  <- seq(0, 30, by = 5)
-  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st))
+  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st, keep_dose_records = TRUE))
   # doses at 12 and 24 h are not sampling times -> no rows there; dose at 0 is kept
   expect_false(any(out$evid != 0 & out$TIME %in% c(12, 24)))
   expect_true(any(out$evid != 0 & out$TIME == 0))
