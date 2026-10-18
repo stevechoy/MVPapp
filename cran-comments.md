@@ -9,7 +9,8 @@ small: `run_mvp()` launches the app and `mvp_app()` returns the app object
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
+0 errors | 0 warnings | 1 note (on a new submission, the single 'CRAN incoming
+feasibility' note, which contains the points below)
 
 * This is a new submission.
 * Possibly misspelled words in DESCRIPTION (Pharmacometrics, pharmacometrics,
@@ -24,7 +25,8 @@ small: `run_mvp()` launches the app and `mvp_app()` returns the app object
 * Possibly invalid URL https://lagom.shinyapps.io/MVPapp/ (status 500):
   this is a live demo of the app hosted on shinyapps.io. It works in a
   browser, but the server returns an error to automated checks while the
-  app is waking up from sleep.
+  app is waking up from sleep. TODO: delete this bullet if the latest
+  win-builder / `urlchecker::url_check()` run no longer reports it.
 
 ### Notes on dependencies
 
@@ -42,10 +44,15 @@ small: `run_mvp()` launches the app and `mvp_app()` returns the app object
 
 ## Test environments
 
-* local: Windows 11, R 4.6.1 (2026-06-24 ucrt): 0 errors | 0 warnings | 0 notes
+TODO: re-run all of these on the final commit and update the results and dates.
+
+* local: Windows 11, R 4.6.1 (2026-06-24 ucrt), with all Suggests installed:
+  TODO: result of the final `devtools::check()`
 * GitHub Actions: windows-latest (release), macos-latest (release),
-  ubuntu-latest (devel, release, oldrel-1)
-* win-builder: R-devel (2026-10-16 r90686 ucrt): 0 errors | 0 warnings | 1 note
+  ubuntu-latest (devel, release, oldrel-1): TODO: confirm all five are green
+* win-builder: R-devel (TODO: version and date) and R-release:
+  TODO: result (expected: 0 errors | 0 warnings | 1 note, the new-submission note above)
+* macOS builder (`check_mac_release()`): TODO result
 
 ## Other notes
 
@@ -53,3 +60,15 @@ small: `run_mvp()` launches the app and `mvp_app()` returns the app object
   The `mvp_app()` example builds the app object without launching it.
 * Tests that compile an 'mrgsolve' model are skipped on CRAN to keep check
   time short.
+* The optional AI-assisted translation needs a provider account or API key
+  that the user supplies; no examples or tests make network calls, and the
+  feature is only available when the Suggests packages are installed.
+* The app compiles and runs model code written by the user, as any 'mrgsolve'
+  session does. `?run_mvp` ("Hosting and security") documents that the
+  `authentication_code` and model-password options are not a security boundary,
+  so the app should not be exposed to untrusted users.
+* The default favicon (`inst/favicon/`) was created for this package.
+* Code in `run_mvp()` is adapted from the ShinyDemo package by Jason Bryer
+  (https://github.com/jbryer/ShinyDemo). TODO: confirm how that code is
+  licensed and, if it was copied rather than only inspired by it, list its
+  author as `ctb`/`cph` in `Authors@R`.
