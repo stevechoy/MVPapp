@@ -45,7 +45,8 @@ TODO: re-run all of these on the final commit and update the results and dates.
   ubuntu-latest (devel, release, oldrel-1): TODO: confirm all five are green
 * win-builder: R-devel (2026-10-17 r90697 ucrt, checked 2026-10-18):
   0 errors | 0 warnings | 1 note (the new-submission note above)
-* win-builder: R-release: TODO result (run `devtools::check_win_release()`)
+* win-builder: R-release 4.6.1 (2026-06-24 ucrt, checked 2026-10-18):
+  0 errors | 0 warnings | 1 note (the new-submission note above)
 * macOS builder (`check_mac_release()`): TODO result
 
 ## Other notes
@@ -63,6 +64,5 @@ TODO: re-run all of these on the final commit and update the results and dates.
   so the app should not be exposed to untrusted users.
 * The default favicon (`inst/favicon/`) was created for this package.
 * Code in `run_mvp()` is adapted from the ShinyDemo package by Jason Bryer
-  (https://github.com/jbryer/ShinyDemo). TODO: confirm how that code is
-  licensed and, if it was copied rather than only inspired by it, list its
-  author as `ctb`/`cph` in `Authors@R`.
+  (https://github.com/jbryer/ShinyDemo, GPL); he is listed in `Authors@R` as
+  `ctb` and `cph`.

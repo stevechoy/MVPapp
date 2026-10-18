@@ -4,7 +4,9 @@ Version: 1.0.0
 Authors@R: c(
     person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre", "cph")),
     person("Jin Gyu", "Kim", role = "aut"),
-    person("Matthew", "Fidler", role = "ctb"))
+    person("Matthew", "Fidler", role = "ctb"),
+    person("Jason", "Bryer", role = c("ctb", "cph"),
+           comment = "Author of the ShinyDemo package, from which run_mvp() is adapted"))
 Description: An interactive 'shiny' application for exploring
     pharmacometrics models with minimal setup. Users can explore model
     structures, parameters and dosing regimens with 'mrgsolve', and compare
