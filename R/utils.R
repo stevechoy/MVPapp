@@ -222,8 +222,6 @@ sampled_times <- function(sim_out) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name obs_only
-#'
 #' Observation records of a simulation output
 #'
 #' Plots and derived metrics use observation records (evid == 0) only; the
@@ -239,8 +237,6 @@ obs_only <- function(sim_out) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name new_model_suffix
-#'
 #' Unique suffix for compiled mrgsolve model names
 #'
 #' Compiling a model with the name of an existing one deletes the earlier
@@ -262,8 +258,6 @@ new_model_suffix <- function(session = NULL) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name rename_stored_models
-#'
 #' Give the mcode() model name inside stored editor code a fresh unique suffix
 #' (used when a session file is restored).
 #'
@@ -281,8 +275,6 @@ rename_stored_models <- function(code, session = NULL) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name nca_dose_vector
-#'
 #' Dose per NCA group (subject and additional keys), taken from the first
 #' positive dosing record (EVID >= 1) when the dataset has an EVID column, so
 #' that an AMT column (0 on observation rows) or a dose column that varies

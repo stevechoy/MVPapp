@@ -839,7 +839,7 @@ nca_key_string <- function(cols) {
 #' @param key Character vector of key column names.
 #'
 #' @returns A list of row numbers named by the subjects' key strings, for the
-#'   `index` argument of [nca_subset()].
+#'   `index` argument of `nca_subset()`.
 #' @noRd
 #-------------------------------------------------------------------------------
 nca_index <- function(concData, key) {
@@ -870,7 +870,7 @@ window_rows <- function(df, start_time, end_time) {
 #'
 #' @description
 #' Window metrics use only the sampled rows inside the window (no interpolation),
-#' so a bound without a sample shortens the window actually used: e.g. [24, 30]
+#' so a bound without a sample shortens the window actually used: e.g. `[24, 30]`
 #' with samples at 24 and 36 only covers 24, giving an AUC of 0. In a running
 #' app this shows a notification (replaced, not repeated, on recalculation);
 #' otherwise it is a warning.

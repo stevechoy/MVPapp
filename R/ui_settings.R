@@ -386,8 +386,7 @@ brand_hex <- function(color, arg = "brand_color") {
 }
 
 #-------------------------------------------------------------------------------
-#' @name brand_contrast_text
-#' @title Readable text colour ("#FFFFFF" or "#000000") for a background colour
+#' Readable text colour ("#FFFFFF" or "#000000") for a background colour
 #'
 #' White is used when its WCAG contrast ratio with the background is at least 3
 #' (the large-text threshold, which also suits the bold navbar), otherwise black.
@@ -402,8 +401,7 @@ brand_contrast_text <- function(bg) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name brand_asset_url
-#' @title URL for a branding image
+#' URL for a branding image
 #'
 #' Web (http/https) and data: URLs are used as they are. A local file is served
 #' through a Shiny resource path, so it does not have to be inside the package.
