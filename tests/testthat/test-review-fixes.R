@@ -125,3 +125,63 @@ test_that("nonmem2rx uploads: control stream or listing plus supporting files", 
   expect_null(prep(upload(c("a.ctl", "b.ctl"))))      # two control streams: rejected
   expect_null(prep(upload(c("run1.ext", "run1.phi"))))   # no control stream: not nonmem2rx
 })
+
+test_that("window metrics use pre-dose values at the window end and post-dose at its start", {
+  m <- mrgsolve::update(mrgsolve::param(mrgsolve::house(), CL = 1, VC = 20), digits = 8)
+  e <- as.data.frame(mrgsolve::ev(amt = 100, ii = 24, addl = 2, cmt = 2))
+  out <- with_mock_session(MVPapp:::run_single_sim(m, ev_df = e, sampling_times = mrgsolve::tgrid(0, 72, 1)))
+  # every dose time has the pre-dose observation followed by the post-dose record
+  at24 <- out[out$TIME == 24, ]
+  expect_equal(at24$evid, c(0, 1))
+  expect_lt(at24$CP[1], at24$CP[2])
+
+  trough <- 5 * exp(-24 / 20)
+  pk <- MVPapp:::pknca_table(out, "CP", 0, 24)
+  expect_equal(pk$CP_CMAX_ranged[1], 5)
+  expect_equal(pk$CP_TMAX_ranged[1], 0)
+  expect_equal(pk$CP_CMIN_ranged[1], trough, tolerance = 1e-6)
+  expect_equal(pk$AUC_ranged[1], 100 * (1 - exp(-24 / 20)), tolerance = 1e-3)  # exact 69.88
+  expect_equal(pk$CP_CAVG_ranged[1], pk$AUC_ranged[1] / 24)
+
+  ex <- MVPapp:::exposures_table(out, "CP", 24, 48)
+  expect_equal(ex$Cmax, 5 + trough, tolerance = 1e-6)          # post-dose at the start
+  expect_equal(ex$Clast, (5 + trough) * exp(-24 / 20), tolerance = 1e-6) # pre-dose at the end
+  expect_equal(ex$Tmax, 24)
+  expect_equal(MVPapp:::exposures_table(out, "CP", 24, 24)$Cmax, trough, tolerance = 1e-6)
+})
+
+test_that("ADDL doses are written out as separate records", {
+  e <- data.frame(ID = 1, time = 0, amt = 100, cmt = 2, evid = 1, ii = 24, addl = 2)
+  r <- MVPapp:::realize_dose_records(e)
+  expect_equal(r$time, c(0, 24, 48))
+  expect_true(all(r$addl == 0))
+  expect_identical(MVPapp:::realize_dose_records(transform(e, addl = 0)), transform(e, addl = 0))
+})
+
+test_that("variability helpers cope with a model that has no OMEGA", {
+  skip_on_cran() # compiles a model
+  noiiv <- mrgsolve::mcode("noiiv", "$PARAM CL = 1, V = 10\n$CMT CENT\n$ODE dxdt_CENT = -CL/V*CENT;",
+                           quiet = TRUE)
+  om <- MVPapp:::extract_matrix(mrgsolve::house(), "omega")
+  expect_equal(MVPapp:::reconstruct_matrices(noiiv, om, name_of_matrix = "omega"), list())
+  expect_true(mrgsolve::is.mrgmod(MVPapp:::update_variability(noiiv, list(), name_of_matrix = "omega")))
+})
+
+test_that("individual plots show one regression label per panel", {
+  d <- data.frame(ID = rep(1:4, each = 5), TIME = rep(1:5, 4), DV = rnorm(20) + rep(1:4, each = 5),
+                  EVID = 0, CMT = 1)
+  p <- with_mock_session(MVPapp:::do_data_page_ind_plot(
+    nmd = d, rownums = 2, colnums = 2, pagenum = 1, filter_id = "", filter_cmt = "NULL", sort_by = "ID",
+    strat_by = "", highlight_range = "None", x_axis = "TIME", y_axis = "DV", color_by = "",
+    med_line = FALSE, med_line_by = "", boxplot = FALSE, dolm = TRUE, smoother = FALSE,
+    logy = FALSE, logx = FALSE, plot_title = "", label_size = 3, highlight_var = "",
+    highlight_var_values = "", plot_dosing = FALSE, dose_col = "", dose_units = "", lloq_name = ""))
+  labels <- Filter(function(l) inherits(l$geom, "GeomText"), p$layers)[[1]]$data
+  expect_true("facet_label" %in% names(labels))
+  expect_equal(nrow(labels), 4)
+})
+
+test_that("OpenAI-Compatible requests use OPENAI_COMPATIBLE_API_KEY", {
+  body <- paste(deparse(MVPapp:::run_ellmer_chat), collapse = "\n")
+  expect_match(body, 'credentials = function() Sys.getenv("OPENAI_COMPATIBLE_API_KEY")', fixed = TRUE)
+})

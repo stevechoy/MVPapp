@@ -37,6 +37,12 @@ First release prepared for CRAN.
 * Data Exploration: 'Flag Outliers' works with dosing rows present, text columns with NA no longer break plots, and ID/TIME are detected from `PTNO`/`ATSD` columns (#41)
 * Spider plots rank parameters by how much they change the metric (#42)
 * Saved sessions record the running MVPapp version (previously always 0.4.5), the locked-models help text links to this repository, and Data Exploration plots no longer print ggplot2 messages to the console (#46)
+* Exposure metrics over a time window (Parameter Sensitivity Analysis, tornado/spider plots and Variability exposure tables) took the next dose's peak when the window ended on an additional (ADDL) dose time. Additional doses are now simulated as separate records, so each dose time has its pre-dose and post-dose value; a window uses the pre-dose (trough) value at its end and the post-dose value at its start. Cavg is now AUC divided by the window length instead of the mean of the sampled values (#47)
+* Compiling Model 1 with an error after a model had compiled successfully closed the session (#48)
+* After loading a saved session, a dataset newly chosen with "Browse server files" was ignored in favour of the session's dataset (#49)
+* Individual plots with "Insert regression" showed every subject's equation in every panel instead of one per panel (#50)
+* AI translation with an OpenAI-Compatible provider now sends `OPENAI_COMPATIBLE_API_KEY`; previously ellmer fell back to `OPENAI_API_KEY`, which could send an OpenAI key to the other provider (#51)
+* Variability helpers no longer fail when a model has no `$OMEGA` or `$SIGMA` block (#52)
 
 ## Documentation
 

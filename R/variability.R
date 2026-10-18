@@ -120,6 +120,13 @@ reconstruct_matrices <- function(input_model_object,
     number_of_matrices <- length(input_model_object$sigma)
   }
 
+  if(length(number_of_matrices) == 0 || number_of_matrices == 0) {
+    if(debug) {
+      message('model has no ', name_of_matrix, ' matrix')
+    }
+    return(list())
+  }
+
   if(coerce_to_numeric) {
     input_matrix <- apply(input_matrix, c(1, 2), as.numeric) %>%
       matrix(., nrow = nrow(.), ncol= ncol(.))
@@ -181,6 +188,10 @@ update_variability <- function(input_model_object,
                                name_of_matrix = "omega",
                                check_validity = TRUE,
                                debug          = FALSE) {
+
+  if(length(input_matrix) == 0) {
+    return(input_model_object) # nothing to update (e.g. the model has no such matrix)
+  }
 
   if(check_validity) {
     matrix_is_valid <- check_matrix(input_model_object = input_model_object, input_matrix = input_matrix, debug = debug)

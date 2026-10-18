@@ -717,7 +717,9 @@ do_data_page_ind_plot <- function(nmd,
   
   # ── && for scalar + data directly instead of ggplot_build ────
   if (dolm && x_is_numeric && y_is_numeric && !boxplot) {
-    df_stats <- lm_eqn(df = nmd, facet_name = facet_name, x = x_axis, y = y_axis)
+    # One label per panel: panels are split by facet_label (one per individual)
+    lm_facet <- if (facet_name != "" && facet_name != x_axis) "facet_label" else ""
+    df_stats <- lm_eqn(df = nmd, facet_name = lm_facet, x = x_axis, y = y_axis)
     
     if (same_scale) {
       med_x <- (min_data_x_all + max_data_x_all) / 2

@@ -942,7 +942,10 @@ run_ellmer_chat <- function(service,
              ellmer::chat_claude(model = model_name, system = system_prompt, params = optimal_params)
            },
            "OpenRouter"        = ellmer::chat_openrouter(model = model_name, system = system_prompt, params = optimal_params),
-           "OpenAI-Compatible" = ellmer::chat_openai_compatible(base_url = api_chat, model = model_name, system = system_prompt, params = optimal_params),
+           "OpenAI-Compatible" = ellmer::chat_openai_compatible(base_url = api_chat,
+                                                                 # without this, ellmer would use OPENAI_API_KEY
+                                                                 credentials = function() Sys.getenv("OPENAI_COMPATIBLE_API_KEY"),
+                                                                 model = model_name, system = system_prompt, params = optimal_params),
            "DeepSeek"          = ellmer::chat_deepseek(model = model_name, system = system_prompt, params = optimal_params),
            "Apollo"            = if(internal_version) {
              ellmer::chat_openai_compatible(base_url = paste0(apollo_url, "/llm-api"),

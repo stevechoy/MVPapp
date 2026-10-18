@@ -2798,6 +2798,10 @@ server <- function(input, output, session) {
     uploaded_data_override(NULL)
   })
   
+  observeEvent(input$upload_cloud, {
+    if (is.list(input$upload_cloud)) uploaded_data_override(NULL) # a server file was picked
+  }, ignoreInit = TRUE)
+  
   uploaded_data <- reactive({
     # Use restored data if available
     if (!is.null(uploaded_data_override())) {
@@ -5825,7 +5829,7 @@ server <- function(input, output, session) {
   changed_reacted_param_model_1 <- reactiveVal()
   
   observe({
-    #shiny::req(model_1_is_valid())
+    shiny::req(model_1_is_valid()) # same guard as Model 2: skip when the model failed to compile
     if (model_1_checkpoint$param_input_generated_model_1) {
       if (show_debugging_msg) {
         message('update_model_object_initiated')

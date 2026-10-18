@@ -1,6 +1,31 @@
 # Model compilation, dosing regimens and simulation
 
 #-------------------------------------------------------------------------------
+#' @name realize_dose_records
+#'
+#' @title Write additional doses (ADDL) out as separate dosing records
+#'
+#' @description
+#' With every dose as its own record, the simulated output has two rows at each
+#' dose time: the observation (pre-dose value) followed by the dose record
+#' (post-dose value). Without this, an observation at an additional dose time
+#' holds the post-dose value and the pre-dose (trough) value is lost.
+#'
+#' @param ev_data A dosing data frame (or mrgsolve event object)
+#'
+#' @returns A data frame with addl = 0 for every dosing record
+#' @noRd
+#-------------------------------------------------------------------------------
+realize_dose_records <- function(ev_data) {
+  ev_data  <- as.data.frame(ev_data)
+  addl_col <- intersect(c("addl", "ADDL"), names(ev_data))
+  if (length(addl_col) == 0 || !any(ev_data[[addl_col[1]]] > 0, na.rm = TRUE)) {
+    return(ev_data)
+  }
+  as.data.frame(mrgsolve::realize_addl(ev_data))
+}
+
+#-------------------------------------------------------------------------------
 #' @name safely_mrgsim_df
 #'
 #' @title Error-capturing (safely) wrappers for various functions
@@ -136,7 +161,7 @@ run_single_sim <- function(input_model_object,
     set.seed(seed)
     
     solved_output <- input_model_object %>%
-      mrgsolve::data_set(as.data.frame(ext_db_ev)) %>%
+      mrgsolve::data_set(realize_dose_records(ext_db_ev)) %>%
       mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
       safely_mrgsim_df(#events = ev_df,
         tgrid  = sampling_times,
@@ -167,7 +192,7 @@ run_single_sim <- function(input_model_object,
                                TRUE                     ~ 1 + nsubj_offset) # handles iterate_batch_runs()
     
     solved_output <- input_model_object %>%
-      mrgsolve::data_set(as.data.frame(ev_df) %>% dplyr::mutate(ID = id_num)) %>%
+      mrgsolve::data_set(realize_dose_records(ev_df) %>% dplyr::mutate(ID = id_num)) %>%
       mrgsolve::carry_out(amt, rate, addl, ii, cmt, evid, tinf) %>%
       #mrgsolve::obsonly() %>%
       mrgsolve::zero_re() %>%
