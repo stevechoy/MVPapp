@@ -249,16 +249,17 @@ test_that("a short last PDF page keeps the panel size of a full page", {
     highlight_range = "80%", x_axis = "TIME", y_axis = "DV", color_by = "", boxplot = FALSE, dolm = FALSE,
     logy = FALSE, logx = FALSE, plot_title = NULL, highlight_var = "", highlight_var_values = "",
     plot_dosing = FALSE, dose_col = "AMT", dose_units = ""))
-  f <- tempfile(fileext = ".pdf")
-  on.exit(unlink(f))
-  grDevices::pdf(f, width = 6, height = 8)
+  # onefile = FALSE writes one PDF file per page, so the files can be counted
+  dir <- tempfile("pages")
+  dir.create(dir)
+  on.exit(unlink(dir, recursive = TRUE))
+  grDevices::pdf(file.path(dir, "page%03d.pdf"), width = 6, height = 8, onefile = FALSE)
   seen <- integer(0)
   MVPapp:::print_ind_pages(lapply(1:2, page), rownums = 3, on_page = function(i, n) seen <<- c(seen, i))
   grDevices::dev.off()
   expect_equal(seen, 1:2)
   # one PDF page per plot (no blank first page)
-  txt <- paste(readLines(f, warn = FALSE), collapse = "\n")
-  expect_equal(lengths(gregexpr("/Type /Page[^s]", txt, useBytes = TRUE)), 2L)
+  expect_length(list.files(dir, pattern = "\\.pdf$"), 2)
 })
 
 test_that("the watermark is drawn with linear and log axes and left out of plotly", {
