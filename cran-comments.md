@@ -40,7 +40,7 @@ feasibility' note, which contains the points below)
 TODO: re-run all of these on the final commit and update the results and dates.
 
 * local: Windows 11, R 4.6.1 (2026-06-24 ucrt), with all Suggests installed:
-  TODO: result of the final `devtools::check()`
+  0 errors | 0 warnings | 0 notes
 * GitHub Actions: windows-latest (release), macos-latest (release),
   ubuntu-latest (devel, release, oldrel-1): TODO: confirm all five are green
 * win-builder: R-devel (2026-10-17 r90697 ucrt, checked 2026-10-18):
