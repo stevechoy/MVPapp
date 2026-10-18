@@ -115,8 +115,7 @@ rm(.brand_arg)
 if (!is.null(brand_color)) mvp_navy <- brand_color # loading spinners
 dt_header_bg <- if (is.null(brand_color)) "#003366" else brand_color                            # data table headers
 dt_header_fg <- if (is.null(brand_color)) "#99CCFF" else (brand_text_color %||% "#FFFFFF")
-brand_head   <- if (is.null(brand_color) && is.null(brand_logo) && is.null(brand_favicon)) NULL else
-  brand_head_tags(color = brand_color, text_color = brand_text_color, favicon = brand_favicon)
+brand_head   <- brand_head_tags(color = brand_color, text_color = brand_text_color, favicon = brand_favicon) # default favicon if none
 ui_title     <- brand_title(page_title, brand_logo)
 
 # UI ----
@@ -131,7 +130,7 @@ ui <- shiny::navbarPage(
   header = htmltools::tagList(
   shinyjs::useShinyjs(),
   navbar_bg_color,
-  brand_head, # NULL unless branded
+  brand_head, # favicon, and the colour/logo styles when branded
   tags$head(tags$script(HTML("
   $(function() {
     // hover: everything except icons marked click

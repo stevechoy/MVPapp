@@ -145,7 +145,7 @@ default white or black is chosen for readability. Ignored if \code{brand_color} 
 \item{brand_logo}{Character. Default NULL (no logo). Path to an image file (png, jpg, svg, ...) or a web URL, shown
 in the navbar in front of the page title.}
 
-\item{brand_favicon}{Character. Default NULL (no favicon). Path to an image file (png, ico, svg) or a web URL, used
+\item{brand_favicon}{Character. Default NULL (the MVP icon shipped with the package). Path to an image file (png, ico, svg) or a web URL, used
 as the browser tab icon.}
 
 \item{page_title}{Character. Default NULL ("Model Visualization Platform (MVP)"). Title shown in the navbar. When

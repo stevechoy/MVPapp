@@ -54,7 +54,7 @@
 #'   default white or black is chosen for readability. Ignored if `brand_color` is NULL.
 #' @param brand_logo Character. Default NULL (no logo). Path to an image file (png, jpg, svg, ...) or a web URL, shown
 #'   in the navbar in front of the page title.
-#' @param brand_favicon Character. Default NULL (no favicon). Path to an image file (png, ico, svg) or a web URL, used
+#' @param brand_favicon Character. Default NULL (the MVP icon shipped with the package). Path to an image file (png, ico, svg) or a web URL, used
 #'   as the browser tab icon.
 #' @param page_title Character. Default NULL ("Model Visualization Platform (MVP)"). Title shown in the navbar. When
 #'   set, it is also used as the browser tab title.

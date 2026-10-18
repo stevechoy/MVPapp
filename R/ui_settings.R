@@ -460,6 +460,24 @@ resolve_branding <- function(params) {
 }
 
 #-------------------------------------------------------------------------------
+#' @name default_favicon_tags
+#' @title Favicon links for the MVP icon shipped with the package
+#'
+#' Used when `brand_favicon` is not set: two concentration-time curves on the
+#' navy of the default theme. An SVG for modern browsers, with a PNG for the
+#' ones that do not support SVG icons.
+#' @returns a list of `<link>` tags (empty if the icon files are not installed)
+#' @noRd
+#-------------------------------------------------------------------------------
+default_favicon_tags <- function() {
+  dir <- system.file("favicon", package = "MVPapp")
+  if (!nzchar(dir)) return(list())
+  shiny::addResourcePath("mvp-favicon", dir)
+  list(htmltools::tags$link(rel = "icon", type = "image/png", sizes = "64x64", href = "mvp-favicon/mvp-favicon.png"),
+       htmltools::tags$link(rel = "icon", type = "image/svg+xml", sizes = "any", href = "mvp-favicon/mvp-favicon.svg"))
+}
+
+#-------------------------------------------------------------------------------
 #' @name brand_head_tags
 #' @title Page head content for the branding: colour overrides and favicon
 #' @param color,text_color validated colours ("#RRGGBB") or NULL
@@ -496,6 +514,8 @@ brand_head_tags <- function(color = NULL, text_color = NULL, favicon = NULL) {
     type <- switch(ext, svg = "image/svg+xml", ico = "image/x-icon", jpg = , jpeg = "image/jpeg",
                    gif = "image/gif", "image/png")
     tags <- c(tags, list(htmltools::tags$link(rel = "icon", type = type, href = favicon)))
+  } else {
+    tags <- c(tags, default_favicon_tags())
   }
   htmltools::tags$head(htmltools::tagList(tags))
 }

@@ -450,11 +450,12 @@ test_that("mvp_app() is unchanged without branding and honours the brand argumen
     paste(as.character(r$head), as.character(r$html))
   }
   default <- ui_html(MVPapp::mvp_app())
-  expect_false(grepl("mvp-brand-logo", default, fixed = TRUE))
-  expect_false(grepl("rel=\"icon\"", default, fixed = TRUE))
+  expect_false(grepl("<img[^>]*mvp-brand-logo", default)) # no logo in the navbar (only the shared style rule)
   expect_true(grepl("#003366", default, fixed = TRUE))
   expect_true(grepl("Model Visualization Platform (MVP)", default, fixed = TRUE))
   expect_true(grepl("<title>Model Visualization Platform (MVP)</title>", default, fixed = TRUE))
+  expect_true(grepl("mvp-favicon/mvp-favicon.svg", default, fixed = TRUE)) # shipped default icon
+  expect_true(file.exists(system.file("favicon", "mvp-favicon.png", package = "MVPapp")))
 
   logo <- tempfile(fileext = ".svg")
   writeLines('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="red"/></svg>', logo)
@@ -465,6 +466,7 @@ test_that("mvp_app() is unchanged without branding and honours the brand argumen
   expect_true(grepl("#F36633", branded, fixed = TRUE))
   expect_true(grepl("mvp-brand-logo", branded, fixed = TRUE))
   expect_true(grepl("rel=\"icon\"", branded, fixed = TRUE))
+  expect_false(grepl("mvp-favicon/mvp-favicon", branded, fixed = TRUE)) # brand_favicon replaces the default
   expect_true(grepl("Company MVP", branded, fixed = TRUE))
   expect_true(grepl("<title>Company MVP</title>", branded, fixed = TRUE))
   # data table headers use the brand colour
