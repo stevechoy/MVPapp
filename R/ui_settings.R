@@ -482,8 +482,7 @@ brand_head_tags <- function(color = NULL, text_color = NULL, favicon = NULL) {
       ".box.box-solid.box-primary>.box-header {background: ", color, " !important; color: ", text_color, " !important;}\n",
       ".box.box-solid.box-primary {border-bottom-color: ", color, " !important; border-left-color: ", color, " !important; ",
       "border-right-color: ", color, " !important; border-top-color: ", color, " !important;}\n",
-      # sub-tab links (the theme's green accent) in the brand colour, if readable on white
-      if (identical(brand_contrast_text(color), "#FFFFFF")) paste0(".nav-tabs>li:not(.active)>a {color: ", color, ";}\n") else "",
+      # (sub-tab links such as "Regimen 1" keep the theme's green accent on purpose)
       # company logo in the navbar
       ".mvp-brand-logo {height: 28px; margin: -5px 10px 0 0; vertical-align: middle;}\n"
     )
