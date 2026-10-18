@@ -331,7 +331,6 @@ pknca_table <- function(input_simulated_table,
                   CMAX = max(YVARNAME, na.rm = TRUE)[1],  ### First element if multiple values found
                   DVBL = dplyr::first(YVARNAME),
                   CFBPCT = ((YVARNAME - DVBL) / DVBL) * 100,
-                  MEANCFBPCT = mean(CFBPCT, na.rm = TRUE), # only accurate if sampling points are equidistant
                   NADIRPCT = min(CFBPCT, na.rm = TRUE)[1]
     )
 
@@ -347,9 +346,14 @@ pknca_table <- function(input_simulated_table,
                   dYVAR      = (YVARNAME  + YLAG) * (TIME - XLAG) * 0.5, # Area for trapezoid
                   dYVAR      = dplyr::if_else(is.na(dYVAR), 0, dYVAR),
                   AUC_tlast    = sum(dYVAR),
-                  CAVG         = time_averaged(AUC_tlast, TIME, YVARNAME)) %>%
+                  CAVG         = time_averaged(AUC_tlast, TIME, YVARNAME),
+                  # Time-weighted mean % change (area under CFBPCT / time span),
+                  # so non-uniform sampling doesn't bias it
+                  dCFB         = (CFBPCT + dplyr::lag(CFBPCT)) * (TIME - XLAG) * 0.5,
+                  dCFB         = dplyr::if_else(is.na(dCFB), 0, dCFB),
+                  MEANCFBPCT   = time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-ID, -tad, -TIMEADJ, -YLAG, -XLAG, -dYVAR, -DVBL)
+    dplyr::select(-ID, -tad, -TIMEADJ, -YLAG, -XLAG, -dYVAR, -dCFB, -DVBL)
 
   if (debug) {
     # message(start_time)
@@ -366,7 +370,6 @@ pknca_table <- function(input_simulated_table,
     dplyr::mutate(CMIN = min(YVARNAME, na.rm = TRUE)[1],
                   CMAX = max(YVARNAME, na.rm = TRUE)[1], ### First element if multiple values found
                   CFBPCT = ((YVARNAME - DVBL_overall) / DVBL_overall) * 100, # Note: Baseline is always first ever TIME overall
-                  MEANCFBPCT = mean(CFBPCT, na.rm = TRUE), # only accurate if sampling points are equidistant
                   NADIRPCT = min(CFBPCT, na.rm = TRUE)[1]
     )
 
@@ -380,7 +383,10 @@ pknca_table <- function(input_simulated_table,
                   dYVAR         = (YVARNAME + YLAG) * (TIME - XLAG) * 0.5, # Area for trapezoid
                   dYVAR         = dplyr::if_else(is.na(dYVAR), 0, dYVAR),
                   AUC_ranged    = sum(dYVAR),
-                  CAVG          = time_averaged(AUC_ranged, TIME, YVARNAME)) %>%
+                  CAVG          = time_averaged(AUC_ranged, TIME, YVARNAME),
+                  dCFB          = (CFBPCT + dplyr::lag(CFBPCT)) * (TIME - XLAG) * 0.5, # time-weighted, as above
+                  dCFB          = dplyr::if_else(is.na(dCFB), 0, dCFB),
+                  MEANCFBPCT    = time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
     dplyr::ungroup()
 
   CMIN_time <-  metrics_table_time[["CMIN"]][1]

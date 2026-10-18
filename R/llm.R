@@ -278,12 +278,7 @@ translate_model_code <- function(ready_path,
     }) # end of withProgress
     
   }, error = function(e) {
-    resp <- httr2::last_response()
-    msg  <- if(!is.null(resp)) {
-      tryCatch(httr2::resp_body_json(resp)$message, error = function(i) httr2::resp_body_string(resp))
-    } else {
-      e$message
-    }
+    msg <- llm_error_message(e)
     if(debug) message("--- TRANSLATION ERROR ---\n", msg)
     safely_showNotification(paste("Translation Failed:", msg), type = "error", duration = NULL)
     return(NULL)
@@ -553,15 +548,7 @@ refine_model_code <- function(model_code,
     
   }, error = function(e) {
     # Single unified error handler
-    resp <- httr2::last_response()
-    
-    # Try to extract detailed error message
-    msg <- if (!is.null(resp)) {
-      error_json <- tryCatch(httr2::resp_body_json(resp), error = function(i) NULL)
-      error_json$message %||% httr2::resp_body_string(resp)
-    } else {
-      e$message
-    }
+    msg <- llm_error_message(e)
     
     if(debug) message("--- REFINEMENT ERROR ---\n", msg)
     safely_showNotification(paste("Refinement Failed:", msg), type = "error", duration = NULL)
@@ -1507,4 +1494,38 @@ get_apollo_token_ext <- function() {
 #-------------------------------------------------------------------------------
 nonmem2rx_available <- function() {
   requireNamespace("nonmem2rx", quietly = TRUE)
+}
+
+#-------------------------------------------------------------------------------
+#' @name llm_error_message
+#'
+#' @title Builds the error message shown when an LLM request fails
+#'
+#' @description
+#' Uses only the condition itself. `httr2::last_response()` is shared by the
+#' whole R process, so on a multi-user server it could hold another session's
+#' response (and it is stale for errors that are not HTTP errors).
+#'
+#' @param e a condition
+#'
+#' @returns a single character string
+#' @noRd
+#-------------------------------------------------------------------------------
+
+llm_error_message <- function(e) {
+  msg <- conditionMessage(e)
+  if (inherits(e, "httr2_http") && !is.null(e$resp)) {
+    body <- tryCatch(httr2::resp_body_json(e$resp), error = function(i) NULL)
+    detail <- if (is.list(body)) {
+      if (is.list(body$error)) body$error$message else body$message
+    }
+    if (is.null(detail)) {
+      detail <- tryCatch(httr2::resp_body_string(e$resp), error = function(i) NULL)
+    }
+    if (is.character(detail) && length(detail) == 1 && nzchar(detail) &&
+        !grepl(detail, msg, fixed = TRUE)) {
+      msg <- paste(msg, detail)
+    }
+  }
+  msg
 }

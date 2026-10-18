@@ -88,7 +88,8 @@ Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter",
 
 \item{api_upload}{Character. Default NA_character_. API upload URL when using Dify-based workflows (internal deployment only)}
 
-\item{api_chat}{Character. Default NA_character_. API chat URL required when using OpenAI-Compatible providers}
+\item{api_chat}{Character. Default NA_character_. Base URL required when using OpenAI-Compatible providers,
+e.g. "https://api.moonshot.ai/v1" ("/chat/completions" is appended automatically)}
 
 \item{user_id}{Character. Default MVP_user. User ID for LLMs}
 

@@ -19,6 +19,8 @@ small: `run_mvp()` launches the app and `mvp_app()` returns the app object
   describing the app.
 * Suggests or Enhances not in mainstream repositories: nonmem2mrgsolve
   (see below; available via `Additional_repositories`).
+* Imports includes 26 non-default packages: MVPapp is a full 'shiny'
+  application and every Import is used (see "Notes on dependencies" below).
 * Possibly invalid URL https://lagom.shinyapps.io/MVPapp/ (status 500):
   this is a live demo of the app hosted on shinyapps.io. It works in a
   browser, but the server returns an error to automated checks while the

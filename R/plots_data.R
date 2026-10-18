@@ -1847,11 +1847,21 @@ categorize_outliers <- function(df,
 
 get_bin_times <- function(dfcol, bin_num = 20, relative_threshold = 0.05) {
 
+  x <- as.numeric(dfcol)
+  x <- x[is.finite(x)]
+
+  # A single time (e.g. a trough-only dataset) or no usable time gives at
+  # most one bin, and there is nothing to lump
+  n_unique <- length(unique(x))
+  if(n_unique <= 1) {
+    return(unique(x))
+  }
+
   # If number of unique times are less than 20, use that instead
-  if(length(unique(as.numeric(dfcol))) < bin_num) {bin_num <- length(unique(as.numeric(dfcol)))}
+  if(n_unique < bin_num) {bin_num <- n_unique}
 
   # Determine the unique bin boundaries based on quantiles
-  bin_times <- unique(quantile(as.numeric(dfcol), probs = seq(0, 1, length.out = bin_num + 1), na.rm = TRUE))
+  bin_times <- unname(unique(quantile(x, probs = seq(0, 1, length.out = bin_num + 1))))
 
   # Initialize the lumped bin times
   lumped_bin_times <- c(bin_times[1])  # Start with the first value

@@ -20,7 +20,7 @@ Roxygen: list(markdown = TRUE)
 Imports: bslib (>= 0.5.1), 
          cowplot, 
          data.table (>= 1.14.2),
-         dplyr,
+         dplyr (>= 1.1.0),
          DT,
          flextable (>= 0.6.10),
          ggplot2 (>= 3.4.4),

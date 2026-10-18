@@ -23,7 +23,8 @@ lm_eqn <- function(df, facet_name, x, y) {
     df_stats <- df
   }
 
-  string_name <- paste0(y, "~", x)
+  # Backticks so non-syntactic names such as "Conc (ng/mL)" work in the formula
+  string_name <- paste0("`", gsub("`", "\\`", y, fixed = TRUE), "` ~ `", gsub("`", "\\`", x, fixed = TRUE), "`")
 
   if(x == y) { # workaround for when same variable is used for both y and x,
     # which returns an NA slope. It seems summarise can't handle this well
@@ -437,6 +438,11 @@ create_facet_label <- function(df, sort_by) {
 #-------------------------------------------------------------------------------
 
 calculate_tick_size <- function(abs_y, max_ticks = 12, nice_values = c(1,2,5,10)) {
+  # No parameter changed the metric (range 0), or the range is NA/Inf:
+  # any positive tick size works, and 0 would make seq() fail downstream
+  if(length(abs_y) != 1 || !is.finite(abs_y) || abs_y <= 0) {
+    return(1)
+  }
   approx_tick_size <- abs_y / max_ticks
 
   # Find the nearest "nice" tick size (1, 2, 5, or 10 times a power of 10)

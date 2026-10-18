@@ -43,6 +43,16 @@ First release prepared for CRAN.
 * Individual plots with "Insert regression" showed every subject's equation in every panel instead of one per panel (#50)
 * AI translation with an OpenAI-Compatible provider now sends `OPENAI_COMPATIBLE_API_KEY`; previously ellmer fell back to `OPENAI_API_KEY`, which could send an OpenAI key to the other provider (#51)
 * Variability helpers no longer fail when a model has no `$OMEGA` or `$SIGMA` block (#52)
+* Data Input no longer closes the session when a file has columns that only differ by case or a `#`/`@` prefix (e.g. `dv` and `DV`, `#ID` and `ID`): the first keeps its name and the others get a suffix (`DV_1`). De-selected columns that disappear after unticking a built-in option, and Data Editor code that doesn't return a data frame, are also handled (#53)
+* Variability: pulling covariate distributions from a dataset without an `ID` column, or without a previously selected column, no longer closes the session. Switching patient database no longer errors while the age range updates, and the NHANES age slider is limited to the ages in the database (2-85 years) (#54)
+* Variability: an edited OMEGA/SIGMA matrix is always checked for positive semi-definiteness (also with `@correlation`, with a small tolerance for valid rank-deficient blocks), and a matrix mrgsolve refuses no longer closes the session (#55)
+* Variability: a single simulated subject now gets variability and sampled covariates, the sex ratio is exact (e.g. 7 of 10 subjects male at 70%), covariates the model also outputs (e.g. `$CAPTURE WT`) are no longer duplicated as `WT.x`/`WT.y`, and changing Model 1's number of subjects no longer re-simulates Model 2 (#56)
+* Mean % change from baseline (MEANCFBPCT) is now time-weighted, like Cavg, instead of the mean of the sampled values (#57)
+* Median lines no longer fail when the x-axis has a single value (e.g. trough-only data); tornado plots no longer fail when no parameter changes the metric; regression lines work with column names such as `Conc (ng/mL)` (#58)
+* Duration/rate syntax (`D_`/`R_`) is detected when indented, e.g. under `$MAIN` (#59)
+* NCA table labels: `AUCPEO` is the observed (not predicted) % extrapolated AUC, `AUCPEP` and MRTinf,pred (`MRTIVIFP`) are now labelled, and `AUCIFPD` shows its per-dose unit (#60)
+* AI translation: a control stream that nonmem2mrgsolve can't parse no longer closes the session, and error messages show the provider's message for that request only (#61)
+* Removed the bslib "Navigation containers expect a collection of `nav_panel()`" warnings printed by every `mvp_app()` call (#62)
 
 ## Documentation
 

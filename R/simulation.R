@@ -73,7 +73,8 @@ safely_mcode <- mvp_safely(mrgsolve::mcode)
 #' @param seed                  Seed number for RNG for reproducibility
 #' @param divide_by             Divide the TIME by this value, used for scaling x-axis
 #' @param debug                 Default FALSE, set to TRUE to show more messages in console
-#' @param nsubj                 Default 1, in which case mrgsolve::zero_re() will be applied
+#' @param nsubj                 Default 1. Without `ext_db`, a single subject is simulated with
+#'                              mrgsolve::zero_re() applied
 #' @param nsubj_offset          Default 0, uses this value +1 to start ID count
 #' @param append_id_text        A string prefix to be inserted for each ID to become their USUBJID
 #' @param ext_db                Default NULL, supply R object of external database
@@ -116,7 +117,9 @@ run_single_sim <- function(input_model_object,
     return(NULL)
   }
   
-  if (nsubj > 1 && !is.null(ext_db)) {
+  # Population branch whenever a covariate database is given, including a
+  # single subject (keeps variability and the sampled covariates)
+  if (!is.null(ext_db) && nrow(ext_db) > 0) {
     
     ext_db_ev_prewt <- data.table::merge.data.table(
       mrgsolve::ev_rep(ev_df, 1:nrow(ext_db)),
@@ -167,15 +170,23 @@ run_single_sim <- function(input_model_object,
         tgrid  = sampling_times,
         tad    = TRUE)
     
-    if (is.null(solved_output$error))
-      solved_output$result <- data.table::merge.data.table(
-        solved_output$result, ext_db, by = c("ID"), all.x = TRUE
-      )
+    if (is.null(solved_output$error)) {
+      # Only add covariates the model doesn't already output (e.g. via
+      # $CAPTURE WT); merging both would give WT.x / WT.y
+      ext_db_new <- dplyr::select(ext_db, dplyr::all_of(
+        c("ID", setdiff(names(ext_db), names(solved_output$result)))
+      ))
+      if (ncol(ext_db_new) > 1) {
+        solved_output$result <- data.table::merge.data.table(
+          data.table::as.data.table(solved_output$result), ext_db_new, by = c("ID"), all.x = TRUE
+        )
+      }
+    }
     
     ev_df <- ext_db_ev
     
   } else {
-    # Covers nsubj <= 1 AND the nsubj > 1 / ext_db NULL edge case ──
+    # No covariate database: single-subject simulation without variability ──
     if (nsubj > 1 && is.null(ext_db)) {
       if (debug) message("nsubj > 1 but ext_db is NULL - falling back to single-subject sim")
     }
@@ -311,8 +322,10 @@ sample_age_wt <- function(df_name     = "None",
 
   # Without enough matching subjects, slice_sample() silently returns fewer rows,
   # which previously led to duplicated subjects (or a cryptic error) below
-  n_male_needed   <- ceiling(nsubj * prop.male)
-  n_female_needed <- ceiling(nsubj * (1 - prop.male))
+  # The two counts add up to nsubj exactly (ceiling() on both could draw one
+  # extra subject, which was then dropped at random, shifting the sex ratio)
+  n_male_needed   <- round(nsubj * prop.male)
+  n_female_needed <- nsubj - n_male_needed
   n_male_avail    <- sum(df.sexes$SEX == 0)
   n_female_avail  <- sum(df.sexes$SEX == 1)
   if (n_male_avail < n_male_needed || n_female_avail < n_female_needed) {

@@ -27,7 +27,8 @@
 #'   Defaults to all supported providers: "Claude", "Gemini", "OpenAI", "OpenRouter", "OpenAI-Compatible", "DeepSeek",
 #'   "Azure OpenAI" and "AWS Bedrock". Internal-deployment providers (e.g. "PMx Co-Modeler", "Apollo") are also accepted.
 #' @param api_upload Character. Default NA_character_. API upload URL when using Dify-based workflows (internal deployment only)
-#' @param api_chat Character. Default NA_character_. API chat URL required when using OpenAI-Compatible providers
+#' @param api_chat Character. Default NA_character_. Base URL required when using OpenAI-Compatible providers,
+#'   e.g. "https://api.moonshot.ai/v1" ("/chat/completions" is appended automatically)
 #' @param user_id Character. Default MVP_user. User ID for LLMs
 #' @param reuse_context Logical. Default FALSE. Set to TRUE to re-use same conversation during retries.
 #' @param model_gemini Character. Default gemini-3.8-flash. Model for Gemini.

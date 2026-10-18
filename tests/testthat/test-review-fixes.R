@@ -185,3 +185,90 @@ test_that("OpenAI-Compatible requests use OPENAI_COMPATIBLE_API_KEY", {
   body <- paste(deparse(MVPapp:::run_ellmer_chat), collapse = "\n")
   expect_match(body, 'credentials = function() Sys.getenv("OPENAI_COMPATIBLE_API_KEY")', fixed = TRUE)
 })
+
+# Medium-severity findings from the final pre-CRAN review -----------------------
+
+test_that("check_matrix() always checks eigenvalues, with a tolerance (M7, L36)", {
+  mod <- list(code = "$OMEGA @correlation @block\n0.1 0.5 0.2") # @correlation no longer skips the check
+  bad <- list(matrix(c(1, 2, 2, 1), 2))                          # not positive semi-definite
+  expect_false(MVPapp:::check_matrix(mod, bad, display_error = FALSE))
+  v <- c(0.3, 0.7, 1.1)
+  rank1 <- list(tcrossprod(v))                                   # valid, smallest eigenvalue ~ -1e-17
+  expect_true(MVPapp:::check_matrix(mod, rank1, display_error = FALSE))
+  expect_false(MVPapp:::check_matrix(mod, list(matrix(NA_real_, 1)), display_error = FALSE))
+  expect_true(MVPapp:::check_matrix(mod, list(), display_error = FALSE))
+})
+
+test_that("update_variability() keeps the model when omat() refuses the matrix (M7)", {
+  wrong_size <- list(diag(0.1, 7)) # house() has a 4 x 4 OMEGA
+  out <- suppressWarnings(MVPapp:::update_variability(mrgsolve::house(), wrong_size, check_validity = FALSE))
+  expect_true(mrgsolve::is.mrgmod(out))
+  expect_equal(mrgsolve::omat(out, make = TRUE), mrgsolve::omat(mrgsolve::house(), make = TRUE))
+})
+
+test_that("get_bin_times() copes with a single unique x value (M8)", {
+  expect_equal(MVPapp:::get_bin_times(rep(24, 10)), 24)
+  expect_equal(MVPapp:::get_bin_times(c(NA, 24, 24)), 24)
+  expect_length(MVPapp:::get_bin_times(c(NA_real_, NA_real_)), 0)
+  expect_equal(MVPapp:::quantize(c(24, 24), levels = MVPapp:::get_bin_times(c(24, 24))), c(24, 24))
+  expect_equal(range(MVPapp:::get_bin_times(c(0, 0, 10, 10))), c(0, 10))
+})
+
+test_that("tornado plot works when no parameter changes the metric (M17)", {
+  expect_equal(MVPapp:::calculate_tick_size(0), 1)
+  expect_equal(MVPapp:::calculate_tick_size(NA_real_), 1)
+  expect_equal(MVPapp:::calculate_tick_size(37), 5)
+  df <- data.frame(.paramname = c("KA", "CL"), Lower = c(100, 100), Upper = c(100, 100))
+  for (as in c("Percentage", "Ratio")) {
+    p <- suppressWarnings(MVPapp:::tornado_plot(df, reference_value = 100, display_as = as)) # plotly-only "text" aesthetic
+    expect_s3_class(p, "ggplot")
+    expect_no_error(suppressWarnings(ggplot2::ggplot_build(p)))
+  }
+})
+
+test_that("lm_eqn() handles non-syntactic column names (M20)", {
+  d <- data.frame(`Conc (ng/mL)` = c(1, 2, 3, 5), `Time (h)` = 1:4, check.names = FALSE)
+  out <- MVPapp:::lm_eqn(d, facet_name = NULL, x = "Time (h)", y = "Conc (ng/mL)")
+  expect_match(out$label, "R²")
+  expect_equal(unname(out$slope), unname(coef(lm(d[[1]] ~ d[[2]]))[2]))
+})
+
+test_that("covariates the model also outputs are not duplicated as .x/.y (M21)", {
+  skip_on_cran() # compiles an mrgsolve model
+  code <- '
+$PARAM CL = 1, V = 10, WT = 70
+$CMT CENT
+$ODE dxdt_CENT = -CL * pow(WT / 70, 0.75) / V * CENT;
+$TABLE double CP = CENT / V;
+$CAPTURE CP WT
+'
+  mod <- mrgsolve::mcode("mvp_capture_wt", code, quiet = TRUE)
+  db  <- suppressMessages(MVPapp:::sample_age_wt(df_name = "NHANES", nsubj = 5))
+  out <- suppressWarnings(MVPapp:::run_single_sim(
+    mod, ev_df = mrgsolve::ev(amt = 100), sampling_times = mrgsolve::tgrid(0, 24, 4),
+    nsubj = 5, ext_db = db))
+  expect_true("WT" %in% names(out))
+  expect_false(any(c("WT.x", "WT.y") %in% names(out)))
+  expect_true(all(c("AGEMO", "SEX") %in% names(out)) || all(setdiff(names(db), "ID") %in% names(out)))
+})
+
+test_that("mean % change from baseline is time-weighted (M16)", {
+  skip_on_cran() # compiles an mrgsolve model
+  code <- '
+$PARAM CL = 1, V = 10, BL = 10
+$CMT CENT
+$ODE dxdt_CENT = -CL / V * CENT;
+$TABLE double Y = BL + CENT / V;
+$CAPTURE Y
+'
+  mod <- mrgsolve::update(mrgsolve::mcode("mvp_baseline", code, quiet = TRUE), digits = 8)
+  st  <- c(0, 0.5, 1, 2, 4, 8, 24, 48) # non-uniform sampling
+  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = as.data.frame(mrgsolve::ev(amt = 100, time = 1)),
+                                                   sampling_times = st))
+  pk  <- MVPapp:::pknca_table(out, "Y", 0, 48)
+  # % change is linear in Y, so its time-weighted mean follows from Cavg
+  expect_equal(pk$Y_MEANCFBPCT_ranged[1], (pk$Y_CAVG_ranged[1] - 10) / 10 * 100, tolerance = 1e-6)
+  expect_equal(pk$Y_MEANCFBPCT_tlast[1],  (pk$Y_CAVG_tlast[1]  - 10) / 10 * 100, tolerance = 1e-6)
+  obs <- out[out$evid == 0, ]
+  expect_false(isTRUE(all.equal(pk$Y_MEANCFBPCT_ranged[1], mean((obs$Y - 10) / 10 * 100))))
+})

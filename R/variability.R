@@ -203,13 +203,21 @@ update_variability <- function(input_model_object,
     } # model object is not updated if matrix is invalid
   }
 
-  if(name_of_matrix == "omega") {
-    tmp <- input_model_object %>% mrgsolve::omat(input_matrix)
-  }
-
-  if(name_of_matrix == "sigma") {
-    tmp <- input_model_object %>% mrgsolve::smat(input_matrix)
-  }
+  # omat()/smat() can still refuse a matrix (e.g. a dimension mismatch); keep
+  # the original model object rather than letting the error close the session
+  tmp <- tryCatch({
+    if(name_of_matrix == "omega") {
+      mrgsolve::omat(input_model_object, input_matrix)
+    } else {
+      mrgsolve::smat(input_model_object, input_matrix)
+    }
+  }, error = function(e) {
+    if(shiny::isRunning()) {
+      shiny::showNotification(paste0("ERROR: The ", name_of_matrix, " matrix could not be applied: ", conditionMessage(e)),
+                              type = "error", duration = 10)
+    }
+    input_model_object
+  })
 
   return(tmp)
 }
@@ -237,8 +245,14 @@ check_matrix <- function(input_model_object,
                          check_symmetry = FALSE,
                          debug = FALSE,
                          display_error = TRUE) {
-  #print(input_matrix)
-  for(i in 1:length(input_matrix)) {
+  for(i in seq_along(input_matrix)) {
+
+    if(any(!is.finite(input_matrix[[i]]))) {
+      if(display_error) {
+        shiny::showNotification("ERROR: Each matrix element must be a finite number", type = "error", duration = 10)
+      }
+      return(FALSE)
+    }
 
     if(check_diagonal) {
       if(any(diag(input_matrix[[i]]) < 0)) {
@@ -249,23 +263,17 @@ check_matrix <- function(input_model_object,
       }
     } # End of check diagonal
 
-    if(any(stringr::str_detect(input_model_object$code, "@correlation"))) {
-      check_eigenvalues <- FALSE
-
-    } else {
-      check_eigenvalues <- TRUE
-    }
-
-    if(check_eigenvalues) { # check that the matrix must be positive semi-definite assuming '@correlation' is not used in ANY code
-      if(debug) {
-        message("No @correlation found, proceeding to checking eigenvalues")
+    # The table always holds covariances, even when the model code uses
+    # @correlation, so the matrix must always be positive semi-definite.
+    # A small tolerance avoids rejecting valid rank-deficient blocks whose
+    # smallest eigenvalue is a rounding error below zero.
+    ev  <- eigen(input_matrix[[i]], symmetric = TRUE, only.values = TRUE)$values
+    tol <- sqrt(.Machine$double.eps) * max(1, abs(ev))
+    if(any(ev < -tol)) {
+      if(display_error) {
+        shiny::showNotification("ERROR: The matrix is not positive semi-definite", type = "error", duration = 10)
       }
-      if(any(eigen(input_matrix[[i]])$values < 0)) {
-        if(display_error) {
-          shiny::showNotification("ERROR: The matrix is not positive semi-definite", type = "error", duration = 10)
-        }
-        return(FALSE)
-      }
+      return(FALSE)
     } # End of check eigenvalues
 
     if(check_symmetry) {

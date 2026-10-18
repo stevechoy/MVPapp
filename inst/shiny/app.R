@@ -109,6 +109,9 @@ ui <- shiny::navbarPage(
   title = htmltools::div(page_title),
   selected = 'Simulation',
   theme = shinythemes::shinytheme('flatly'),
+  # Non-tab content goes in `header`; as positional arguments, bslib warns
+  # that navigation containers expect only nav panels
+  header = htmltools::tagList(
   shinyjs::useShinyjs(),
   navbar_bg_color,
   tags$head(tags$script(HTML("
@@ -131,7 +134,8 @@ ui <- shiny::navbarPage(
       });
     });
   });
-"))),
+")))
+  ), # end of header
   ## Page 1 Data Input ----
   tabPanel('Data Input', icon = icon('file'),
            sidebarLayout(
@@ -2523,7 +2527,7 @@ ui <- shiny::navbarPage(
                                p('v0.1.0  (2023-08-09) - Stable release with model comparison and console messages.')
            )
   ),                  # end of tabPanel
-  useShinydashboardMVP(),
+  footer = useShinydashboardMVP() # shinydashboard dependencies (box(), infoBox(), ...)
   #tags$script(src = "https://kit.fontawesome.com/<you>.js"),
 ) # end of ui
 
@@ -2826,32 +2830,32 @@ server <- function(input, output, session) {
   ## built_in_filtered_data() ----
   built_in_filtered_data <- reactive({
     tmp <- uploaded_data()
-    
-    if(any(duplicated(names(tmp)))) {
-      
-      # Get the column names
-      col_names <- names(tmp)
-      
+
+    # Rename on the plain names vector first: dplyr::rename_all() refuses to
+    # create duplicate names (e.g. "dv" and "DV", or "#ID" and "ID"), so the
+    # duplicate check has to run after these renames, not before.
+    col_names <- names(tmp)
+    if(input$change_all_to_upper) {
+      col_names <- toupper(col_names)
+    }
+    if(input$remove_pound_sign) {
+      col_names <- gsub("[#@]", "", col_names)
+    }
+
+    if(any(duplicated(col_names))) {
+
       # Find the duplicate column names
       dup_cols <- which(duplicated(col_names) | duplicated(col_names, fromLast = TRUE))
-      
+
       shiny::showNotification(paste0("WARNING: These column names are duplicated and will be renamed: ", paste(unique(col_names[dup_cols]), collapse = " ")), type = "warning", duration = 10)
-      # Add a suffix to duplicate column names to make them unique
-      col_names[dup_cols] <- paste0(col_names[dup_cols], "_", 1:length(dup_cols))
-      
-      # Update the column names in the dataframe
-      names(tmp) <- col_names
+      # The first occurrence keeps its name (so e.g. ID and DV still exist);
+      # later ones get a suffix: DV, DV_1, ID, ID_1
+      col_names <- make.unique(col_names, sep = "_")
     }
-    
-    if(input$change_all_to_upper) {
-      tmp <- tmp %>% dplyr::rename_all(toupper)
-    }
-    
-    if(input$remove_pound_sign) {
-      tmp <- tmp %>% dplyr::rename_all(~stringr::str_replace_all(., "#", ""))
-      tmp <- tmp %>% dplyr::rename_all(~stringr::str_replace_all(., "@", ""))
-    }
-    
+
+    # Update the column names in the dataframe
+    names(tmp) <- col_names
+
     if (input$EVID_filter) {
       if ('EVID' %in% names(tmp)) {
         tmp <- tmp %>% dplyr::filter(EVID < 1)
@@ -2898,7 +2902,9 @@ server <- function(input, output, session) {
     tmp <- built_in_filtered_data()
     
     if(!is.null(input$column)) {
-      tmp <- tmp %>% dplyr::select(!dplyr::all_of(input$column))
+      # any_of(): a de-selected column can vanish when a built-in option is
+      # unticked (e.g. "Create ID column"), which would error with all_of()
+      tmp <- tmp %>% dplyr::select(!dplyr::any_of(input$column))
     }
     
     return(tmp)
@@ -2978,6 +2984,13 @@ server <- function(input, output, session) {
         }
         
         nmdata_code_is_valid(TRUE)
+      } else {
+        # e.g. code ending in pull(DV): it runs, but the result is not a dataset.
+        # Reset the flag so an earlier valid Apply doesn't stay in effect.
+        nmdata_code_is_valid(FALSE)
+        shiny::showNotification(paste0("ERROR: Dataset cleaning code must return a data frame (it returned an object of class '",
+                                       paste(class(safely_nmdata_code()$result), collapse = "/"), "')."),
+                                type = "error", duration = 10)
       }
     } else {
       
@@ -3482,14 +3495,14 @@ server <- function(input, output, session) {
                             "AUCLST"   = paste0("AUClast (", input$desc_time_unit, "*", input$desc_conc_unit, ")"),
                             #"AUCIFO"   = paste0("AUCinf,obs (", input$desc_time_unit, "*", input$desc_conc_unit, ")"),
                             "AUCIFP"   = paste0("AUCinf,pred (", input$desc_time_unit, "*", input$desc_conc_unit, ")"),
-                            "AUCIFPD"  = paste0("AUCinf,pred_norm (", input$desc_time_unit, "*", input$desc_conc_unit, ")"),
-                            #"AUCPEO"   = paste0("AUC%extrap,obs (%)"),
-                            "AUCPEO"   = paste0("AUC%extrap,pred (%)"),
+                            "AUCIFPD"  = paste0("AUCinf,pred_norm (", input$desc_time_unit, "*", input$desc_conc_unit, "/", input$desc_dose_unit, ")"),
+                            "AUCPEO"   = paste0("AUC%extrap,obs (%)"),
+                            "AUCPEP"   = paste0("AUC%extrap,pred (%)"),
                             "LAMZHL"   = paste0("T1/2,lambdaz (", input$desc_time_unit, ")"),
                             "TMAX"     = paste0("Tmax (", input$desc_time_unit, ")"),
                             "MRTIVLST" = paste0("MRT,iv (", input$desc_time_unit, ")"),
                             "MRTIVIFO" = paste0("MRT,iv_inf (", input$desc_time_unit, ")"),
-                            "MRTIVLFP" = paste0("MRT,iv_inf_pred (", input$desc_time_unit, ")"),
+                            "MRTIVIFP" = paste0("MRT,iv_inf_pred (", input$desc_time_unit, ")"),
                             "MRTEVLST" = paste0("MRT,ex_tlast (", input$desc_time_unit, ")"),
                             "MRTEVIFO" = paste0("MRT,ex_inf (", input$desc_time_unit, ")"),
                             "MRTEVIFP" = paste0("MRT,ex_inf_pred (", input$desc_time_unit, ")"),
@@ -4246,9 +4259,9 @@ server <- function(input, output, session) {
     
     if (input$llm_model_1 == "OpenAI-Compatible") {
       textInput('api_chat_model_1',
-                label = "API Chat URL",
+                label = "API Base URL",
                 value = llm_settings_model_1$api_chat,
-                placeholder = "API Chat URL"
+                placeholder = "e.g. https://api.moonshot.ai/v1"
       )
     }    
   })
@@ -4614,12 +4627,23 @@ server <- function(input, output, session) {
       file.copy(ready_path$ext,   file.path(work_dir, "dummy.ext"))
       
       # Call nonmem2mrgsolve using the dummy name
-      translated_code <- nonmem2mrgsolve::nonmem2mrgsolve(
-        filename = "dummy",
-        dir      = work_dir,
-        write    = FALSE
-      ) %>%
-        .$V1 %>% paste(collapse = "\n")
+      translated_code <- tryCatch(
+        nonmem2mrgsolve::nonmem2mrgsolve(
+          filename = "dummy",
+          dir      = work_dir,
+          write    = FALSE
+        ) %>%
+          .$V1 %>% paste(collapse = "\n"),
+        error = function(e) {
+          safely_showNotification(
+            paste0("nonmem2mrgsolve conversion failed: ", conditionMessage(e)),
+            type = "error", duration = 10
+          )
+          NULL
+        }
+      )
+      
+      shiny::req(!is.null(translated_code))
       
       current_code$answer          <- translated_code
       current_code$conversation_id <- NULL
@@ -5016,9 +5040,9 @@ server <- function(input, output, session) {
     
     if (input$llm_model_2 == "OpenAI-Compatible") {
       textInput('api_chat_model_2',
-                label = "API Chat URL",
+                label = "API Base URL",
                 value = llm_settings_model_2$api_chat,
-                placeholder = "API Chat URL"
+                placeholder = "e.g. https://api.moonshot.ai/v1"
       )
     }    
   })
@@ -5384,12 +5408,23 @@ server <- function(input, output, session) {
       file.copy(ready_path$ext,   file.path(work_dir, "dummy.ext"))
       
       # Call nonmem2mrgsolve using the dummy name
-      translated_code <- nonmem2mrgsolve::nonmem2mrgsolve(
-        filename = "dummy",
-        dir      = work_dir,
-        write    = FALSE
-      ) %>%
-        .$V1 %>% paste(collapse = "\n")
+      translated_code <- tryCatch(
+        nonmem2mrgsolve::nonmem2mrgsolve(
+          filename = "dummy",
+          dir      = work_dir,
+          write    = FALSE
+        ) %>%
+          .$V1 %>% paste(collapse = "\n"),
+        error = function(e) {
+          safely_showNotification(
+            paste0("nonmem2mrgsolve conversion failed: ", conditionMessage(e)),
+            type = "error", duration = 10
+          )
+          NULL
+        }
+      )
+      
+      shiny::req(!is.null(translated_code))
       current_code$answer          <- translated_code
       
       if (show_debugging_msg) message(current_code$answer)
@@ -5893,15 +5928,15 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "cmt5_model_1", choices = mrgsolve::outvars(inputted_model_1())$cmt)
     } else {
       # Automatically handle D_ and R_ if present
-      if (any(stringr::str_starts(inputted_model_1()$code, "D_"))) {
+      if (any(stringr::str_detect(inputted_model_1()$code, "^\\s*D_"))) {
         updateCheckboxInput(session, "model_dur_checkbox", value = TRUE)
         shiny::showNotification("Duration syntax (D_xxx) detected in the model code and will be modeled by default.", type = "message", duration = 10)
       } else {
         updateCheckboxInput(session, "model_dur_checkbox", value = FALSE)
       }
       
-      if (any(stringr::str_starts(inputted_model_1()$code, "R_") &
-              !stringr::str_starts(inputted_model_1()$code, "R_tot"))) {
+      if (any(stringr::str_detect(inputted_model_1()$code, "^\\s*R_") &
+              !stringr::str_detect(inputted_model_1()$code, "^\\s*R_tot"))) {
         updateCheckboxInput(session, "model_rate_checkbox", value = TRUE)
         shiny::showNotification("Rate syntax (R_xxx) detected in the model code and will be modeled by default.", type = "message", duration = 10)
       } else {
@@ -5947,7 +5982,7 @@ server <- function(input, output, session) {
     ## Solution is to uncheck the model_dur_checkbox
     
     if (input$model_dur_checkbox) {
-      if (any(stringr::str_starts(inputted_model_1()$code, "D_"))) {
+      if (any(stringr::str_detect(inputted_model_1()$code, "^\\s*D_"))) {
         if(any(dosing_regimen_model_1()$amt > 0)) {
           tmp <- TRUE
         } else {
@@ -5965,7 +6000,7 @@ server <- function(input, output, session) {
     tmp <- FALSE
     
     if (input$model_rate_checkbox) {
-      if (any(stringr::str_starts(inputted_model_1()$code, "R_"))) {
+      if (any(stringr::str_detect(inputted_model_1()$code, "^\\s*R_"))) {
         if(any(dosing_regimen_model_1()$amt > 0)) {
           tmp <- TRUE
         } else {
@@ -6275,15 +6310,15 @@ server <- function(input, output, session) {
       updateSelectizeInput(session, "cmt5_model_2", choices = mrgsolve::outvars(inputted_model_2())$cmt)
     } else {
       # Automatically handle D_ and R_ if present
-      if (any(stringr::str_starts(inputted_model_2()$code, "D_"))) {
+      if (any(stringr::str_detect(inputted_model_2()$code, "^\\s*D_"))) {
         updateCheckboxInput(session, "model_dur_checkbox_2", value = TRUE)
         shiny::showNotification("Duration syntax (D_xxx) detected in the model code and will be modeled by default.", type = "message", duration = 10)
       } else {
         updateCheckboxInput(session, "model_dur_checkbox_2", value = FALSE)
       }
       
-      if (any(stringr::str_starts(inputted_model_2()$code, "R_") &
-              !stringr::str_starts(inputted_model_2()$code, "R_tot"))) {
+      if (any(stringr::str_detect(inputted_model_2()$code, "^\\s*R_") &
+              !stringr::str_detect(inputted_model_2()$code, "^\\s*R_tot"))) {
         updateCheckboxInput(session, "model_rate_checkbox_2", value = TRUE)
         shiny::showNotification("Rate syntax (R_xxx) detected in the model code and will be modeled by default.", type = "message", duration = 10)
       } else {
@@ -6323,7 +6358,7 @@ server <- function(input, output, session) {
     tmp <- FALSE
     
     if (input$model_dur_checkbox_2) {
-      if (any(stringr::str_starts(inputted_model_2()$code, "D_"))) {
+      if (any(stringr::str_detect(inputted_model_2()$code, "^\\s*D_"))) {
         if(any(dosing_regimen_model_2()$amt > 0)) {
           tmp <- TRUE
         } else {
@@ -6341,7 +6376,7 @@ server <- function(input, output, session) {
     tmp <- FALSE
     
     if (input$model_rate_checkbox_2) {
-      if (any(stringr::str_starts(inputted_model_2()$code, "R_"))) {
+      if (any(stringr::str_detect(inputted_model_2()$code, "^\\s*R_"))) {
         if(any(dosing_regimen_model_2()$amt > 0)) {
           tmp <- TRUE
         } else {
@@ -8224,6 +8259,10 @@ server <- function(input, output, session) {
   d_y_value_threshold   <- debounce(reactive({ input$y_value_threshold }), debounce_timer_fast)
   
   d_n_subj_model_1      <- debounce(reactive({ input$n_subj_model_1 }), debounce_timer_fast)
+  # Age range (months) available in each covariate database
+  db_age_limits_mo <- lapply(c(NHANES = "nhanes.filtered", CDC = "cdc.expand", WHO = "who.expand"),
+                             function(x) range(mvp_dataset(x)$AGEMO, na.rm = TRUE))
+  
   d_age_db_model_1      <- debounce(reactive({ input$age_db_model_1 }), debounce_timer_slow)
   d_wt_db_model_1       <- debounce(reactive({ input$wt_db_model_1 }), debounce_timer_slow)
   d_males_db_model_1    <- debounce(reactive({ input$males_db_model_1 }), debounce_timer_slow)
@@ -8283,7 +8322,7 @@ server <- function(input, output, session) {
       shinyjs::enable("bmi_db_model_1")
     }
     if (input$db_model_1 == "NHANES") {
-      updateSliderInput(session, "age_db_model_1", min = 0, max = 100, value = c(18, 65), step = 1)
+      updateSliderInput(session, "age_db_model_1", min = 2, max = 85, value = c(18, 65), step = 1) # NHANES covers ages 2-85 y
     }
     if (input$db_model_1 == "CDC") {
       updateSliderInput(session, "age_db_model_1", min = 0, max = 20,  value = c(6, 18), step = 0.5)
@@ -8656,10 +8695,16 @@ server <- function(input, output, session) {
       
       n_target <- n_subj_model_1_clean()
       
+      # The dataset may lack an ID column, or no longer hold a selected
+      # column (e.g. after re-uploading a different file)
+      cov_source <- nmdataset_for_plot()
+      cov_cols <- setdiff(intersect(input$dataset_cov_dist_model_1, names(cov_source)), "ID")
+      shiny::req("ID" %in% names(cov_source), length(cov_cols) > 0)
+      
       # Retain unique subjects and columns of interest
-      subj_level <- nmdataset_for_plot() %>%
+      subj_level <- cov_source %>%
         dplyr::distinct(ID, .keep_all = TRUE) %>%
-        dplyr::select(dplyr::all_of(input$dataset_cov_dist_model_1))
+        dplyr::select(dplyr::all_of(cov_cols))
       
       subj_level <- subj_level %>%
         dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(as.character(.)))))
@@ -8695,6 +8740,15 @@ server <- function(input, output, session) {
     )
   
   database_model_1 <- reactive({
+    # Right after the database is switched (e.g. NHANES -> CDC), the debounced
+    # age range still holds the previous database's values; wait for the
+    # updated slider instead of letting sample_age_wt() error
+    if (input$db_model_1 != "None") {
+      age_limits_mo <- db_age_limits_mo[[input$db_model_1]]
+      shiny::req(d_age_db_model_1()[1] * 12 >= age_limits_mo[1],
+                 d_age_db_model_1()[2] * 12 <= age_limits_mo[2])
+    }
+    
     dbm1 <- sample_age_wt(df_name     = input$db_model_1,
                           nsubj       = n_subj_model_1_clean(),
                           lower.agemo = d_age_db_model_1()[1] * 12,
@@ -9129,7 +9183,7 @@ server <- function(input, output, session) {
       shinyjs::enable("bmi_db_model_2")      
     }
     if (input$db_model_2 == "NHANES") {
-      updateSliderInput(session, "age_db_model_2", min = 0, max = 100, value = c(18, 65), step = 1)
+      updateSliderInput(session, "age_db_model_2", min = 2, max = 85, value = c(18, 65), step = 1) # NHANES covers ages 2-85 y
     }
     if (input$db_model_2 == "CDC") {
       updateSliderInput(session, "age_db_model_2", min = 0, max = 20,  value = c(6, 18), step = 0.5)
@@ -9502,10 +9556,16 @@ server <- function(input, output, session) {
       
       n_target <- n_subj_model_2_clean()
       
+      # The dataset may lack an ID column, or no longer hold a selected
+      # column (e.g. after re-uploading a different file)
+      cov_source <- nmdataset_for_plot()
+      cov_cols <- setdiff(intersect(input$dataset_cov_dist_model_2, names(cov_source)), "ID")
+      shiny::req("ID" %in% names(cov_source), length(cov_cols) > 0)
+      
       # Retain unique subjects and columns of interest
-      subj_level <- nmdataset_for_plot() %>%
+      subj_level <- cov_source %>%
         dplyr::distinct(ID, .keep_all = TRUE) %>%
-        dplyr::select(dplyr::all_of(input$dataset_cov_dist_model_2))
+        dplyr::select(dplyr::all_of(cov_cols))
       
       subj_level <- subj_level %>%
         dplyr::mutate(dplyr::across(everything(), ~ suppressWarnings(as.numeric(as.character(.)))))
@@ -9541,6 +9601,15 @@ server <- function(input, output, session) {
     )
   
   database_model_2 <- reactive({
+    # Right after the database is switched (e.g. NHANES -> CDC), the debounced
+    # age range still holds the previous database's values; wait for the
+    # updated slider instead of letting sample_age_wt() error
+    if (input$db_model_2 != "None") {
+      age_limits_mo <- db_age_limits_mo[[input$db_model_2]]
+      shiny::req(d_age_db_model_2()[1] * 12 >= age_limits_mo[1],
+                 d_age_db_model_2()[2] * 12 <= age_limits_mo[2])
+    }
+    
     dbm2 <- sample_age_wt(df_name     = input$db_model_2,
                           nsubj       = n_subj_model_2_clean(),
                           lower.agemo = d_age_db_model_2()[1] * 12,
@@ -9876,7 +9945,9 @@ server <- function(input, output, session) {
         debug              = show_debugging_msg,
         divide_by          = time_value(),
         nsubj              = n_subj_model_2_clean(),
-        nsubj_offset       = n_subj_model_1_clean(),
+        # Fixed offset (Model 1 can never exceed max_sim_n subjects): IDs never
+        # overlap Model 1's, and changing Model 1's N no longer re-simulates Model 2
+        nsubj_offset       = max_sim_n,
         append_id_text     = "m2-",
         ext_db             = database_model_2(),
         show_matches       = TRUE,
