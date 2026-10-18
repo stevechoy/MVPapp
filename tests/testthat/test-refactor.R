@@ -239,3 +239,22 @@ test_that("individual plots draw one dose bar per dose, as wide as the infusion"
   infusion <- bars(transform(d, RATE = c(50, 0, 50, 0)))
   expect_equal(infusion$xmax - infusion$xmin, rep(2, nrow(infusion))) # 100 / 50
 })
+
+test_that("a short last PDF page keeps the panel size of a full page", {
+  d <- data.frame(ID = rep(1:10, each = 3), TIME = rep(0:2, 10), DV = rep(c(5, 3, 1), 10), EVID = 0, AMT = 0)
+  page <- function(i) with_mock_session(MVPapp:::do_data_page_ind_plot(
+    d, rownums = 3, colnums = 3, pagenum = i, filter_id = "", filter_cmt = "NULL", sort_by = NULL, strat_by = "",
+    highlight_range = "80%", x_axis = "TIME", y_axis = "DV", color_by = "", boxplot = FALSE, dolm = FALSE,
+    logy = FALSE, logx = FALSE, plot_title = NULL, highlight_var = "", highlight_var_values = "",
+    plot_dosing = FALSE, dose_col = "AMT", dose_units = ""))
+  f <- tempfile(fileext = ".pdf")
+  on.exit(unlink(f))
+  grDevices::pdf(f, width = 6, height = 8)
+  seen <- integer(0)
+  MVPapp:::print_ind_pages(lapply(1:2, page), rownums = 3, on_page = function(i, n) seen <<- c(seen, i))
+  grDevices::dev.off()
+  expect_equal(seen, 1:2)
+  # one PDF page per plot (no blank first page)
+  txt <- paste(readLines(f, warn = FALSE), collapse = "\n")
+  expect_equal(lengths(gregexpr("/Type /Page[^s]", txt, useBytes = TRUE)), 2L)
+})

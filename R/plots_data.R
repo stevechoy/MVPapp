@@ -1641,3 +1641,52 @@ draw_histogram_plot <- function(input_df,
   
   return(hist_plot)
 }
+
+#-------------------------------------------------------------------------------
+#' Print individual-plot pages with the same panel size on every page
+#'
+#' ggplot2 drops empty rows of a facet_wrap, so a last page with fewer
+#' subjects than rows x columns would stretch its panels over the whole page.
+#' Here a page with fewer panel rows is drawn in a shorter, top-aligned area
+#' (the rest of the page stays white), so each panel keeps the size it has on
+#' a full page.
+#'
+#' @param plots list of ggplot objects, one per page
+#' @param rownums number of panel rows on a full page
+#' @param on_page function(i, n) called before page i of n is drawn (progress)
+#' @noRd
+#-------------------------------------------------------------------------------
+print_ind_pages <- function(plots, rownums, on_page = function(i, n) NULL) {
+  # Panel rows on a page, and the height (inches) of everything that is not a
+  # panel: titles, strips, axes, margins. Panel rows share the rest equally.
+  page_layout <- function(g) {
+    is_panel  <- grepl("^panel", g$layout$name)
+    is_fixed  <- as.character(grid::unitType(g$heights)) != "null"
+    fixed_in  <- sum(grid::convertHeight(g$heights[is_fixed], "inches", valueOnly = TRUE))
+    list(rows = length(unique(g$layout$t[is_panel])), fixed = fixed_in)
+  }
+  
+  grobs   <- lapply(plots, ggplot2::ggplotGrob)
+  layouts <- lapply(grobs, page_layout)
+  
+  # A full page is the reference; with only one (short) page nothing to compare
+  full <- Filter(function(l) l$rows >= rownums, layouts)
+  ref_fixed <- if (length(full) > 0) full[[1]]$fixed else NULL
+  
+  for (i in seq_along(grobs)) {
+    on_page(i, length(grobs))
+    if (i > 1) grid::grid.newpage() # a fresh PDF device already starts on page 1
+    page_in <- grid::convertHeight(grid::unit(1, "npc"), "inches", valueOnly = TRUE)
+    l <- layouts[[i]]
+    height_in <- page_in
+    if (!is.null(ref_fixed) && l$rows < rownums) {
+      # height of one panel row on a full page, times the rows used here
+      panel_in  <- (page_in - ref_fixed) / rownums
+      height_in <- min(page_in, l$fixed + l$rows * panel_in)
+    }
+    grid::pushViewport(grid::viewport(y = 1, just = "top", height = grid::unit(height_in, "inches")))
+    grid::grid.draw(grobs[[i]])
+    grid::popViewport()
+  }
+  invisible(plots)
+}

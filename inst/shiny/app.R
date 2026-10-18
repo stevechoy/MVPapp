@@ -4018,10 +4018,10 @@ server <- function(input, output, session) {
         
         grDevices::pdf(file = file, width = input$plotlydi_all_width, height = input$plotlydi_all_height)
         on.exit(grDevices::dev.off(), add = TRUE) # also closes the device if a page fails
-        for(m in seq_along(p_ind_all)) {
-          setProgress(value = 0.2 + (m/length(p_ind_all) * 0.8), message = 'Compiling PDF', detail = paste0("page ", m, "/", length(p_ind_all)))
-          print(p_ind_all[[m]])
-        }
+        # same panel size on every page, also on a last page with fewer subjects
+        print_ind_pages(p_ind_all, rownums = as.numeric(input$number_of_rows),
+                        on_page = function(i, n) setProgress(value = 0.2 + (i / n * 0.8), message = 'Compiling PDF',
+                                                             detail = paste0("page ", i, "/", n)))
       })
     }
   )
