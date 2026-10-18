@@ -226,10 +226,16 @@ run_single_sim <- function(input_model_object,
     # Dosing records written out by realize_dose_records() can fall after the
     # last sampling time (e.g. 12 doses q12h with a 72 h maximum); they would
     # extend plots and offer time points that were never sampled
-    t_max <- tryCatch(max(mrgsolve::stime(sampling_times), na.rm = TRUE),
-                      error = function(e) suppressWarnings(max(as.numeric(sampling_times), na.rm = TRUE)))
-    if ("evid" %in% names(solved_output) && is.finite(t_max)) {
-      solved_output <- dplyr::filter(solved_output, !(.data$evid != 0 & .data$TIME > !!t_max))
+    # Dose records are kept only at sampled times (where they give the
+    # pre-/post-dose pair); records at unsampled times would otherwise be
+    # plotted and feed AUC/Cmax/etc. with values that were never sampled
+    t_samp <- tryCatch(as.numeric(mrgsolve::stime(sampling_times)),
+                       error = function(e) suppressWarnings(as.numeric(sampling_times)))
+    t_samp <- t_samp[is.finite(t_samp)]
+    if ("evid" %in% names(solved_output) && length(t_samp) > 0) {
+      solved_output <- dplyr::filter(
+        solved_output,
+        .data$evid == 0 | round(.data$TIME, 6) %in% round(!!t_samp, 6))
     }
   } else {
     shiny::showNotification(
@@ -321,7 +327,7 @@ sample_age_wt <- function(df_name     = "None",
 
   if(lower.wt == upper.wt) { # Allows singular weight
     df.sexes <- df.sexes %>%
-      dplyr::filter(WT == lower.wt)
+      dplyr::filter(abs(WT - lower.wt) <= 0.5) # +/- 0.5 kg, as for single ages (L55)
   } else {
     df.sexes <- df.sexes %>%
       dplyr::filter(WT >= lower.wt, WT <= upper.wt)
@@ -329,7 +335,7 @@ sample_age_wt <- function(df_name     = "None",
   
   if(lower.bmi == upper.bmi) { # Allows singular BMI
     df.sexes <- df.sexes %>%
-      dplyr::filter(BMI == lower.bmi)
+      dplyr::filter(abs(BMI - lower.bmi) <= 0.5) # +/- 0.5 kg/m2 (L55)
   } else {
     df.sexes <- df.sexes %>%
       dplyr::filter(BMI >= lower.bmi, BMI <= upper.bmi)
@@ -961,7 +967,7 @@ iterate_batch_runs <- function(batch_run_df,
   list_of_runs <- vector("list", n_runs)
   
   # ── Simulation loop ───────────────────────────────────────────────────────────
-  shiny::withProgress(message = "Batch Run", value = 0, {
+  run_all <- function() {
     
     # -- Reference run (i = 1) --
     if (show_progress) shiny::setProgress(value = 1 / n_runs, detail = paste0("1/", n_runs))
@@ -1030,12 +1036,16 @@ iterate_batch_runs <- function(batch_run_df,
         tmp$.cat          <- s$cat_name
         tmp$.paramname    <- s$param_name
         tmp$.value        <- s$bound_value
-        tmp$.ratio        <- s$bound_value / s$reference_value
+        tmp$.ratio        <- if (isTRUE(s$reference_value != 0)) s$bound_value / s$reference_value else NA_real_ # undefined for a reference of 0 (L54)
         list_of_runs[[run_i]] <- tmp
       }
     }
     
-  }) # end withProgress
+    list_of_runs
+  } # end run_all
+  
+  # withProgress() needs a running Shiny session, so only use it when asked to
+  list_of_runs <- if (show_progress) shiny::withProgress(message = "Batch Run", value = 0, run_all()) else run_all()
   
   dplyr::bind_rows(list_of_runs)
 }

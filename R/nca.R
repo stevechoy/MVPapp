@@ -243,6 +243,25 @@ gm_mean_cv = function(x, na.rm = TRUE) {
 }
 
 #-------------------------------------------------------------------------------
+#' @name pct_change_from
+#' @title Percent change from a baseline; NA when the baseline is 0 or not finite
+#' @param x values
+#' @param baseline baseline value
+#' @noRd
+#-------------------------------------------------------------------------------
+pct_change_from <- function(x, baseline) {
+  if (length(baseline) != 1 && length(baseline) != length(x)) baseline <- baseline[1]
+  out <- (x - baseline) / baseline * 100
+  out[!(is.finite(baseline) & baseline != 0)] <- NA_real_
+  out
+}
+
+#' @noRd
+safe_min <- function(x) {
+  if (all(is.na(x))) NA_real_ else min(x, na.rm = TRUE)[1]
+}
+
+#-------------------------------------------------------------------------------
 #' @name quantile_output
 #'
 #' @title Creates upper and lower percentiles by TIME for a given dataset
@@ -264,13 +283,20 @@ quantile_output <- function(iiv_sim_input,
                             upper_quartile = 0.975,
                             dp   = 5
 ) {
+  # Statistics use observation records only: at a dose time that is also a
+  # sampling time, dose records carry post-dose values that would otherwise be
+  # blended with the pre-dose observations
+  obs <- if ("evid" %in% names(iiv_sim_input)) iiv_sim_input$evid == 0 else rep(TRUE, nrow(iiv_sim_input))
+  iiv_sim_input$.obs_yvar <- ifelse(obs, iiv_sim_input[[yvar]], NA_real_)
+
   iiv_sim_input <- iiv_sim_input %>%
     dplyr::group_by(TIME) %>%
-    dplyr::mutate(median_yvar   = quantile(.data[[yvar]], probs = 0.5, na.rm = TRUE) %>% round(digits = dp),
-                  mean_yvar     = mean(.data[[yvar]], na.rm = TRUE) %>% round(digits = dp),
-                  lower_yvar    = quantile(.data[[yvar]], probs = lower_quartile, na.rm = TRUE) %>% round(digits = dp),
-                  upper_yvar    = quantile(.data[[yvar]], probs = upper_quartile, na.rm = TRUE) %>% round(digits = dp)) %>%
-    dplyr::ungroup()
+    dplyr::mutate(median_yvar   = quantile(.data$.obs_yvar, probs = 0.5, na.rm = TRUE) %>% round(digits = dp),
+                  mean_yvar     = mean(.data$.obs_yvar, na.rm = TRUE) %>% round(digits = dp),
+                  lower_yvar    = quantile(.data$.obs_yvar, probs = lower_quartile, na.rm = TRUE) %>% round(digits = dp),
+                  upper_yvar    = quantile(.data$.obs_yvar, probs = upper_quartile, na.rm = TRUE) %>% round(digits = dp)) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-".obs_yvar")
 }
 
 #-------------------------------------------------------------------------------
@@ -330,8 +356,8 @@ pknca_table <- function(input_simulated_table,
     dplyr::mutate(CMIN = min(YVARNAME, na.rm = TRUE)[1],
                   CMAX = max(YVARNAME, na.rm = TRUE)[1],  ### First element if multiple values found
                   DVBL = dplyr::first(YVARNAME),
-                  CFBPCT = ((YVARNAME - DVBL) / DVBL) * 100,
-                  NADIRPCT = min(CFBPCT, na.rm = TRUE)[1]
+                  CFBPCT = pct_change_from(YVARNAME, DVBL),
+                  NADIRPCT = safe_min(CFBPCT)
     )
 
   DVBL_overall <- metrics_table$DVBL[1] # Note: Baseline is always first ever TIME overall
@@ -351,7 +377,7 @@ pknca_table <- function(input_simulated_table,
                   # so non-uniform sampling doesn't bias it
                   dCFB         = (CFBPCT + dplyr::lag(CFBPCT)) * (TIME - XLAG) * 0.5,
                   dCFB         = dplyr::if_else(is.na(dCFB), 0, dCFB),
-                  MEANCFBPCT   = time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
+                  MEANCFBPCT   = if (all(is.na(CFBPCT))) NA_real_ else time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
     dplyr::ungroup() %>%
     dplyr::select(-ID, -tad, -TIMEADJ, -YLAG, -XLAG, -dYVAR, -dCFB, -DVBL)
 
@@ -369,8 +395,8 @@ pknca_table <- function(input_simulated_table,
   metrics_table_time <- window_rows(input_simulated_table, start_time, end_time) %>%
     dplyr::mutate(CMIN = min(YVARNAME, na.rm = TRUE)[1],
                   CMAX = max(YVARNAME, na.rm = TRUE)[1], ### First element if multiple values found
-                  CFBPCT = ((YVARNAME - DVBL_overall) / DVBL_overall) * 100, # Note: Baseline is always first ever TIME overall
-                  NADIRPCT = min(CFBPCT, na.rm = TRUE)[1]
+                  CFBPCT = pct_change_from(YVARNAME, DVBL_overall), # Note: Baseline is always first ever TIME overall
+                  NADIRPCT = safe_min(CFBPCT)
     )
 
   metrics_table_time <- metrics_table_time %>%
@@ -386,7 +412,7 @@ pknca_table <- function(input_simulated_table,
                   CAVG          = time_averaged(AUC_ranged, TIME, YVARNAME),
                   dCFB          = (CFBPCT + dplyr::lag(CFBPCT)) * (TIME - XLAG) * 0.5, # time-weighted, as above
                   dCFB          = dplyr::if_else(is.na(dCFB), 0, dCFB),
-                  MEANCFBPCT    = time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
+                  MEANCFBPCT    = if (all(is.na(CFBPCT))) NA_real_ else time_averaged(sum(dCFB), TIME, CFBPCT)) %>%
     dplyr::ungroup()
 
   CMIN_time <-  metrics_table_time[["CMIN"]][1]
@@ -396,7 +422,7 @@ pknca_table <- function(input_simulated_table,
   TMIN_time <-  metrics_table_time[["TMIN"]][1]
   AUC_time  <-  metrics_table_time$AUC_ranged[1]
   CFBPCT_time <- dplyr::last(metrics_table_time[["CFBPCT"]])
-  MCFBPCT_time <- metrics_table_time[["MEANCFBPCT"]][1]
+  MCFBPCT_time <- if (is.finite(DVBL_overall) && DVBL_overall != 0) metrics_table_time[["MEANCFBPCT"]][1] else NA_real_ # undefined for a zero baseline (M29)
   NADIRPCT_time <- metrics_table_time[["NADIRPCT"]][1]
 
   metrics_table <- metrics_table %>%
@@ -459,6 +485,11 @@ pct_above_y_at_x <- function(model_is_valid = FALSE,
     input_df_filtered <- input_df %>%
       dplyr::filter(!!dplyr::sym(y_name)  > y_value,
                     !!dplyr::sym(x_name) == x_value)
+
+    # observation records only (dose records carry post-dose values)
+    if ("evid" %in% names(input_df)) {
+      input_df_filtered <- dplyr::filter(input_df_filtered, .data$evid == 0)
+    }
 
     number_of_ids_in_df          <- length(unique(input_df$ID))
     number_of_ids_in_df_filtered <- length(unique(input_df_filtered$ID))

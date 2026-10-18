@@ -100,7 +100,7 @@ do_data_page_plot <- function(nmd,
   if ('EVID' %in% names(nmd)) {
     nmd <- dplyr::filter(nmd, EVID == 0)
     shiny::showNotification("Dosing rows (EVID >= 1) are excluded from the general plot.",
-                            type = "message", duration = 10)
+                            type = "message", duration = 10, id = "note_general_plot_evid")
   }
   
   # ── Blank handling ────────────────────────────────────────────────────────
@@ -305,8 +305,8 @@ do_data_page_plot <- function(nmd,
           "ERROR: Too many facets (>30) found. Please filter further or choose another variable(s).",
           type = "error", duration = 10)
       } else {
-        facet_formula <- as.formula(paste0("~", paste(facet_name, collapse = "+")))
-        a <- a + ggplot2::facet_wrap(facet_formula, labeller = ggplot2::label_both)
+        # vars() with symbols copes with non-syntactic names such as "Dose group"
+        a <- a + ggplot2::facet_wrap(ggplot2::vars(!!!rlang::syms(facet_name)), labeller = ggplot2::label_both)
       }
     }
   }
@@ -500,7 +500,9 @@ do_data_page_ind_plot <- function(nmd,
         max_yvar = max(YVAR, na.rm = TRUE)) %>%
       dplyr::ungroup()
     
-    nmd[(nmd == Inf | nmd == -Inf)] <- NA
+    # numeric columns only: a text value such as "Inf" must not become NA (L56)
+    num_cols <- vapply(nmd, is.numeric, logical(1))
+    nmd[num_cols] <- lapply(nmd[num_cols], function(x) replace(x, is.infinite(x), NA))
     
     dose_height <- 0.5
     

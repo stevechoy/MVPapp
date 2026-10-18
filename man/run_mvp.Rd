@@ -161,6 +161,16 @@ answers before cleaning) and \code{ellmer_chat_response} /
 \code{dify_chat_response} (raw chat responses).
 }
 
+\strong{Hosting and security.} MVPapp evaluates R and C++ model code supplied
+in the browser, so anyone who can open the app can run code on the server
+under the server account. \code{authentication_code} and the model passwords
+are a convenience to limit access to the interface and to hide models, not
+a security boundary: host the app only for trusted users, in a sandboxed
+account or container. The same applies to AI translation: its output is
+compiled automatically, and compiling mrgsolve code can itself run
+commands, so do not translate documents from untrusted sources on a
+shared server.
+
 Without installing MVPapp (e.g. where package installation is restricted),
 the development version can also be launched from GitHub, provided its
 dependencies are installed:

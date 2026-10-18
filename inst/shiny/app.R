@@ -2576,13 +2576,30 @@ server <- function(input, output, session) {
   
   # Handling save / load session states
   
+  # Typed $PARAM values and applied OMEGA/SIGMA matrices (M27)
+  collect_session_extras <- function() {
+    param_values <- function(model_fn, prefix) {
+      tryCatch({
+        nm <- names(mrgsolve::param(model_fn()))
+        stats::setNames(lapply(nm, function(n) input[[paste0(prefix, n)]]), nm)
+      }, error = function(e) NULL)
+    }
+    mat <- function(rv) tryCatch(rv(), error = function(e) NULL)
+    list(
+      param_values_model_1 = param_values(inputted_model_1, "param_m1_"),
+      param_values_model_2 = param_values(inputted_model_2, "param_m2_"),
+      omega_model_1 = mat(extracted_omega_model_1), sigma_model_1 = mat(extracted_sigma_model_1),
+      omega_model_2 = mat(extracted_omega_model_2), sigma_model_2 = mat(extracted_sigma_model_2)
+    )
+  }
+  
   output$btn_save_session <- downloadHandler(
     filename = function() {
       paste0("mvp_session_", format(Sys.time(), "%Y%m%d_%H%M%S"), ".rds")
     },
     content = function(file) {
       tryCatch({
-        saveRDS(get_session_state(input, uploaded_data), file)
+        saveRDS(get_session_state(input, uploaded_data, extras = collect_session_extras()), file)
       }, error = function(e) {
         showNotification(paste("Save failed:", e$message), type = "error", duration = 10)
         saveRDS(list(error = e$message), file)  # saves something so browser doesn't hang
@@ -2596,7 +2613,7 @@ server <- function(input, output, session) {
     },
     content = function(file) {
       tryCatch({
-        saveRDS(get_session_state(input, uploaded_data), file)
+        saveRDS(get_session_state(input, uploaded_data, extras = collect_session_extras()), file)
       }, error = function(e) {
         showNotification(paste("Save failed:", e$message), type = "error", duration = 10)
         saveRDS(list(error = e$message), file)  # saves something so browser doesn't hang
@@ -2643,7 +2660,20 @@ server <- function(input, output, session) {
                           selectize_choices  = tryCatch(names(nmdata_cmt_filtered()) %>% sort(),
                                                         error = function(e) NULL))
     
-    shinyjs::delay(750, {
+    # Settings that only exist once the models are compiled (parameter values, matrices, covariate widgets)
+    state_to_restore <- stored_session_state()
+    extracted_matrices <- list(omega_model_1 = extracted_omega_model_1, sigma_model_1 = extracted_sigma_model_1,
+                               omega_model_2 = extracted_omega_model_2, sigma_model_2 = extracted_sigma_model_2)
+    apply_matrices <- function(m, omega, sigma) {
+      chk <- if (m == 1) iiv_checkpoint_model_1 else iiv_checkpoint_model_2
+      if (omega) chk$updated_matrix_omega <- TRUE
+      if (sigma) chk$updated_matrix_sigma <- TRUE
+    }
+    shinyjs::delay(500,  restore_session_dynamic(state_to_restore, session, part = "params"))
+    shinyjs::delay(2000, restore_session_dynamic(state_to_restore, session, part = "matrices",
+                                                 extracted = extracted_matrices, apply_matrices = apply_matrices))
+    
+    shinyjs::delay(4500, {
       pending_session_restore(FALSE)
       stored_session_state(NULL)
     })
@@ -3014,7 +3044,7 @@ server <- function(input, output, session) {
       if(input$distinct_by_ID) {
         if('ID' %in% names(nonmem_dataset)) {
           nonmem_dataset <- nonmem_dataset %>% dplyr::distinct(ID, .keep_all = TRUE)
-          shiny::showNotification(paste0("Dataset has been filtered to retain one row per ID only (N=", nrow(nonmem_dataset), ")"), type = "message", duration = 10)
+          shiny::showNotification(paste0("Dataset has been filtered to retain one row per ID only (N=", nrow(nonmem_dataset), ")"), type = "message", duration = 10, id = "note_one_row_per_id")
         }
       }
       
@@ -3440,7 +3470,7 @@ server <- function(input, output, session) {
       
       if("EVID" %in% names(nmdataset_for_nca)) {
         nmdataset_for_nca <- nmdataset_for_nca %>% filter(EVID == 0)
-        shiny::showNotification("Only retaining observations (EVID == 0) for NCA.", type = "message", duration = 10)
+        shiny::showNotification("Only retaining observations (EVID == 0) for NCA.", type = "message", duration = 10, id = "note_nca_evid")
       }
       
       if(!isTRUE(input$mw_value > 0)) {
@@ -3456,13 +3486,11 @@ server <- function(input, output, session) {
         shiny::showNotification(paste0("WARNING: Multiple CMTs found. Retaining most frequent CMT (", most_frequent_cmt, ") for NCA."), type = "warning", duration = 10)
       }
       
-      nmdataset_for_nca <- nmdataset_for_nca %>% # sort by ID and TIME to prevent "Check if the x is sorted in order!" error. Also by additional keys and dose col
-        arrange(!!dplyr::sym(input$additional_keys), !!dplyr::sym(input$dose_colname), !!dplyr::sym(input$subject_colname), !!dplyr::sym(input$time_colname))
+      nmdataset_for_nca <- nmdataset_for_nca %>% # sort by ID and TIME to prevent "Check if the x is sorted in order!" error. Also by additional keys
+        arrange(!!dplyr::sym(input$additional_keys), !!dplyr::sym(input$subject_colname), !!dplyr::sym(input$time_colname))
       
-      doses_by_id <- nmdataset_for_nca %>%
-        dplyr::select(!!dplyr::sym(input$subject_colname), !!dplyr::sym(input$additional_keys), !!dplyr::sym(input$dose_colname)) %>%
-        dplyr::distinct() %>%
-        .[[input$dose_colname]]
+      # Dose from the first positive dosing record per subject and key (L51)
+      doses_by_id <- nca_dose_vector(nmdataset_for_nca, nmdataset_for_plot(), input$subject_colname, input$additional_keys, input$dose_colname)
       
       tblNCA_progress(nmdataset_for_nca, ## originally was NonCompart::tblNCA, modified to support progress bars
                       key = c(input$subject_colname, input$additional_keys),
@@ -3618,13 +3646,10 @@ server <- function(input, output, session) {
         nmdataset_for_nca2 <- nmdataset_for_nca2 %>% filter(CMT %in% most_frequent_cmt[1]) # Use %in% in case of ties
       }
       
-      nmdataset_for_nca2 <- nmdataset_for_nca2 %>% # sort by ID and TIME to prevent "Check if the x is sorted in order!" error. Also by additional keys and dose col
-        arrange(!!dplyr::sym(input$additional_keys), !!dplyr::sym(input$dose_colname), !!dplyr::sym(input$subject_colname), !!dplyr::sym(input$time_colname))
+      nmdataset_for_nca2 <- nmdataset_for_nca2 %>% # sort by ID and TIME to prevent "Check if the x is sorted in order!" error. Also by additional keys
+        arrange(!!dplyr::sym(input$additional_keys), !!dplyr::sym(input$subject_colname), !!dplyr::sym(input$time_colname))
       
-      doses_by_id2 <- nmdataset_for_nca2 %>%
-        dplyr::select(!!dplyr::sym(input$subject_colname), !!dplyr::sym(input$additional_keys), !!dplyr::sym(input$dose_colname)) %>%
-        dplyr::distinct() %>%
-        .[[input$dose_colname]]
+      doses_by_id2 <- nca_dose_vector(nmdataset_for_nca2, nmdataset_for_plot(), input$subject_colname, input$additional_keys, input$dose_colname)
       
       withProgress(message = 'Generating report', value = 0, {
         pdfNCA_wm(fileName = file, ## originally was ncar::pdfNCA, modified to support progress bars and watermarks in plots
@@ -4050,13 +4075,19 @@ server <- function(input, output, session) {
   ## Outline ----
   ### Update model selectizeInput ----
   password_debounced <- shiny::debounce(reactive(input$password), 500) # wait until typing pauses
+  model_password_ok <- reactiveVal(FALSE) # server-side record of an accepted model password
   observeEvent(password_debounced(), {
-    update_model_choices(input_password = password_debounced(), session = session)
+    model_password_ok(isTRUE(update_model_choices(input_password = password_debounced(), session = session)))
   }, label = 'update_model_choices_default_values')
   
+  # Password-gated models are only loaded after the password was accepted by the server
+  # (the browser could otherwise send any value for model_select)
+  model_is_gated <- function(choice) !is.null(choice) && !choice %in% unlist(model_examples_list)
+  
   observeEvent(input$model_select, {
+    shiny::req(!model_is_gated(input$model_select) || model_password_ok())
     shinyAce::updateAceEditor(session, 'model_input', value = model_switch_conditions(input_model_select = input$model_select,
-                                                                                      mcode_model_choice = paste0(mcode_texta_model_1, round(runif(min = 1, max = 9999999, n = 1)), mcode_textb)
+                                                                                      mcode_model_choice = paste0(mcode_texta_model_1, new_model_suffix(session), mcode_textb)
     )
     )
     
@@ -4077,8 +4108,9 @@ server <- function(input, output, session) {
   }, label = 'updateAceEditor Model 1')
   
   observeEvent(input$model_select2, {
+    shiny::req(!model_is_gated(input$model_select2) || model_password_ok())
     shinyAce::updateAceEditor(session, 'model_input2', value = model_switch_conditions(input_model_select = input$model_select2,
-                                                                                       mcode_model_choice = paste0(mcode_texta_model_2, round(runif(min = 1, max = 9999999, n = 1)), mcode_textb)
+                                                                                       mcode_model_choice = paste0(mcode_texta_model_2, new_model_suffix(session), mcode_textb)
     )
     )
     
@@ -4112,7 +4144,7 @@ server <- function(input, output, session) {
   observeEvent(input$cppfile_model_1, {
     shiny::req(input$cppfile_model_1)
     cpp_text_model_1 <- paste(readLines(input$cppfile_model_1$datapath), collapse = "\n")
-    shinyAce::updateAceEditor(session, "model_input", value = paste0(cpp_preamble, '"', cpp_text_model_1, '"', paste0(mcode_texta_model_1, round(runif(min = 1, max = 9999999, n = 1)), mcode_textb)))
+    shinyAce::updateAceEditor(session, "model_input", value = paste0(cpp_preamble, '"', cpp_text_model_1, '"', paste0(mcode_texta_model_1, new_model_suffix(session), mcode_textb)))
   })
   
   output$upload_cpp_model_2 <- renderUI({
@@ -4128,7 +4160,7 @@ server <- function(input, output, session) {
   observeEvent(input$cppfile_model_2, {
     shiny::req(input$cppfile_model_2)
     cpp_text_model_2 <- paste(readLines(input$cppfile_model_2$datapath), collapse = "\n")
-    shinyAce::updateAceEditor(session, "model_input2", value = paste0(cpp_preamble, '"', cpp_text_model_2, '"', paste0(mcode_texta_model_2, round(runif(min = 1, max = 9999999, n = 1)), mcode_textb)))
+    shinyAce::updateAceEditor(session, "model_input2", value = paste0(cpp_preamble, '"', cpp_text_model_2, '"', paste0(mcode_texta_model_2, new_model_suffix(session), mcode_textb)))
   })
   
   ## Handling upload of file option for parsing by external LLM
@@ -4579,6 +4611,8 @@ server <- function(input, output, session) {
     )
     
     shiny::req(!is.null(ready_path))
+    # remove the temporary nonmem2rx work folder once this translation is done (L52)
+    if (is.list(ready_path) && !is.null(ready_path$dir)) on.exit(unlink(ready_path$dir, recursive = TRUE), add = TRUE)
     if(show_debugging_msg) message("ready_path: ", ready_path)
     
     if(show_debugging_msg) message("llm_service_model_1: ", llm_service)
@@ -4587,13 +4621,13 @@ server <- function(input, output, session) {
     update_editor <- function(code) {
       shinyAce::updateAceEditor(
         session, "model_input",
-        value = paste0(pdf_preamble, '"', code, '"', paste0(mcode_texta_model_1, round(runif(min = 1, max = 9999999, n = 1)), mcode_textb))
+        value = paste0(pdf_preamble, '"', code, '"', paste0(mcode_texta_model_1, new_model_suffix(session), mcode_textb))
       )
     }
     
     # ── Helper: compile and return the safely_mcode result ────────────────────
     compile_code <- function(code, suffix) {
-      model_name <- paste0("Model-1-LLM-", suffix, "-", round(runif(min = 1, max = 9999999, n = 1)))
+      model_name <- paste0("Model-1-LLM-", suffix, "-", new_model_suffix(session))
       safely_mcode(model = model_name, code = code, recover = TRUE)
     }
     
@@ -4612,6 +4646,7 @@ server <- function(input, output, session) {
       # Create a dedicated temp directory for this translation
       work_dir <- tempfile()
       dir.create(work_dir)
+      on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
       
       # Copy both files with a matching dummy base name
       file.copy(ready_path$model, file.path(work_dir, "dummy.ctl"))
@@ -4636,7 +4671,7 @@ server <- function(input, output, session) {
       
       shiny::req(!is.null(translated_code))
       
-      current_code$answer          <- translated_code
+      current_code$answer          <- paste0("\n", trimws(escape_editor_string(translated_code)), "\n") # same escaping as AI output (M28)
       current_code$conversation_id <- NULL
       current_code$chat_obj        <- NULL
       
@@ -5365,6 +5400,8 @@ server <- function(input, output, session) {
     )
     
     shiny::req(!is.null(ready_path))
+    # remove the temporary nonmem2rx work folder once this translation is done (L52)
+    if (is.list(ready_path) && !is.null(ready_path$dir)) on.exit(unlink(ready_path$dir, recursive = TRUE), add = TRUE)
     if(show_debugging_msg) message("ready_path: ", ready_path)
     
     if(show_debugging_msg) message("llm_service_model_2: ", llm_service)
@@ -5373,13 +5410,13 @@ server <- function(input, output, session) {
     update_editor <- function(code) {
       shinyAce::updateAceEditor(
         session, "model_input2",
-        value = paste0(pdf_preamble, '"', code, '"', paste0(mcode_texta_model_2, round(runif(min = 1, max = 9999999, n = 1)), mcode_textb))
+        value = paste0(pdf_preamble, '"', code, '"', paste0(mcode_texta_model_2, new_model_suffix(session), mcode_textb))
       )
     }
     
     # ── Helper: compile and return the safely_mcode result ────────────────────
     compile_code <- function(code, suffix) {
-      model_name <- paste0("Model-2-LLM-", suffix, "-", round(runif(min = 1, max = 9999999, n = 1)))
+      model_name <- paste0("Model-2-LLM-", suffix, "-", new_model_suffix(session))
       safely_mcode(model = model_name, code = code, recover = TRUE)
     }
     
@@ -5398,6 +5435,7 @@ server <- function(input, output, session) {
       # Create a dedicated temp directory for this translation
       work_dir <- tempfile()
       dir.create(work_dir)
+      on.exit(unlink(work_dir, recursive = TRUE), add = TRUE)
       
       # Copy both files with a matching dummy base name
       file.copy(ready_path$model, file.path(work_dir, "dummy.ctl"))
@@ -5421,7 +5459,7 @@ server <- function(input, output, session) {
       )
       
       shiny::req(!is.null(translated_code))
-      current_code$answer          <- translated_code
+      current_code$answer          <- paste0("\n", trimws(escape_editor_string(translated_code)), "\n") # same escaping as AI output (M28)
       
       if (show_debugging_msg) message(current_code$answer)
       current_code$conversation_id <- NULL
@@ -5805,7 +5843,7 @@ server <- function(input, output, session) {
       column(
         width = 3,
         numericInput(
-          inputId = nm,
+          inputId = paste0("param_m1_", nm), # prefixed so parameter names cannot clash with other inputs (L48)
           label   = paste0(nm, ": "),
           value   = param_vals[[i]]
         )
@@ -5834,7 +5872,7 @@ server <- function(input, output, session) {
     
     # Retrieve all input values up front — single pass, no per-iteration NULL checks
     input_values <- vapply(param_names, function(nm) {
-      val <- input[[nm]]
+      val <- input[[paste0("param_m1_", nm)]]
       if (is.null(val)) NA_real_ else as.numeric(val)
     }, numeric(1))
     
@@ -6180,7 +6218,7 @@ server <- function(input, output, session) {
     params      <- mrgsolve::param(inputted_model_2())
     param_names <- names(params)
     param_vals  <- as.numeric(params)
-    param_ids   <- paste0(param_names, "_model_2")
+    param_ids   <- paste0("param_m2_", param_names)
     
     if (show_debugging_msg) message(paste(param_names, collapse = ", "))
     
@@ -6217,7 +6255,7 @@ server <- function(input, output, session) {
     
     # Retrieve all input values up front — single pass, no per-iteration NULL checks
     input_values2 <- vapply(param_names2, function(nm) {
-      val2 <- input[[paste0(nm, '_model_2')]]
+      val2 <- input[[paste0('param_m2_', nm)]]
       if (is.null(val2)) NA_real_ else as.numeric(val2)
     }, numeric(1))
     
@@ -6908,28 +6946,28 @@ server <- function(input, output, session) {
   }, label = 'update model_1 time selection')
   
   observeEvent(input$min_nca_obs_time_model_1, {
-    times <- simulation_output_model_1()$TIME
+    times <- sampled_times(simulation_output_model_1())
     shinyWidgets::updatePickerInput(session, inputId = 'max_nca_obs_time_model_1',
                                     choices  = sort(unique(times[times > as.numeric(input$min_nca_obs_time_model_1)])),
                                     selected = input$max_nca_obs_time_model_1)
   }, label = 'update model_1 NCA time (Max)')
   
   observeEvent(input$max_nca_obs_time_model_1, {
-    times <- simulation_output_model_1()$TIME
+    times <- sampled_times(simulation_output_model_1())
     shinyWidgets::updatePickerInput(session, inputId = 'min_nca_obs_time_model_1',
                                     choices  = sort(unique(times[times < as.numeric(input$max_nca_obs_time_model_1)])),
                                     selected = input$min_nca_obs_time_model_1)
   }, label = 'update model_1 NCA time (Min)')
   
   observeEvent(input$min_tor_obs_time_model_1, {
-    times <- simulation_output_model_1()$TIME
+    times <- sampled_times(simulation_output_model_1())
     shinyWidgets::updatePickerInput(session, inputId = 'max_tor_obs_time_model_1',
                                     choices  = sort(unique(times[times > as.numeric(input$min_tor_obs_time_model_1)])),
                                     selected = input$max_tor_obs_time_model_1)
   }, label = 'update model_1 Batch time (Max)')
   
   observeEvent(input$max_tor_obs_time_model_1, {
-    times <- simulation_output_model_1()$TIME
+    times <- sampled_times(simulation_output_model_1())
     shinyWidgets::updatePickerInput(session, inputId = 'min_tor_obs_time_model_1',
                                     choices  = sort(unique(times[times < as.numeric(input$max_tor_obs_time_model_1)])),
                                     selected = input$min_tor_obs_time_model_1)
@@ -7222,28 +7260,28 @@ server <- function(input, output, session) {
   }, label = 'update model_2 time selection')
   
   observeEvent(input$min_nca_obs_time_model_2, {
-    times <- simulation_output_model_2()$TIME
+    times <- sampled_times(simulation_output_model_2())
     shinyWidgets::updatePickerInput(session, inputId = 'max_nca_obs_time_model_2',
                                     choices  = sort(unique(times[times > as.numeric(input$min_nca_obs_time_model_2)])),
                                     selected = input$max_nca_obs_time_model_2)
   }, label = 'update model_2 NCA time (Max)')
   
   observeEvent(input$max_nca_obs_time_model_2, {
-    times <- simulation_output_model_2()$TIME
+    times <- sampled_times(simulation_output_model_2())
     shinyWidgets::updatePickerInput(session, inputId = 'min_nca_obs_time_model_2',
                                     choices  = sort(unique(times[times < as.numeric(input$max_nca_obs_time_model_2)])),
                                     selected = input$min_nca_obs_time_model_2)
   }, label = 'update model_2 NCA time (Min)')
   
   observeEvent(input$min_tor_obs_time_model_2, {
-    times <- simulation_output_model_2()$TIME
+    times <- sampled_times(simulation_output_model_2())
     shinyWidgets::updatePickerInput(session, inputId = 'max_tor_obs_time_model_2',
                                     choices  = sort(unique(times[times > as.numeric(input$min_tor_obs_time_model_2)])),
                                     selected = input$max_tor_obs_time_model_2)
   }, label = 'update model_2 Batch time (Max)')
   
   observeEvent(input$max_tor_obs_time_model_2, {
-    times <- simulation_output_model_2()$TIME
+    times <- sampled_times(simulation_output_model_2())
     shinyWidgets::updatePickerInput(session, inputId = 'min_tor_obs_time_model_2',
                                     choices  = sort(unique(times[times < as.numeric(input$max_tor_obs_time_model_2)])),
                                     selected = input$min_tor_obs_time_model_2)
@@ -7556,6 +7594,24 @@ server <- function(input, output, session) {
   length_lower_change_model_1  <- reactiveVal(0)
   length_upper_change_model_1  <- reactiveVal(0)
   batch_runs_model_1           <- reactiveVal(NULL)
+  # Fingerprint of what the batch results were generated from, to flag stale results (L47)
+  batch_signature_model_1     <- reactiveVal(NULL)
+  batch_signature_now_model_1 <- function() {
+    mod <- changed_reacted_param_model_1()
+    rlang::hash(list(mod@model, as.list(mrgsolve::param(mod)), as.matrix(mrgsolve::omat(mod)), as.matrix(mrgsolve::smat(mod)),
+                     dosing_regimen_model_1(), sampling_options()))
+  }
+  observe({
+    sig <- batch_signature_model_1()
+    shiny::req(!is.null(sig))
+    now <- tryCatch(batch_signature_now_model_1(), error = function(e) NULL)
+    if (!is.null(now) && !identical(now, sig)) {
+      showNotification("Batch run results (tornado/spider) are out of date: the model, dosing or sampling changed since they were generated. Click 'Generate Batch' again.",
+                       type = "warning", duration = NULL, id = "batch_stale_model_1")
+    } else {
+      removeNotification("batch_stale_model_1")
+    }
+  }, label = "stale batch runs model 1")
   d_plot_title_tor_model_1     <- debounce(reactive({ input$plot_title_tor_model_1 }), debounce_timer_slow)
   d_xlab_tor_model_1           <- debounce(reactive({ input$xlab_tor_model_1 }), debounce_timer_slow)
   d_trim_tor_model_1           <- debounce(reactive({ input$trim_tor_model_1 }), debounce_timer_slow)
@@ -7677,6 +7733,8 @@ server <- function(input, output, session) {
     )
     
     batch_runs_model_1(batch_runs)
+    batch_signature_model_1(batch_signature_now_model_1())
+    removeNotification("batch_stale_model_1")
     
     if(show_debugging_msg) {
       message_object(batch_runs_model_1())
@@ -7890,6 +7948,24 @@ server <- function(input, output, session) {
   length_lower_change_model_2  <- reactiveVal(0)
   length_upper_change_model_2  <- reactiveVal(0)
   batch_runs_model_2           <- reactiveVal(NULL)
+  # Fingerprint of what the batch results were generated from, to flag stale results (L47)
+  batch_signature_model_2     <- reactiveVal(NULL)
+  batch_signature_now_model_2 <- function() {
+    mod <- changed_reacted_param_model_2()
+    rlang::hash(list(mod@model, as.list(mrgsolve::param(mod)), as.matrix(mrgsolve::omat(mod)), as.matrix(mrgsolve::smat(mod)),
+                     dosing_regimen_model_2(), sampling_options()))
+  }
+  observe({
+    sig <- batch_signature_model_2()
+    shiny::req(!is.null(sig))
+    now <- tryCatch(batch_signature_now_model_2(), error = function(e) NULL)
+    if (!is.null(now) && !identical(now, sig)) {
+      showNotification("Batch run results (tornado/spider) are out of date: the model, dosing or sampling changed since they were generated. Click 'Generate Batch' again.",
+                       type = "warning", duration = NULL, id = "batch_stale_model_2")
+    } else {
+      removeNotification("batch_stale_model_2")
+    }
+  }, label = "stale batch runs model 2")
   d_plot_title_tor_model_2     <- debounce(reactive({ input$plot_title_tor_model_2 }), debounce_timer_slow)
   d_xlab_tor_model_2           <- debounce(reactive({ input$xlab_tor_model_2 }), debounce_timer_slow)
   d_trim_tor_model_2           <- debounce(reactive({ input$trim_tor_model_2 }), debounce_timer_slow)
@@ -8011,6 +8087,8 @@ server <- function(input, output, session) {
     )
     
     batch_runs_model_2(batch_runs)
+    batch_signature_model_2(batch_signature_now_model_2())
+    removeNotification("batch_stale_model_2")
     
     if(show_debugging_msg) {
       message_object(batch_runs_model_2())

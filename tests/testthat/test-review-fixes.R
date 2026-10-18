@@ -23,7 +23,7 @@ test_that("value boxes pick the exact metric column (CFBPCT vs MEANCFBPCT)", {
   df <- data.frame(AUC_ranged = 250, DV_CMAX_ranged = 12)
   expect_equal(box_value("AUC_ranged"), 250)
   expect_equal(box_value("CMAX_ranged"), 12)
-  expect_true(grepl("NA", as.character(MVPapp:::create_value_box(df, "TMIN_ranged", "x", color = "olive"))))
+  expect_true(grepl("N/A", as.character(MVPapp:::create_value_box(df, "TMIN_ranged", "x", color = "olive"))))
 })
 
 test_that("sample_age_wt() errors clearly instead of duplicating subjects", {
@@ -329,4 +329,97 @@ test_that("dosing records after the last sampling time are not in the output, no
   st2 <- c(0, 5, 10, 30, 70)
   out2 <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st2))
   expect_equal(MVPapp:::sampled_times(out2), st2)
+})
+
+test_that("dose records only at sampled times; statistics use observation rows only (H7, H8)", {
+  skip_on_cran() # compiles an mrgsolve model
+  mod <- mvp_test_model()
+  ev  <- data.frame(ID = 1, time = 0, amt = 50, cmt = 1, evid = 1, ii = 12, addl = 2, rate = 0, tinf = 0)
+  st  <- seq(0, 30, by = 5)
+  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st))
+  # doses at 12 and 24 h are not sampling times -> no rows there; dose at 0 is kept
+  expect_false(any(out$evid != 0 & out$TIME %in% c(12, 24)))
+  expect_true(any(out$evid != 0 & out$TIME == 0))
+
+  # quantiles ignore the dose records at a sampled dose time
+  st3 <- seq(0, 36, by = 4)
+  out3 <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st3))
+  q <- MVPapp:::quantile_output(out3, yvar = "CP")
+  at12 <- q[q$TIME == 12, ]
+  obs_val <- out3$CP[out3$TIME == 12 & out3$evid == 0]
+  expect_equal(unique(at12$median_yvar), round(stats::median(obs_val), 5))
+})
+
+test_that("compiled model names are unique per call and rewritten on restore (M24)", {
+  a <- MVPapp:::new_model_suffix(NULL)
+  b <- MVPapp:::new_model_suffix(NULL)
+  expect_false(identical(a, b))
+  code <- "model_object <- mrgsolve::mcode('Model-1-1234567', model_code, recover = TRUE)"
+  new <- MVPapp:::rename_stored_models(code, NULL)
+  expect_false(grepl("1234567", new))
+  expect_match(new, "^model_object <- mrgsolve::mcode\\('Model-1-[A-Za-z0-9]+',")
+  # editors without a stored name are left alone
+  expect_equal(MVPapp:::rename_stored_models("nothing here", NULL), "nothing here")
+})
+
+test_that("nonmem2mrgsolve output is escaped like LLM output (M28)", {
+  expect_equal(MVPapp:::escape_editor_string('$PROB "x" \\ y'), '$PROB \\"x\\" \\\\ y')
+})
+
+test_that("% change from baseline is NA, not Inf, for a zero baseline (M29)", {
+  skip_on_cran() # needs NonCompart-free path only, but uses mrgsolve
+  mod <- mvp_test_model()
+  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = as.data.frame(mrgsolve::ev(amt = 100, time = 0)),
+                                                   sampling_times = seq(0, 24, by = 2)))
+  pk <- MVPapp:::pknca_table(out, "CP", 0, 24)
+  expect_true(is.na(pk$CP_CFBPCT_ranged[1]))
+  expect_true(is.na(pk$CP_MEANCFBPCT_ranged[1]))
+  expect_true(is.na(pk$CP_NADIRPCT_ranged[1]))
+  expect_true(is.na(pk$CP_CFBPCT_tlast[1]) || !is.infinite(pk$CP_CFBPCT_tlast[1]))
+})
+
+test_that("facets by a non-syntactic column name work (L46)", {
+  d <- data.frame(ID = rep(1:4, each = 3), TIME = rep(0:2, 4), DV = c(1:12), `Dose group` = rep(c("a", "b"), each = 6),
+                  CMT = 1, check.names = FALSE)
+  p <- with_mock_session(MVPapp:::do_data_page_plot(
+    nmd = d, filter_cmt = "NULL", x_axis = "TIME", y_axis = "DV", color_by = "", med_line = FALSE, med_line_by = "",
+    boxplot = FALSE, num_quantiles = 0, dolm = FALSE, smoother = FALSE, facet_name = "Dose group",
+    logy = FALSE, logx = FALSE, plot_title = ""))
+  expect_s3_class(p, "ggplot")
+  expect_no_error(ggplot2::ggplot_build(p))
+})
+
+test_that("NCA dose comes from the first positive dosing record (L51)", {
+  all_df <- data.frame(ID = c(1, 1, 1, 2, 2, 2), EVID = c(1, 0, 0, 1, 0, 0), AMT = c(100, 0, 0, 200, 0, 0),
+                       TIME = c(0, 1, 2, 0, 1, 2), DV = c(0, 5, 3, 0, 8, 4))
+  obs <- all_df[all_df$EVID == 0, ]
+  expect_equal(MVPapp:::nca_dose_vector(obs, all_df, "ID", "", "AMT"), c(100, 200))
+  # no EVID column: first positive value on the observation rows
+  d <- data.frame(ID = c(1, 1, 2, 2), DOSE = c(10, 10, 20, 20))
+  expect_equal(MVPapp:::nca_dose_vector(d, d, "ID", "", "DOSE"), c(10, 20))
+})
+
+test_that("batch runs work outside Shiny and a zero metric reference falls back to Value (L53, L54)", {
+  df <- data.frame(.paramname = c("CL", "V"), Lower = c(1, 2), Upper = c(3, 4))
+  p <- suppressMessages(MVPapp:::tornado_plot(df, reference_value = 0, display_as = "Percentage"))
+  expect_s3_class(p, "ggplot")
+})
+
+test_that("reserved covariate names include ID and USUBJID (L57)", {
+  out <- with_mock_session(MVPapp:::check_cov_name("ID", "COV1"))
+  expect_equal(out, "COV1")
+})
+
+test_that("restore_session_dynamic() puts back matrices and marks them applied (M27)", {
+  om <- matrix(c("0.09", NA, NA, "0.09"), 2)
+  st <- list(settings = list(), extras = list(param_values_model_1 = list(CL = 2), omega_model_1 = om))
+  rv <- shiny::reactiveVal(NULL)
+  applied <- NULL
+  shiny::testServer(function(input, output, session) {}, {
+    expect_no_error(MVPapp:::restore_session_dynamic(st, session, part = "params"))
+    MVPapp:::restore_session_dynamic(st, session, part = "matrices", extracted = list(omega_model_1 = rv),
+                                     apply_matrices = function(m, omega, sigma) applied <<- c(m, omega, sigma))
+  })
+  expect_equal(shiny::isolate(rv()), om)
+  expect_equal(applied, c(1, 1, 0))
 })

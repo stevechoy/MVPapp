@@ -1,5 +1,13 @@
 # Saving and restoring app sessions
 
+
+#' IDs of the custom covariate parameter inputs (created by renderUI)
+#' @noRd
+session_cov_detail_ids <- function() {
+  fields <- c("mean", "sd", "meanlog", "sdlog", "min", "max", "catprop", "catvalue1", "catvalue2")
+  unlist(lapply(1:2, function(m) unlist(lapply(1:3, function(i) paste0("custom_cov_", i, "_", fields, "_model_", m)))))
+}
+
 #' Get current MVP session state
 #'
 #' Captures all current UI inputs and reactive values into a serializable list
@@ -9,6 +17,10 @@
 #' @param input The Shiny \code{input} object from the current server session.
 #' @param uploaded_data The \code{uploaded_data} reactive. Wrapped in
 #'   \code{tryCatch} so \code{NULL} is stored gracefully if no file is loaded.
+#' @param extras Optional named list of values that are not simple inputs:
+#'   \code{param_values_model_1/2} (named lists of the typed \code{$PARAM}
+#'   values) and \code{omega_model_1/2}, \code{sigma_model_1/2} (the applied
+#'   variability matrices as data frames).
 #'
 #' @return A named list containing \code{version}, \code{saved_at}, and
 #'   sublists \code{model}, \code{data}, \code{dosing}, \code{sim},
@@ -17,7 +29,7 @@
 #' @seealso \code{\link{restore_session_state}}
 #'
 #' @noRd
-get_session_state <- function(input, uploaded_data) {
+get_session_state <- function(input, uploaded_data, extras = NULL) {
   list(
     version = mvp_version(),  # tag with app version for forward-compat checks
     saved_at = Sys.time(),
@@ -295,6 +307,26 @@ get_session_state <- function(input, uploaded_data) {
       
     ),
     
+    # --- Solver and other settings not covered above ---
+    settings = c(
+      list(
+        solver_maxsteps = input$solver_maxsteps,
+        solver_atol     = input$solver_atol,
+        solver_rtol     = input$solver_rtol,
+        CFB_from_DV     = input$CFB_from_DV,
+        use_dataset_cov_dist_model_1 = input$use_dataset_cov_dist_model_1,
+        dataset_cov_dist_model_1     = input$dataset_cov_dist_model_1,
+        use_dataset_cov_dist_model_2 = input$use_dataset_cov_dist_model_2,
+        dataset_cov_dist_model_2     = input$dataset_cov_dist_model_2
+      ),
+      # custom covariate parameters (mean, SD, min, max, proportion, category values)
+      stats::setNames(lapply(session_cov_detail_ids(), function(id) input[[id]]),
+                      session_cov_detail_ids())
+    ),
+    
+    # --- Typed $PARAM values and applied OMEGA/SIGMA matrices ---
+    extras = extras,
+    
     # --- Variability matrices ---
     variability = list(
       db_model_1             = input$db_model_1,
@@ -417,8 +449,17 @@ restore_session_state <- function(state, input, session, uploaded_data_override,
   # --- Model code & settings ---
   updateSelectInput(session, "model_select",         selected = '--------------------------------------------') # Dummy choice to not update model code
   updateSelectInput(session, "model_select2",        selected = '--------------------------------------------') # Dummy choice to not update model code
-  shinyAce::updateAceEditor(session, "model_input",  value    = state$model$model_input)
-  shinyAce::updateAceEditor(session, "model_input2", value    = state$model$model_input2)
+  shinyAce::updateAceEditor(session, "model_input",  value    = rename_stored_models(state$model$model_input, session))
+  shinyAce::updateAceEditor(session, "model_input2", value    = rename_stored_models(state$model$model_input2, session))
+  
+  # --- Solver and other settings ---
+  st <- state$settings
+  updateNumericInput( session, "solver_maxsteps",  value = st$solver_maxsteps)
+  updateNumericInput( session, "solver_atol",      value = st$solver_atol)
+  updateNumericInput( session, "solver_rtol",      value = st$solver_rtol)
+  updateCheckboxInput(session, "CFB_from_DV",      value = st$CFB_from_DV)
+  updateCheckboxInput(session, "use_dataset_cov_dist_model_1", value = st$use_dataset_cov_dist_model_1)
+  updateCheckboxInput(session, "use_dataset_cov_dist_model_2", value = st$use_dataset_cov_dist_model_2)
   
   # --- Data: Dataset cleaning ---
   updateCheckboxInput(session, "create_cmt_col",      value    = state$data$create_cmt_col)
@@ -612,6 +653,8 @@ restore_session_state <- function(state, input, session, uploaded_data_override,
     updateSelectizeInput(session, "color_data_by", selected = state$sim$color_data_by)
   }
   
+  updateSelectizeInput(session, "dataset_cov_dist_model_1", selected = state$settings$dataset_cov_dist_model_1)
+  updateSelectizeInput(session, "dataset_cov_dist_model_2", selected = state$settings$dataset_cov_dist_model_2)
   updateSelectizeInput(session, "stat_sum_data_by",         selected = state$sim$stat_sum_data_by)
   updateCheckboxInput(session, "combine_nmdata",           value    = state$sim$combine_nmdata)
   updateCheckboxInput(session, "stat_sum_data_option",     value    = state$sim$stat_sum_data_option)
@@ -751,3 +794,55 @@ restore_session_state <- function(state, input, session, uploaded_data_override,
   
   invisible(NULL)
 }
+
+#' Restore the settings that only exist once the model has been compiled
+#'
+#' Typed \code{$PARAM} values and custom covariate widgets (\code{part = "params"}),
+#' then the applied OMEGA/SIGMA matrices (\code{part = "matrices"}). Called in the
+#' second restore pass, after the models were generated.
+#'
+#' @param state Session state list.
+#' @param session Shiny session.
+#' @param part Which settings to restore.
+#' @param extracted Named list of the reactiveVals holding the OMEGA/SIGMA matrices
+#'   (\code{omega_model_1}, \code{sigma_model_1}, \code{omega_model_2}, \code{sigma_model_2}).
+#' @param apply_matrices Function(m, omega, sigma) marking the restored matrices of model \code{m} as applied.
+#' @noRd
+restore_session_dynamic <- function(state, session, part = c("params", "matrices"), extracted = list(), apply_matrices = NULL) {
+  part <- match.arg(part)
+  
+  if (part == "params") {
+    # custom covariate parameters
+    for (id in session_cov_detail_ids()) {
+      val <- state$settings[[id]]
+      if (is.null(val)) next
+      if (grepl("_catprop_", id)) shiny::updateSliderInput(session, id, value = val) else updateNumericInput(session, id, value = val)
+    }
+    
+    # typed $PARAM values (inputs are named param_m1_<name> / param_m2_<name>)
+    for (nm in names(state$extras$param_values_model_1)) {
+      val <- state$extras$param_values_model_1[[nm]]
+      if (!is.null(val)) updateNumericInput(session, paste0("param_m1_", nm), value = val)
+    }
+    for (nm in names(state$extras$param_values_model_2)) {
+      val <- state$extras$param_values_model_2[[nm]]
+      if (!is.null(val)) updateNumericInput(session, paste0("param_m2_", nm), value = val)
+    }
+    return(invisible(NULL))
+  }
+  
+  # Applied OMEGA/SIGMA: put the saved matrices back and mark them as applied. This must
+  # come after the parameter values (a parameter change re-extracts the model's own matrices)
+  # and does not rely on the tables having been rendered (hidden tabs are not).
+  for (m in 1:2) {
+    om <- state$extras[[paste0("omega_model_", m)]]
+    sg <- state$extras[[paste0("sigma_model_", m)]]
+    has_om <- (is.data.frame(om) || is.matrix(om)) && !is.null(extracted[[paste0("omega_model_", m)]])
+    has_sg <- (is.data.frame(sg) || is.matrix(sg)) && !is.null(extracted[[paste0("sigma_model_", m)]])
+    if (has_om) extracted[[paste0("omega_model_", m)]](om)
+    if (has_sg) extracted[[paste0("sigma_model_", m)]](sg)
+    if ((has_om || has_sg) && is.function(apply_matrices)) apply_matrices(m, omega = has_om, sigma = has_sg)
+  }
+  invisible(NULL)
+}
+

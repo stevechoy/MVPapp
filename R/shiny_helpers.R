@@ -320,7 +320,7 @@ create_value_box <- function(input_dataset,
   metric_value <- if (dp) round(metric_value, digits = sigdig) else signif(metric_value, digits = sigdig)
   
   shinydashboard::valueBox(
-    value    = htmltools::tags$p(style = font_size, metric_value),
+    value    = htmltools::tags$p(style = font_size, if (length(metric_value) != 1 || !is.finite(metric_value)) "N/A" else metric_value),
     subtitle = value_box_subtitle,
     width    = width,
     color    = color,
@@ -437,7 +437,7 @@ general_warning_modal <- function(title = "Warning", text_description = "Test") 
 #' @noRd
 #-------------------------------------------------------------------------------
 
-check_cov_name <- function(orig_name, replaced_name = "DUMMY", list_of_reserved_strings = c("AGE", "AGEMO", "SEX", "WT", "BMI", "BSA")) {
+check_cov_name <- function(orig_name, replaced_name = "DUMMY", list_of_reserved_strings = c("AGE", "AGEMO", "SEX", "WT", "BMI", "BSA", "ID", "USUBJID")) {
 
   if (orig_name %in% list_of_reserved_strings) {
     new_name <- replaced_name

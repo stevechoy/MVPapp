@@ -47,6 +47,14 @@ tornado_plot <- function(df,
   # width of columns in plot (value between 0 and 1)
   width <- 0.95
 
+  # Ratio and % change divide by the reference metric, which is undefined at 0 (L54)
+  if (display_as %in% c("Ratio", "Percentage") && (!is.finite(reference_value) || reference_value == 0)) {
+    safely_showNotification(
+      paste0("The reference value of the metric is 0 or not finite, so '", display_as, "' is undefined. Showing 'Value' instead."),
+      type = "warning", duration = 10, id = "tornado_zero_ref")
+    display_as <- "Value"
+  }
+
   df <- df %>%
     dplyr::rename(Parameter = !!dplyr::sym(param_name),
                   Lower     = !!dplyr::sym(lower_name),
@@ -284,6 +292,14 @@ spider_plot <-  function(df,
                          normalize_x_axis = FALSE,
                          bioeq_lines   = FALSE) {
   
+  # Ratio and % change divide by the reference metric, which is undefined at 0 (L54)
+  if (display_as %in% c("Ratio", "Percentage") && (!is.finite(reference_value) || reference_value == 0)) {
+    safely_showNotification(
+      paste0("The reference value of the metric is 0 or not finite, so '", display_as, "' is undefined. Showing 'Value' instead."),
+      type = "warning", duration = 10, id = "tornado_zero_ref")
+    display_as <- "Value"
+  }
+
   df <- df %>%
     dplyr::rename(Parameter = !!dplyr::sym(param_name),
                   Ratio     = !!dplyr::sym(ratio_name),

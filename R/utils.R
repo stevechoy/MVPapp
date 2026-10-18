@@ -220,3 +220,94 @@ sampled_times <- function(sim_out) {
   if ("evid" %in% names(sim_out)) sim_out <- sim_out[sim_out$evid == 0, , drop = FALSE]
   sort(unique(sim_out$TIME))
 }
+
+#-------------------------------------------------------------------------------
+#' @name new_model_suffix
+#'
+#' Unique suffix for compiled mrgsolve model names
+#'
+#' Compiling a model with the name of an existing one deletes the earlier
+#' shared library, so names must not repeat across sessions (or browser tabs)
+#' of one R process. Built from the Shiny session token and a process-wide
+#' counter instead of the (re-seeded) random number stream.
+#'
+#' @param session Shiny session (or NULL)
+#' @noRd
+#-------------------------------------------------------------------------------
+.mvp_model_counter <- new.env(parent = emptyenv())
+.mvp_model_counter$n <- 0L
+
+new_model_suffix <- function(session = NULL) {
+  .mvp_model_counter$n <- .mvp_model_counter$n + 1L
+  token <- tryCatch(session$token, error = function(e) NULL)
+  token <- if (is.null(token)) "local" else substr(gsub("[^A-Za-z0-9]", "", token), 1, 8)
+  paste0(token, "x", Sys.getpid(), "x", .mvp_model_counter$n)
+}
+
+#-------------------------------------------------------------------------------
+#' @name rename_stored_models
+#'
+#' Give the mcode() model name inside stored editor code a fresh unique suffix
+#' (used when a session file is restored).
+#'
+#' @param code character, editor contents
+#' @param session Shiny session
+#' @noRd
+#-------------------------------------------------------------------------------
+rename_stored_models <- function(code, session = NULL) {
+  if (is.null(code) || length(code) != 1 || is.na(code)) return(code)
+  m <- regmatches(code, regexec("(mrgsolve::)?mcode\\('(Model-[12]-)[^']*'", code))[[1]]
+  if (length(m) == 0) return(code)
+  sub("(mrgsolve::)?mcode\\('Model-([12])-[^']*'",
+      paste0("\\1mcode('Model-\\2-", new_model_suffix(session), "'"),
+      code)
+}
+
+#-------------------------------------------------------------------------------
+#' @name nca_dose_vector
+#'
+#' Dose per NCA group (subject and additional keys), taken from the first
+#' positive dosing record (EVID >= 1) when the dataset has an EVID column, so
+#' that an AMT column (0 on observation rows) or a dose column that varies
+#' within a group does not give a wrong or mismatched dose. Falls back to the
+#' first positive value on the observation rows, then to the first value.
+#'
+#' @param obs_df observation records used for the NCA, in NCA order
+#' @param all_df the dataset before observation filtering (may contain dosing rows)
+#' @param subject_col,key_cols,dose_col column names
+#' @returns numeric vector, one value per distinct (subject, keys) in `obs_df`
+#' @importFrom dplyr distinct left_join filter group_by summarise across all_of first
+#' @noRd
+#-------------------------------------------------------------------------------
+nca_dose_vector <- function(obs_df, all_df, subject_col, key_cols, dose_col) {
+  keys <- c(subject_col, key_cols)
+  keys <- keys[!is.na(keys) & nzchar(keys)]
+  first_pos <- function(df) {
+    df <- df[!is.na(df[[dose_col]]) & suppressWarnings(as.numeric(df[[dose_col]])) > 0, , drop = FALSE]
+    df %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(keys))) %>%
+      dplyr::summarise(.dose = dplyr::first(.data[[dose_col]]), .groups = "drop")
+  }
+  res <- dplyr::distinct(obs_df[, keys, drop = FALSE])
+  
+  if (!is.null(all_df) && "EVID" %in% names(all_df) && all(c(keys, dose_col) %in% names(all_df))) {
+    dosing <- all_df[!is.na(all_df$EVID) & all_df$EVID >= 1, , drop = FALSE]
+    d1 <- first_pos(dosing)
+    names(d1)[names(d1) == ".dose"] <- ".dose_evid"
+    res <- dplyr::left_join(res, d1, by = keys)
+  } else {
+    res$.dose_evid <- NA_real_
+  }
+  d2 <- first_pos(obs_df)
+  names(d2)[names(d2) == ".dose"] <- ".dose_obs"
+  res <- dplyr::left_join(res, d2, by = keys)
+  
+  fallback <- dplyr::distinct(obs_df[, c(keys, dose_col), drop = FALSE])
+  fallback <- fallback[!duplicated(fallback[, keys, drop = FALSE]), , drop = FALSE]
+  res <- dplyr::left_join(res, stats::setNames(fallback, c(keys, ".dose_any")), by = keys)
+  
+  out <- res$.dose_evid
+  out[is.na(out)] <- res$.dose_obs[is.na(out)]
+  out[is.na(out)] <- res$.dose_any[is.na(out)]
+  as.numeric(out)
+}

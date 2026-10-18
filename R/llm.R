@@ -104,6 +104,7 @@ translate_model_code <- function(ready_path,
     detected_type <- "text/plain"
     new_path <- paste0(file_path, ".txt")
     file.copy(file_path, new_path)
+    on.exit(unlink(new_path), add = TRUE)
     file_path <- new_path
     locally_parse_file <- TRUE
     safely_showNotification(paste0("Text file detected, will be parsed locally to bypass file upload."))
@@ -609,6 +610,21 @@ refine_model_code <- function(model_code,
 }
 
 #-------------------------------------------------------------------------------
+#' @name escape_editor_string
+#' @title Escape backslashes and quotes so text can sit inside a double-quoted
+#'   R string in the code editor
+#' @param x character
+#' @importFrom stringr str_replace_all fixed
+#' @noRd
+#-------------------------------------------------------------------------------
+escape_editor_string <- function(x) {
+  replaces <- c("\\" = "\\\\",
+                "\"" = "\\\"",
+                "'" = "\\'")
+  stringr::str_replace_all(x, stringr::fixed(replaces))
+}
+
+#-------------------------------------------------------------------------------
 #' @name clean_llm_response
 #'
 #' @title Clean and Escape LLM Markdown Responses
@@ -643,11 +659,7 @@ clean_llm_response <- function(final_answer) {
   # Uses fixed() for maximum performance on large strings
   # The answer is placed inside a double-quoted R string in the code editor, so
   # backslashes must be escaped first, then quotes
-  replaces <- c("\\" = "\\\\",
-                "\"" = "\\\"",
-                "'" = "\\'")
-  
-  final_answer <- stringr::str_replace_all(final_answer, stringr::fixed(replaces))
+  final_answer <- escape_editor_string(final_answer)
   
   # 3. Final Polish: Trim whitespace and add intentional newlines
   final_answer <- paste0("\n", trimws(final_answer), "\n")
