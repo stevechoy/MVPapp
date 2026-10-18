@@ -18,3 +18,4 @@
 ^\.Renviron$
 ^\.httr-oauth$
 ^Claude outputs$
+^CLAUDE\.md$
