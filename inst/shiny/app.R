@@ -3319,7 +3319,8 @@ server <- function(input, output, session) {
                            selected = dplyr::case_when("DOSEA" %in% names(nmdataset_for_plot()) ~ "DOSEA",
                                                        "DOSEP" %in% names(nmdataset_for_plot()) ~ "DOSEP",
                                                        "DOSEAM" %in% names(nmdataset_for_plot()) ~ "DOSEAM",
-                                                       "DOSE" %in% names(nmdataset_for_plot()) ~ "DOSE")
+                                                       "DOSE" %in% names(nmdataset_for_plot()) ~ "DOSE",
+                                                       "AMT" %in% names(nmdataset_for_plot()) ~ "AMT")
       )
       
       updateSelectizeInput(session,
@@ -3330,7 +3331,7 @@ server <- function(input, output, session) {
                                                        "DOSE" %in% names(nmdataset_for_plot()) ~ "DOSE",
                                                        "DOSEA" %in% names(nmdataset_for_plot()) ~ "DOSEA",
                                                        "DOSEMG" %in% names(nmdataset_for_plot()) ~ "DOSEMG",
-                                                       #"AMT" %in% names(nmdataset_for_plot()) ~ "AMT",
+                                                       "CMT" %in% names(nmdataset_for_plot()) ~ "CMT",
                                                        TRUE ~ "DUMMY")
       )
       
