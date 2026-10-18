@@ -220,7 +220,8 @@ test_that("tornado plot works when no parameter changes the metric (M17)", {
   expect_equal(MVPapp:::calculate_tick_size(37), 5)
   df <- data.frame(.paramname = c("KA", "CL"), Lower = c(100, 100), Upper = c(100, 100))
   for (as in c("Percentage", "Ratio")) {
-    p <- suppressWarnings(MVPapp:::tornado_plot(df, reference_value = 100, display_as = as)) # plotly-only "text" aesthetic
+    # the plotly-only "text" aesthetic no longer triggers "Ignoring unknown aesthetics"
+    expect_no_warning(p <- MVPapp:::tornado_plot(df, reference_value = 100, display_as = as))
     expect_s3_class(p, "ggplot")
     expect_no_error(suppressWarnings(ggplot2::ggplot_build(p)))
   }

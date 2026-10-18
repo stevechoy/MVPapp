@@ -123,8 +123,16 @@ tornado_plot <- function(df,
                   tooltip = paste0("Parameter: ", Parameter,
                                    "<br>Value: ", round(output, 2)))  # Tooltip content for plotly
 
+  # `text` is not a ggplot2 aesthetic; plotly uses it for the tooltip, so only
+  # ggplot2's "Ignoring unknown aesthetics" warning is muffled
+  rect_layer <- withCallingHandlers(
+    ggplot2::geom_rect(data = df2, ggplot2::aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=Level, text = tooltip)),
+    warning = function(w) {
+      if (grepl("unknown aesthetics", conditionMessage(w), fixed = TRUE)) invokeRestart("muffleWarning")
+    })
+
   p <- ggplot2::ggplot() +
-    ggplot2::geom_rect(data = df2, ggplot2::aes(ymax=ymax, ymin=ymin, xmax=xmax, xmin=xmin, fill=Level, text = tooltip)) + # Add tooltip content for plotly
+    rect_layer +
     ggplot2::theme_bw() +
     ggplot2::geom_hline(yintercept = ref_line) +
     ggplot2::scale_x_continuous(breaks = seq_along(unique(df2$Parameter)),
