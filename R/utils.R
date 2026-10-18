@@ -204,3 +204,19 @@ message_object <- function(x) {
   message(paste(utils::capture.output(print(x)), collapse = "\n"))
   invisible(NULL)
 }
+
+#-------------------------------------------------------------------------------
+#' Sampling times of a simulation
+#'
+#' Sorted unique times of the observation records, so that dosing records
+#' (which can fall between or after the sampling times) are not offered as
+#' choices for metric time windows.
+#'
+#' @param sim_out simulated output with TIME (and optionally evid)
+#' @noRd
+#-------------------------------------------------------------------------------
+sampled_times <- function(sim_out) {
+  if (is.null(sim_out) || !"TIME" %in% names(sim_out)) return(numeric(0))
+  if ("evid" %in% names(sim_out)) sim_out <- sim_out[sim_out$evid == 0, , drop = FALSE]
+  sort(unique(sim_out$TIME))
+}

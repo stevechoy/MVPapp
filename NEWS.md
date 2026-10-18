@@ -61,6 +61,7 @@ First release prepared for CRAN.
 * Variability/Sensitivity/Sessions: upper age, weight and BMI bounds are inclusive (CDC 0-20 y keeps 240-month subjects), Model 2 uses the same maximum subject count as the UI, the eigenvalue check has a tolerance, both models share one exposure-window time list, fallback multipliers agree, dosing events are kept per session rather than shared across users, and saved sessions restore the parameter selector and tornado time window (#68)
 * Templates/documentation: the mrgsolve version in the code preambles reflects the installed version at load time, the QE-TMDD template no longer gives `NaN` for `Lfrac` and labels `TVKD` in nM, the unexported `mrgsolve:::code()` is no longer used, and several help pages were corrected (#69)
 * The DESCRIPTION URL field no longer lists the DOI link (the DOI is cited in Description), launching no longer calls `installed.packages()`, and the app restores the R random-number state (`.Random.seed`) when it stops, like the global options (#70)
+* Simulated output, plots and time-window choices are limited to the sampled range again: dosing records after the maximum sampling time (e.g. 12 doses every 12 h with a 72 h maximum) extended plots, and dosing times were offered as window start/end times (#71)
 
 ## Documentation
 

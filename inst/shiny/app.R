@@ -6891,7 +6891,7 @@ server <- function(input, output, session) {
     sim_out <- simulation_output_model_1()
     if (is.null(sim_out)) return(NULL)
     
-    times_sorted <- sort(unique(sim_out$TIME))
+    times_sorted <- sampled_times(sim_out)
     time_min     <- min(times_sorted)
     time_max     <- max(times_sorted)
     
@@ -7206,7 +7206,7 @@ server <- function(input, output, session) {
     sim_out <- simulation_output_model_2()
     if (is.null(sim_out)) return(NULL)
     
-    times_sorted <- sort(unique(sim_out$TIME))
+    times_sorted <- sampled_times(sim_out)
     time_min     <- min(times_sorted)
     time_max     <- max(times_sorted)
     
@@ -10206,8 +10206,8 @@ server <- function(input, output, session) {
   # built from the union of both models' times (previously whichever model's
   # observer ran last overwrote the other's choices and selection)
   exp_window_times <- reactive({
-    times_1 <- tryCatch(simulation_output_model_1()$TIME, error = function(e) NULL)
-    times_2 <- tryCatch(simulation_output_model_2()$TIME, error = function(e) NULL)
+    times_1 <- tryCatch(sampled_times(simulation_output_model_1()), error = function(e) NULL)
+    times_2 <- tryCatch(sampled_times(simulation_output_model_2()), error = function(e) NULL)
     times   <- sort(unique(c(times_1, times_2)))
     shiny::req(length(times) > 0)
     times

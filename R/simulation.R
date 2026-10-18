@@ -222,6 +222,15 @@ run_single_sim <- function(input_model_object,
       dplyr::mutate(TIMEADJ = TIME / divide_by,
                     USUBJID = as.factor(paste0(append_id_text, ID))) %>%
       dplyr::relocate(USUBJID, .before = ID)
+    
+    # Dosing records written out by realize_dose_records() can fall after the
+    # last sampling time (e.g. 12 doses q12h with a 72 h maximum); they would
+    # extend plots and offer time points that were never sampled
+    t_max <- tryCatch(max(mrgsolve::stime(sampling_times), na.rm = TRUE),
+                      error = function(e) suppressWarnings(max(as.numeric(sampling_times), na.rm = TRUE)))
+    if ("evid" %in% names(solved_output) && is.finite(t_max)) {
+      solved_output <- dplyr::filter(solved_output, !(.data$evid != 0 & .data$TIME > !!t_max))
+    }
   } else {
     shiny::showNotification(
       paste0(solved_output$error, " Potentially due to non-sensible parameter values."),

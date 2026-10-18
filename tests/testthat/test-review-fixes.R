@@ -313,3 +313,19 @@ test_that("facet labels, axis maxima and exposure model names (L43)", {
   p <- MVPapp:::plot_iiv_exp_data(ex, yvar = "AUC", model_1_name = "Same", model_2_name = "Same", show_stats = FALSE)
   expect_equal(length(unique(p$data$MODEL)), 2)
 })
+
+test_that("dosing records after the last sampling time are not in the output, nor offered as windows", {
+  skip_on_cran() # compiles an mrgsolve model
+  mod <- mvp_test_model()
+  ev  <- data.frame(ID = 1, time = 0, amt = 50, cmt = 1, evid = 1, ii = 12, addl = 11, rate = 0, tinf = 0)
+  st  <- seq(0, 72, by = 1)
+  out <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st))
+  expect_lte(max(out$TIME), 72)
+  expect_true(all(out$TIME[out$evid != 0] <= 72))
+  # dose at 12 h intervals inside the range are still kept
+  expect_true(any(out$evid != 0 & out$TIME == 60))
+  # custom sampling grid: dose times that are not sampled are not offered as time windows
+  st2 <- c(0, 5, 10, 30, 70)
+  out2 <- with_mock_session(MVPapp:::run_single_sim(mod, ev_df = ev, sampling_times = st2))
+  expect_equal(MVPapp:::sampled_times(out2), st2)
+})
