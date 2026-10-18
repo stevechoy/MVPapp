@@ -394,6 +394,10 @@ test_that("NCA dose comes from the first positive dosing record (L51)", {
                        TIME = c(0, 1, 2, 0, 1, 2), DV = c(0, 5, 3, 0, 8, 4))
   obs <- all_df[all_df$EVID == 0, ]
   expect_equal(MVPapp:::nca_dose_vector(obs, all_df, "ID", "", "AMT"), c(100, 200))
+  # the app's dataset can be a data.table
+  skip_if_not_installed("data.table")
+  dt <- data.table::as.data.table(all_df)
+  expect_equal(MVPapp:::nca_dose_vector(dt[dt$EVID == 0], dt, "ID", NULL, "AMT"), c(100, 200))
   # no EVID column: first positive value on the observation rows
   d <- data.frame(ID = c(1, 1, 2, 2), DOSE = c(10, 10, 20, 20))
   expect_equal(MVPapp:::nca_dose_vector(d, d, "ID", "", "DOSE"), c(10, 20))

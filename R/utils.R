@@ -280,6 +280,9 @@ rename_stored_models <- function(code, session = NULL) {
 #' @noRd
 #-------------------------------------------------------------------------------
 nca_dose_vector <- function(obs_df, all_df, subject_col, key_cols, dose_col) {
+  # plain data frames: the dataset can be a data.table, where df[, keys] means something else
+  obs_df <- as.data.frame(obs_df)
+  if (!is.null(all_df)) all_df <- as.data.frame(all_df)
   keys <- c(subject_col, key_cols)
   keys <- keys[!is.na(keys) & nzchar(keys)]
   first_pos <- function(df) {
