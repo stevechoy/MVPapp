@@ -328,12 +328,12 @@ add_lm_layers <- function(p, df_stats, label_x, label_y, label_size) {
 add_log_axes <- function(p, logx = FALSE, logy = FALSE) {
   if (logx) {
     p <- p +
-      ggplot2::scale_x_log10(breaks = logbreaks_x, labels = logbreaks_x, oob = scales::oob_squish_infinite) +
+      ggplot2::scale_x_log10(breaks = logbreaks_x, labels = logbreaks_x, minor_breaks = log_minor_breaks, oob = scales::oob_squish_infinite) +
       ggplot2::annotation_logticks(sides = "b")
   }
   if (logy) {
     p <- p +
-      ggplot2::scale_y_log10(breaks = logbreaks_y, labels = logbreaks_y, oob = scales::oob_squish_infinite) +
+      ggplot2::scale_y_log10(breaks = logbreaks_y, labels = logbreaks_y, minor_breaks = log_minor_breaks, oob = scales::oob_squish_infinite) +
       ggplot2::annotation_logticks(sides = "l")
   }
   p

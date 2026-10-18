@@ -45,6 +45,7 @@ First release prepared for CRAN.
 * Compiling Model 1 with an error after a model had compiled successfully closed the session (#48)
 * After loading a saved session, a dataset newly chosen with "Browse server files" was ignored in favour of the session's dataset (#49)
 * The "batch results are out of date" warning for tornado/spider plots now only shows while the matching "Model N (All Parameters)" tab is open, instead of appearing whenever parameters are edited on the Simulation page
+* Data Exploration plots with a log axis: the grey grid lines now sit at 1, 2, ... 9 times each power of 10, lining up with the log tick marks instead of at unrelated positions
 * "Generate All Individuals (.pdf)": a last page with fewer subjects than rows x columns (e.g. 3 subjects on a 3 x 3 page) now keeps the panel size of the other pages, with the unused space left white, instead of stretching the panels over the whole page
 * Individual plots with "Insert regression" showed every subject's equation in every panel instead of one per panel (#50)
 * AI translation with an OpenAI-Compatible provider now sends `OPENAI_COMPATIBLE_API_KEY`; previously ellmer fell back to `OPENAI_API_KEY`, which could send an OpenAI key to the other provider (#51)

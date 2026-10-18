@@ -73,6 +73,11 @@ logbreaks_y <- signif(generate_log_breaks(c(1, 3), -10, 10), digits = 2)
 #' @noRd
 logbreaks_x <- logbreaks_y
 
+# Grid lines at 1, 2, ..., 9 times each power of 10: the same positions as the
+# log tick marks from annotation_logticks(), so grid lines and ticks line up
+#' @noRd
+log_minor_breaks <- generate_log_breaks(1:9, -10, 10)
+
 #-------------------------------------------------------------------------------
 #' Largest finite value of a column across several data frames (NULLs ignored)
 #'
