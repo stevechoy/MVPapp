@@ -106,9 +106,23 @@ llm_packages_available <- all(
 )
 
 
+# Optional branding (mvp_app(brand_color = , brand_text_color = , brand_logo = , brand_favicon = , page_title = )).
+# When these are NULL (the default) the look is unchanged.
+for (.brand_arg in c("brand_color", "brand_text_color", "brand_logo", "brand_favicon")) {
+  if (!exists(.brand_arg, inherits = FALSE)) assign(.brand_arg, NULL)
+}
+rm(.brand_arg)
+if (!is.null(brand_color)) mvp_navy <- brand_color # loading spinners
+dt_header_bg <- if (is.null(brand_color)) "#003366" else brand_color                            # data table headers
+dt_header_fg <- if (is.null(brand_color)) "#99CCFF" else (brand_text_color %||% "#FFFFFF")
+brand_head   <- if (is.null(brand_color) && is.null(brand_logo) && is.null(brand_favicon)) NULL else
+  brand_head_tags(color = brand_color, text_color = brand_text_color, favicon = brand_favicon)
+ui_title     <- brand_title(page_title, brand_logo)
+
 # UI ----
 ui <- shiny::navbarPage(
-  title = htmltools::div(page_title),
+  title = ui_title,
+  windowTitle = page_title, # plain text; the tab title previously showed the raw <div> markup
   selected = 'Simulation',
   theme = shinythemes::shinytheme('flatly'),
   # Non-tab content goes in `header`; as positional arguments, bslib warns
@@ -116,6 +130,7 @@ ui <- shiny::navbarPage(
   header = htmltools::tagList(
   shinyjs::useShinyjs(),
   navbar_bg_color,
+  brand_head, # NULL unless branded
   tags$head(tags$script(HTML("
   $(function() {
     // hover: everything except icons marked click
@@ -3421,7 +3436,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF'});",
+                      paste0("$(this.api().table().header()).css({'background-color': '", dt_header_bg, "', 'color': '", dt_header_fg, "'});"),
                       "}"),
                     pageLength = 10,
                     lengthMenu = c(5, 10, 20, 25, 50, 100),
@@ -3447,7 +3462,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF'});",
+                      paste0("$(this.api().table().header()).css({'background-color': '", dt_header_bg, "', 'color': '", dt_header_fg, "'});"),
                       "}")
                   )
     )
@@ -3613,7 +3628,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF'});",
+                      paste0("$(this.api().table().header()).css({'background-color': '", dt_header_bg, "', 'color': '", dt_header_fg, "'});"),
                       "}")))
   })
   
@@ -8302,7 +8317,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF', 'border-color': '#99CCFF'});",
+                      paste0("$(this.api().table().header()).css({'background-color': '", dt_header_bg, "', 'color': '", dt_header_fg, "', 'border-color': '", dt_header_fg, "'});"),
                       "}")
                   ))
   })
@@ -8314,7 +8329,7 @@ server <- function(input, output, session) {
                   options = list(
                     initComplete = DT::JS(
                       "function(settings, json) {",
-                      "$(this.api().table().header()).css({'background-color': '#003366', 'color': '#99CCFF', 'border-color': '#99CCFF'});",
+                      paste0("$(this.api().table().header()).css({'background-color': '", dt_header_bg, "', 'color': '", dt_header_fg, "', 'border-color': '", dt_header_fg, "'});"),
                       "}")
                   ))
   })

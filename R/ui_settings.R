@@ -1,5 +1,6 @@
 # Page Title 
-page_title            <- 'Model Visualization Platform (MVP)'
+default_page_title    <- 'Model Visualization Platform (MVP)'
+page_title            <- default_page_title # replaced when mvp_app(page_title = ) is given
 
 ## UI settings
 sidebar_width         <- 5  
@@ -361,3 +362,155 @@ shinydashboard_box_format <- htmltools::tags$style(htmltools::HTML("
                                                          ")
 )
 
+#-------------------------------------------------------------------------------
+# Optional branding (mvp_app(brand_color = , brand_text_color = , brand_logo = ,
+# brand_favicon = , page_title = )). Everything below is only used when one of
+# these arguments is not NULL; the default look is unchanged.
+#-------------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------------
+#' @name brand_hex
+#' @title Validate a colour and return it as "#RRGGBB"
+#' @param color a colour name ("orange") or hex string
+#' @param arg argument name, for the error message
+#' @returns a character string
+#' @noRd
+#-------------------------------------------------------------------------------
+brand_hex <- function(color, arg = "brand_color") {
+  if (!is.character(color) || length(color) != 1 || is.na(color) || !nzchar(color)) {
+    stop("`", arg, "` must be a single colour, e.g. \"#F36633\" or \"orange\".", call. = FALSE)
+  }
+  rgb <- tryCatch(grDevices::col2rgb(color)[, 1],
+                  error = function(e) stop("`", arg, "` is not a valid colour: \"", color, "\".", call. = FALSE))
+  grDevices::rgb(rgb[1], rgb[2], rgb[3], maxColorValue = 255)
+}
+
+#-------------------------------------------------------------------------------
+#' @name brand_contrast_text
+#' @title Readable text colour ("#FFFFFF" or "#000000") for a background colour
+#'
+#' White is used when its WCAG contrast ratio with the background is at least 3
+#' (the large-text threshold, which also suits the bold navbar), otherwise black.
+#' @param bg background colour as "#RRGGBB"
+#' @noRd
+#-------------------------------------------------------------------------------
+brand_contrast_text <- function(bg) {
+  rgb <- grDevices::col2rgb(bg)[, 1] / 255
+  lin <- ifelse(rgb <= 0.03928, rgb / 12.92, ((rgb + 0.055) / 1.055)^2.4)
+  lum <- 0.2126 * lin[1] + 0.7152 * lin[2] + 0.0722 * lin[3]
+  if (1.05 / (lum + 0.05) >= 3) "#FFFFFF" else "#000000"
+}
+
+#-------------------------------------------------------------------------------
+#' @name brand_asset_url
+#' @title URL for a branding image
+#'
+#' Web (http/https) and data: URLs are used as they are. A local file is served
+#' through a Shiny resource path, so it does not have to be inside the package.
+#' @param path file path or URL
+#' @param prefix resource path prefix for a local file
+#' @param arg argument name, for the error message
+#' @returns a URL
+#' @noRd
+#-------------------------------------------------------------------------------
+brand_asset_url <- function(path, prefix, arg) {
+  if (!is.character(path) || length(path) != 1 || is.na(path) || !nzchar(path)) {
+    stop("`", arg, "` must be a single file path or URL.", call. = FALSE)
+  }
+  if (grepl("^(https?:|data:)", path, ignore.case = TRUE)) return(path)
+  if (!file.exists(path) || dir.exists(path)) {
+    stop("`", arg, "` file not found: ", path, call. = FALSE)
+  }
+  path <- normalizePath(path, winslash = "/", mustWork = TRUE)
+  shiny::addResourcePath(prefix, dirname(path))
+  paste0(prefix, "/", utils::URLencode(basename(path)))
+}
+
+#-------------------------------------------------------------------------------
+#' @name resolve_branding
+#' @title Validate the branding arguments of mvp_app() and turn them into the
+#'   values used by the app
+#' @param params named list of the mvp_app() settings
+#' @returns `params`, with the brand settings validated (colours as "#RRGGBB",
+#'   images as URLs); settings that are NULL stay NULL
+#' @noRd
+#-------------------------------------------------------------------------------
+resolve_branding <- function(params) {
+  if (!is.null(params$page_title)) {
+    if (!is.character(params$page_title) || length(params$page_title) != 1 || is.na(params$page_title)) {
+      stop("`page_title` must be a single character string.", call. = FALSE)
+    }
+  }
+  if (!is.null(params$brand_color)) {
+    params$brand_color <- brand_hex(params$brand_color, "brand_color")
+    params$brand_text_color <- if (is.null(params$brand_text_color)) {
+      brand_contrast_text(params$brand_color)
+    } else {
+      brand_hex(params$brand_text_color, "brand_text_color")
+    }
+  } else if (!is.null(params$brand_text_color)) {
+    warning("`brand_text_color` is ignored because `brand_color` is not set.", call. = FALSE)
+    params$brand_text_color <- NULL
+  }
+  if (!is.null(params$brand_logo)) {
+    params$brand_logo <- brand_asset_url(params$brand_logo, "mvp-brand-logo", "brand_logo")
+  }
+  if (!is.null(params$brand_favicon)) {
+    params$brand_favicon <- brand_asset_url(params$brand_favicon, "mvp-brand-favicon", "brand_favicon")
+  }
+  params
+}
+
+#-------------------------------------------------------------------------------
+#' @name brand_head_tags
+#' @title Page head content for the branding: colour overrides and favicon
+#' @param color,text_color validated colours ("#RRGGBB") or NULL
+#' @param favicon favicon URL or NULL
+#' @returns an htmltools tag list (empty if nothing is set)
+#' @noRd
+#-------------------------------------------------------------------------------
+brand_head_tags <- function(color = NULL, text_color = NULL, favicon = NULL) {
+  tags <- list()
+  if (!is.null(color)) {
+    text_color <- text_color %||% brand_contrast_text(color)
+    css <- paste0(
+      # navbar and active tab
+      ".navbar-static-top, .navbar-default {background-color: ", color, " !important; border-color: ", color, " !important;}\n",
+      ".navbar-default .navbar-brand, .navbar-default .navbar-nav>li>a {color: ", text_color, " !important;}\n",
+      ".navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus ",
+      "{background-color: ", color, " !important; color: ", text_color, " !important; border-bottom: 3px solid ", text_color, ";}\n",
+      ".navbar-default .navbar-nav>li>a:hover {background-color: transparent !important; color: ", text_color, " !important; opacity: 0.85;}\n",
+      # box headers and borders (shinydashboard "primary")
+      ".box.box-solid.box-primary>.box-header {background: ", color, " !important; color: ", text_color, " !important;}\n",
+      ".box.box-solid.box-primary {border-bottom-color: ", color, " !important; border-left-color: ", color, " !important; ",
+      "border-right-color: ", color, " !important; border-top-color: ", color, " !important;}\n",
+      # sub-tab links (the theme's green accent) in the brand colour, if readable on white
+      if (identical(brand_contrast_text(color), "#FFFFFF")) paste0(".nav-tabs>li:not(.active)>a {color: ", color, ";}\n") else "",
+      # company logo in the navbar
+      ".mvp-brand-logo {height: 28px; margin: -5px 10px 0 0; vertical-align: middle;}\n"
+    )
+    tags <- c(tags, list(htmltools::tags$style(htmltools::HTML(css))))
+  } else {
+    tags <- c(tags, list(htmltools::tags$style(htmltools::HTML(
+      ".mvp-brand-logo {height: 28px; margin: -5px 10px 0 0; vertical-align: middle;}\n"))))
+  }
+  if (!is.null(favicon)) {
+    ext  <- tolower(tools::file_ext(sub("[?#].*$", "", favicon)))
+    type <- switch(ext, svg = "image/svg+xml", ico = "image/x-icon", jpg = , jpeg = "image/jpeg",
+                   gif = "image/gif", "image/png")
+    tags <- c(tags, list(htmltools::tags$link(rel = "icon", type = type, href = favicon)))
+  }
+  htmltools::tags$head(htmltools::tagList(tags))
+}
+
+#-------------------------------------------------------------------------------
+#' @name brand_title
+#' @title Navbar title: the page title, with the company logo in front if set
+#' @param title page title
+#' @param logo logo URL or NULL
+#' @noRd
+#-------------------------------------------------------------------------------
+brand_title <- function(title, logo = NULL) {
+  if (is.null(logo)) return(htmltools::div(title))
+  htmltools::div(htmltools::tags$img(src = logo, class = "mvp-brand-logo", alt = ""), title)
+}

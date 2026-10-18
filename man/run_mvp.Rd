@@ -32,6 +32,11 @@ mvp_app(
   model_lang = c("mrgsolve", "nonmem", "rxode2"),
   prompts_path = system.file("shiny/prompts.R", package = "MVPapp"),
   show_debugging_msg = FALSE,
+  brand_color = NULL,
+  brand_text_color = NULL,
+  brand_logo = NULL,
+  brand_favicon = NULL,
+  page_title = NULL,
   ...
 )
 
@@ -62,6 +67,11 @@ run_mvp(
   model_lang = c("mrgsolve", "nonmem", "rxode2"),
   prompts_path = system.file("shiny/prompts.R", package = "MVPapp"),
   show_debugging_msg = FALSE,
+  brand_color = NULL,
+  brand_text_color = NULL,
+  brand_logo = NULL,
+  brand_favicon = NULL,
+  page_title = NULL,
   ...
 )
 }
@@ -126,6 +136,21 @@ MVPapp. See \code{vignette("automatic-translation")} for more information.}
 \item{show_debugging_msg}{Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
 AI translation responses are then also kept for review (see Details).}
 
+\item{brand_color}{Character. Default NULL (the default navy). A colour, e.g. \code{"#F36633"} or \code{"orange"}, used for the
+navbar, active tab, box headers, table headers and loading spinners. See "Branding" in Details.}
+
+\item{brand_text_color}{Character. Default NULL. Colour of the text on \code{brand_color} (navbar and box headers). By
+default white or black is chosen for readability. Ignored if \code{brand_color} is NULL.}
+
+\item{brand_logo}{Character. Default NULL (no logo). Path to an image file (png, jpg, svg, ...) or a web URL, shown
+in the navbar in front of the page title.}
+
+\item{brand_favicon}{Character. Default NULL (no favicon). Path to an image file (png, ico, svg) or a web URL, used
+as the browser tab icon.}
+
+\item{page_title}{Character. Default NULL ("Model Visualization Platform (MVP)"). Title shown in the navbar. When
+set, it is also used as the browser tab title.}
+
 \item{...}{For \code{run_mvp()}, \code{\link[shiny:runApp]{shiny::runApp()}} arguments (e.g. \code{launch.browser},
 \code{port}). Any other named arguments are passed to the app.}
 }
@@ -160,6 +185,22 @@ bundle download).
 answers before cleaning) and \code{ellmer_chat_response} /
 \code{dify_chat_response} (raw chat responses).
 }
+
+\strong{Branding.} For a company deployment, the title, colour, logo and favicon can be set when
+launching, without editing any package files. Each is optional; with all of them left at
+\code{NULL} the app looks as it always did.
+
+\preformatted{run_mvp(brand_color   = "#F36633",
+        brand_logo    = "path/to/company_logo.png",
+        brand_favicon = "path/to/favicon.png",
+        page_title    = "Company Model Visualization Platform")
+}
+
+Image files are read from where they are and served by the app, so they do not need to be
+inside the package (a web URL also works). A logo with a transparent background and a
+height of about 30 pixels or more works best. \code{brand_color} replaces the navy in the
+navbar, the active tab, the headers and borders of the panels, the data table headers and the
+loading spinners. The same arguments work with \code{mvp_app()} for hosted deployments.
 
 \strong{Hosting and security.} MVPapp evaluates R and C++ model code supplied
 in the browser, so anyone who can open the app can run code on the server

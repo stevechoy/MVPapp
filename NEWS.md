@@ -11,6 +11,8 @@ First release prepared for CRAN.
 
 ## Improvements
 
+* Optional company branding: `run_mvp()`/`mvp_app()` gain `brand_color`, `brand_text_color`, `brand_logo`, `brand_favicon` and `page_title` (all `NULL` by default, which keeps the standard look) to set the navbar/panel/table-header colour, a navbar logo, a favicon and the page title at launch, without editing package files (#76)
+* The browser tab title is now "Model Visualization Platform (MVP)" instead of showing the raw `<div>` markup (#76)
 * Simplified launching (#31): new exported `mvp_app()` returns the app object for deployment (an `app.R` containing `MVPapp::mvp_app()`), replacing `standalone_mode` in `inst/shiny/app.R`, which downloaded code from GitHub at every start. Launching without installation via `shiny::runGitHub()` now loads MVPapp into the app's own environment instead of the global environment, checks dependencies against DESCRIPTION, and can be pinned to a release with `ref`. `inst/shiny/packages.R` was removed.
 * Global options used by the app (`scipen`, `DT.options`, `shiny.maxRequestSize`) are set when the app starts and restored when it stops.
 * `run_mvp()` no longer modifies the global environment or search path, and restores any global options it changes when the app closes. Extra arguments in `...` now reach the app.

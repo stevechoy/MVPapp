@@ -479,6 +479,21 @@ MVPapp::mvp_app(authentication_code = "some_password")
 The deployment then records the installed `MVPapp` version like any
 other package dependency.
 
+### Company branding
+
+For a company deployment, the title, colour, logo and favicon can be set at launch without editing any package files. All arguments are optional; the default (`NULL`) keeps the standard look.
+
+``` r
+MVPapp::mvp_app(
+  brand_color   = "#F36633",                 # navbar, active tab, panel and table headers, spinners
+  brand_logo    = "path/to/company_logo.png", # shown in the navbar in front of the title
+  brand_favicon = "path/to/favicon.png",      # browser tab icon
+  page_title    = "Company Model Visualization Platform"
+)
+```
+
+Image files are read from where they are (they do not need to be inside the package) and a web URL also works. White or black text is chosen automatically for readability on `brand_color`; use `brand_text_color` to override it.
+
 ### Sources for patient databases
 
 The raw data and code used for deriving the populations used in MVP for

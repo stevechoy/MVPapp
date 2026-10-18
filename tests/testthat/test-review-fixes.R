@@ -423,3 +423,44 @@ test_that("restore_session_dynamic() puts back matrices and marks them applied (
   expect_equal(shiny::isolate(rv()), om)
   expect_equal(applied, c(1, 1, 0))
 })
+
+test_that("branding helpers validate and derive colours (brand_*)", {
+  expect_equal(MVPapp:::brand_hex("orange"), "#FFA500")
+  expect_equal(MVPapp:::brand_hex("#f36633"), "#F36633")
+  expect_error(MVPapp:::brand_hex("not-a-colour"), "not a valid colour")
+  expect_error(MVPapp:::brand_hex(c("red", "blue")), "single colour")
+  expect_equal(MVPapp:::brand_contrast_text("#003366"), "#FFFFFF")
+  expect_equal(MVPapp:::brand_contrast_text("#FFFF00"), "#000000")
+  expect_equal(MVPapp:::brand_contrast_text("#F36633"), "#FFFFFF")
+})
+
+test_that("mvp_app() is unchanged without branding and honours the brand arguments", {
+  ui_html <- function(app) {
+    ui <- environment(app$httpHandler)$ui
+    if (is.function(ui)) ui <- ui(NULL)
+    r <- htmltools::renderTags(ui)
+    paste(as.character(r$head), as.character(r$html))
+  }
+  default <- ui_html(MVPapp::mvp_app())
+  expect_false(grepl("mvp-brand-logo", default, fixed = TRUE))
+  expect_false(grepl("rel=\"icon\"", default, fixed = TRUE))
+  expect_true(grepl("#003366", default, fixed = TRUE))
+  expect_true(grepl("Model Visualization Platform (MVP)", default, fixed = TRUE))
+  expect_true(grepl("<title>Model Visualization Platform (MVP)</title>", default, fixed = TRUE))
+
+  logo <- tempfile(fileext = ".svg")
+  writeLines('<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="red"/></svg>', logo)
+  png_file <- file.path(R.home("doc"), "html", "logo.jpg")
+  fav <- if (file.exists(png_file)) png_file else logo
+  branded <- ui_html(MVPapp::mvp_app(brand_color = "#F36633", brand_logo = logo, brand_favicon = fav,
+                                     page_title = "Company MVP"))
+  expect_true(grepl("#F36633", branded, fixed = TRUE))
+  expect_true(grepl("mvp-brand-logo", branded, fixed = TRUE))
+  expect_true(grepl("rel=\"icon\"", branded, fixed = TRUE))
+  expect_true(grepl("Company MVP", branded, fixed = TRUE))
+  expect_true(grepl("<title>Company MVP</title>", branded, fixed = TRUE))
+  # data table headers use the brand colour
+  expect_error(MVPapp::mvp_app(brand_logo = "no/such/file.png"), "file not found")
+  expect_error(MVPapp::mvp_app(brand_color = "zzz"), "not a valid colour")
+  expect_warning(MVPapp::mvp_app(brand_text_color = "white"), "ignored")
+})

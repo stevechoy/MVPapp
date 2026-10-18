@@ -48,6 +48,16 @@
 #'   MVPapp. See `vignette("automatic-translation")` for more information.
 #' @param show_debugging_msg Logical. Default FALSE. Set to TRUE to output verbose working messages in the console, useful for debugging.
 #'   AI translation responses are then also kept for review (see Details).
+#' @param brand_color Character. Default NULL (the default navy). A colour, e.g. `"#F36633"` or `"orange"`, used for the
+#'   navbar, active tab, box headers, table headers and loading spinners. See "Branding" in Details.
+#' @param brand_text_color Character. Default NULL. Colour of the text on `brand_color` (navbar and box headers). By
+#'   default white or black is chosen for readability. Ignored if `brand_color` is NULL.
+#' @param brand_logo Character. Default NULL (no logo). Path to an image file (png, jpg, svg, ...) or a web URL, shown
+#'   in the navbar in front of the page title.
+#' @param brand_favicon Character. Default NULL (no favicon). Path to an image file (png, ico, svg) or a web URL, used
+#'   as the browser tab icon.
+#' @param page_title Character. Default NULL ("Model Visualization Platform (MVP)"). Title shown in the navbar. When
+#'   set, it is also used as the browser tab title.
 #' @param ... For `run_mvp()`, [shiny::runApp()] arguments (e.g. `launch.browser`,
 #'        `port`). Any other named arguments are passed to the app.
 #'
@@ -65,6 +75,21 @@
 #'   `llm_success` (retry that compiled), `branch_model` / `branch_refine` (raw
 #'   answers before cleaning) and `ellmer_chat_response` /
 #'   `dify_chat_response` (raw chat responses).
+#'
+#' **Branding.** For a company deployment, the title, colour, logo and favicon can be set when
+#' launching, without editing any package files. Each is optional; with all of them left at
+#' `NULL` the app looks as it always did.
+#' ```
+#' run_mvp(brand_color   = "#F36633",
+#'         brand_logo    = "path/to/company_logo.png",
+#'         brand_favicon = "path/to/favicon.png",
+#'         page_title    = "Company Model Visualization Platform")
+#' ```
+#' Image files are read from where they are and served by the app, so they do not need to be
+#' inside the package (a web URL also works). A logo with a transparent background and a
+#' height of about 30 pixels or more works best. `brand_color` replaces the navy in the
+#' navbar, the active tab, the headers and borders of the panels, the data table headers and the
+#' loading spinners. The same arguments work with `mvp_app()` for hosted deployments.
 #'
 #' **Hosting and security.** MVPapp evaluates R and C++ model code supplied
 #' in the browser, so anyone who can open the app can run code on the server
@@ -133,6 +158,11 @@ mvp_app <- function(appDir                  = system.file("shiny", package = "MV
                     model_lang              = c("mrgsolve", "nonmem", "rxode2"),
                     prompts_path            = system.file("shiny/prompts.R", package = "MVPapp"),
                     show_debugging_msg      = FALSE,
+                    brand_color             = NULL,
+                    brand_text_color        = NULL,
+                    brand_logo              = NULL,
+                    brand_favicon           = NULL,
+                    page_title              = NULL,
                     ...) {
 
   # Collect the app settings (all named arguments except appDir) plus any extra
@@ -141,6 +171,7 @@ mvp_app <- function(appDir                  = system.file("shiny", package = "MV
   extra  <- list(...)
   extra  <- extra[nzchar(names(extra) %||% character(length(extra)))]
   params <- c(params, extra[!names(extra) %in% names(params)])
+  params <- resolve_branding(params) # validates the optional branding settings
 
   # Evaluate the app in its own environment instead of the global environment.
   # Its parent exposes MVPapp (including internal helpers), the package
