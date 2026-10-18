@@ -472,3 +472,24 @@ test_that("mvp_app() is unchanged without branding and honours the brand argumen
   expect_error(MVPapp::mvp_app(brand_color = "zzz"), "not a valid colour")
   expect_warning(MVPapp::mvp_app(brand_text_color = "white"), "ignored")
 })
+
+test_that("the reproducible bundle plots observations only but keeps dose records in solved_output", {
+  skip_on_cran() # compiles an mrgsolve model
+  skip_if_not_installed("ggplot2")
+  mod <- mvp_test_model()
+  ev  <- data.frame(ID = 1, time = 0, amt = 50, cmt = 1, evid = 1, ii = 12, addl = 5, rate = 0, tinf = 0)
+  st  <- seq(0, 72, by = 1)
+  zipf <- tempfile(fileext = ".zip")
+  MVPapp:::build_repro_bundle(zip_path = zipf, input_model_object = mod,
+                              event_data_orig = ev, event_data_post = ev, sampling_times = st)
+  dir <- tempfile("bundle"); dir.create(dir)
+  utils::unzip(zipf, exdir = dir)
+  script <- list.files(dir, pattern = "^simulation\\.R$", recursive = TRUE, full.names = TRUE)[1]
+  env <- new.env(parent = globalenv())
+  old <- setwd(dirname(script)); on.exit(setwd(old), add = TRUE)
+  pdf(NULL); on.exit(grDevices::dev.off(), add = TRUE)
+  suppressMessages(suppressWarnings(source(basename(script), local = env)))
+  expect_true(any(env$solved_output$evid != 0))        # all records kept for the user
+  expect_true(all(env$plot_output$data$evid == 0))     # the example plot shows observations only
+  expect_equal(sum(env$plot_output$data$time == 72), 1)
+})
