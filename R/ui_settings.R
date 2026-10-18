@@ -460,8 +460,7 @@ resolve_branding <- function(params) {
 }
 
 #-------------------------------------------------------------------------------
-#' @name default_favicon_tags
-#' @title Favicon links for the MVP icon shipped with the package
+#' Favicon links for the MVP icon shipped with the package
 #'
 #' Used when `brand_favicon` is not set: two concentration-time curves on the
 #' navy of the default theme. An SVG for modern browsers, with a PNG for the
