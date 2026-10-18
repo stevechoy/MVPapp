@@ -220,9 +220,6 @@ the development version can also be launched from GitHub, provided its
 dependencies are installed:
 \code{shiny::runGitHub("MVPapp", "stevechoy", subdir = "inst/shiny")}.
 }
-\note{
-Adapted from the ShinyDemo package, \url{https://github.com/jbryer/ShinyDemo}
-}
 \examples{
 if (interactive()) {
   run_mvp(insert_watermark = FALSE) # remove watermarks
