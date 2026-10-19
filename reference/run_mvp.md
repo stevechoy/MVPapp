@@ -318,11 +318,6 @@ restricted), the development version can also be launched from GitHub,
 provided its dependencies are installed:
 `shiny::runGitHub("MVPapp", "stevechoy", subdir = "inst/shiny")`.
 
-## Note
-
-Adapted from the ShinyDemo package,
-<https://github.com/jbryer/ShinyDemo>
-
 ## See also
 
 <https://stevechoy.github.io/MVPapp/articles/supply-passwords.html>
