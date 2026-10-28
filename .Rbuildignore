@@ -19,3 +19,4 @@
 ^\.httr-oauth$
 ^Claude outputs$
 ^CLAUDE\.md$
+^CRAN-SUBMISSION$
