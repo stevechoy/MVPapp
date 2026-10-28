@@ -28,6 +28,7 @@ First release prepared for CRAN.
 
 ## Bugfixes
 
+* The NCA PDF report no longer has a default file name (which would write to the working directory) or changes the working directory, and restores `options(width)` and the graphical parameters with an immediate `on.exit()` (CRAN policy). The tests no longer leave an `Rplots.pdf` in the package folder.
 * NCA report failed with `ncar` >= 0.7.2, which no longer exports its PDF helpers (#26)
 * Static "Show Individual Profiles" plot joined all subjects into one line; each model's profiles now use that model's color (#27)
 * Model 2 variability simulation failed when a covariate database was selected (#28)

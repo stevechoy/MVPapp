@@ -3685,7 +3685,6 @@ server <- function(input, output, session) {
                   #R2ADJ = input$R2ADJ_value,
                   MW = input$mw_value,
                   watermark = insert_watermark,
-                  internal_version = internal_version,
                   debug_msg = FALSE,
                   show_progress = TRUE)
       })

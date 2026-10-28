@@ -526,8 +526,9 @@ nca_add_page <- function(Cex = 0.8, Header1 = "", Header2 = "", Header3 = "",
   if (Cex < 0.1 | Cex > 1.2) stop("Too small or too large cex!")
   nCol <- trunc(242 - 190 * Cex)
   nRow <- trunc(155 - 125 * Cex)
-  options(width = max(10, trunc(300 - 250 * Cex))) # restored by pdfNCA_wm() on exit
 
+  # Draws on the current device (the report's own PDF device, opened by
+  # pdfNCA_wm(), which restores its graphical parameters on exit)
   graphics::par(oma = c(0, 0, 0, 0), mfrow = c(1, 1), mar = c(0, 0, 0, 0), adj = 0, cex = Cex)
   graphics::plot(0, 0, type = "n", ylim = c(2 * nRow - 1, 0), xlim = c(0, nCol - 1),
                  xaxt = "n", yaxt = "n", ylab = "", xlab = "", bty = "n")
@@ -573,9 +574,9 @@ nca_text_m <- function(MTxt, StartRow = 0, Cex = 0.8, Header1 = "", Header2 = ""
 #' @name pdfNCA_wm
 #' @title Modified ncar::pdfNCA to support watermarks
 #'
+#' @param fileName Path of the PDF file to write (required; no default, so
+#'   nothing is written to the working directory)
 #' @param watermark Insert watermark when TRUE
-#' @param internal_version changes temp dir pathing as a workaround for cloud hosting
-#' where access rights prevent writing
 #' @param debug_msg show debug messages
 #' @param show_progress display progress messages
 #' @inheritParams ncar::pdfNCA
@@ -583,49 +584,40 @@ nca_text_m <- function(MTxt, StartRow = 0, Cex = 0.8, Header1 = "", Header2 = ""
 #' @noRd
 #-------------------------------------------------------------------------------
 
-pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
+pdfNCA_wm <- function (fileName, concData, key = "Subject",
                        colTime = "Time", colConc = "conc", dose = 0, adm = "Extravascular",
                        dur = 0, doseUnit = "mg", timeUnit = "h", concUnit = "ug/L",
                        down = "Linear", R2ADJ = 0, MW = 0, SS = FALSE, iAUC = "",
-                       excludeDelta = 1, watermark = TRUE, internal_version = TRUE, debug_msg = TRUE,
+                       excludeDelta = 1, watermark = TRUE, debug_msg = FALSE,
                        show_progress = TRUE)
 {
   rlang::check_installed(c("ncar", "NonCompart"), reason = "to use `pdfNCA_wm()`.")
 
   if(debug_msg) {
-    message(fileName)
-    message(getwd())
-  }
-
-  if(!internal_version) { # Workaround for AWS hosting
-    #fileName <- paste0("/tmp/", fileName) # didn't work
-    old_wd <- setwd(tempdir()) # Write to the session temp directory; restored on exit
-    on.exit(setwd(old_wd), add = TRUE)
-  }
-
-  if(debug_msg) {
-    message(getwd())
+    message("Writing NCA report to: ", fileName)
   }
 
   class(concData) = "data.frame"
-  old_width <- options("width")
-  on.exit(options(old_width), add = TRUE)
+  # Text width used by ncar::Res2Txt() for the report pages (Cex = 0.8)
+  old_options <- options(width = 100)
+  on.exit(options(old_options), add = TRUE)
 
-  if(debug_msg) {
-    message("Trying to open pdf device")
-  }
-  # Open the PDF device first: par() with no device open would create
-  # Rplots.pdf in the working directory and leave that device open
+  # Open the report's own PDF device first (par() with no device open would
+  # create Rplots.pdf in the working directory). Its graphical parameters and
+  # the previously active device are restored, and the device is closed, on
+  # exit, also if an error stops the report half-way.
+  old_device <- grDevices::dev.cur()
   nca_prep_pdf(fileName)
   pdf_device <- grDevices::dev.cur()
+  old_par <- graphics::par(no.readonly = TRUE)
   on.exit({
-    # also closes the device if an error stops the report half-way
     if (pdf_device %in% grDevices::dev.list()) {
       grDevices::dev.set(pdf_device)
+      graphics::par(old_par)
       grDevices::dev.off()
     }
+    if (old_device > 1 && old_device %in% grDevices::dev.list()) grDevices::dev.set(old_device)
   }, add = TRUE)
-  defPar = par(no.readonly = TRUE)
 
   nca_add_page()
   nca_text1(1, 1, "Individual Noncompartmental Analysis Result (Non-Validated)",
@@ -720,9 +712,7 @@ pdfNCA_wm <- function (fileName = "Temp-NCA.pdf", concData, key = "Subject",
       close.screen(all.screens = TRUE)
     }
   }
-  par(defPar)
-  nca_close_pdf()
-
+  invisible(fileName) # the device is closed and parameters restored on exit
 }
 
 #-------------------------------------------------------------------------------

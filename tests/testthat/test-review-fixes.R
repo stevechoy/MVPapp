@@ -488,9 +488,9 @@ test_that("the reproducible bundle plots observations only but keeps dose record
   utils::unzip(zipf, exdir = dir)
   script <- list.files(dir, pattern = "^simulation\\.R$", recursive = TRUE, full.names = TRUE)[1]
   env <- new.env(parent = globalenv())
-  old <- setwd(dirname(script)); on.exit(setwd(old), add = TRUE)
   pdf(NULL); on.exit(grDevices::dev.off(), add = TRUE)
-  suppressMessages(suppressWarnings(source(basename(script), local = env)))
+  # chdir = TRUE: the script finds model.cpp next to it without setwd()
+  suppressMessages(suppressWarnings(source(script, local = env, chdir = TRUE)))
   expect_true(any(env$solved_output$evid != 0))        # all records kept for the user
   expect_true(all(env$plot_output$data$evid == 0))     # the example plot shows observations only
   expect_equal(sum(env$plot_output$data$time == 72), 1)

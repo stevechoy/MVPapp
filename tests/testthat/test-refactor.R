@@ -263,6 +263,9 @@ test_that("a short last PDF page keeps the panel size of a full page", {
 })
 
 test_that("the watermark is drawn with linear and log axes and left out of plotly", {
+  # Building a grob needs a device; use a null device so no Rplots.pdf is written
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
   d <- data.frame(x = c(1, 10, 100), y = c(1, 10, 100))
   base <- ggplot2::ggplot(d, ggplot2::aes(x, y)) + ggplot2::geom_point()
   has_watermark <- function(x) {

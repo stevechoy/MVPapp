@@ -1,3 +1,23 @@
+## Resubmission
+
+This is a resubmission. In response to the review:
+
+* Writing to the user's home filespace: the internal NCA PDF report function
+  (`pdfNCA_wm()`) no longer has a default file name; the app always passes the
+  path of the Shiny download (a temporary file). A test that built a ggplot grob
+  without an open device wrote `Rplots.pdf` into the tests folder; it now uses
+  `pdf(NULL)`. All other files are written to `tempdir()`.
+* Changing options, par or the working directory: `pdfNCA_wm()` no longer calls
+  `setwd()`, and resets `options(width)` and the graphical parameters with an
+  immediate `on.exit()`; the page helper no longer sets options. A test that
+  changed the working directory now uses `source(chdir = TRUE)`. New tests check
+  that the working directory, options, graphical parameters and active device
+  are unchanged after the report is written.
+* The app itself (`inst/shiny/app.R`) sets `scipen`, `DT.options` and
+  `shiny.maxRequestSize` and the random seed when it starts; `on.exit()` cannot
+  be used for a running 'shiny' app, so they are restored with
+  `shiny::onStop()` when the app stops.
+
 ## Submission
 
 First submission of MVPapp to CRAN: an interactive 'shiny' app for exploring
