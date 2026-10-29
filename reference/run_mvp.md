@@ -106,11 +106,10 @@ run_mvp(
 
 - internal_version:
 
-  Logical. Default TRUE. Set to FALSE when hosting the app on a server
-  (e.g. AWS) where the working directory is not writable: NCA reports
-  are then written to the session's temporary directory, and the help
-  text for locked models points to GitHub instead. For internal
-  deployments, it also selects the external Apollo endpoint.
+  Logical. Default TRUE. Set to FALSE when hosting the app outside an
+  internal deployment (e.g. on AWS or shinyapps.io): the help text for
+  locked models then points to GitHub instead, and it selects the
+  external Apollo endpoint (internal deployments only).
 
 - pw_models_path:
 

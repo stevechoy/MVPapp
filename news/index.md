@@ -97,6 +97,44 @@ First release prepared for CRAN.
 
 ### Bugfixes
 
+- NCA gave every subject a dose of 0 (CL/F and Vz/F of 0, CMAXD of NA)
+  when CMT was the additional NCA key and doses were in another
+  compartment than the observations, as with the default key for
+  datasets without ATRT/DOSE columns. Doses are now looked up again
+  without CMT, then by subject; a profile without any positive dose is
+  flagged with a warning
+  ([\#78](https://github.com/stevechoy/MVPapp/issues/78))
+- A local `brand_logo` or `brand_favicon` made every file in its folder
+  downloadable (e.g. `app.R` or a `.Renviron` next to it). Only a copy
+  of the image is served now
+  ([\#79](https://github.com/stevechoy/MVPapp/issues/79))
+- Regression equations in faceted plots are formatted per panel (one
+  panel’s large values no longer turn the others’ into padded scientific
+  notation), and in individual plots each label sits at the top of its
+  own panel ([\#83](https://github.com/stevechoy/MVPapp/issues/83))
+- Data Exploration: “Quantize X-axis” computes its bins after the CMT
+  filter and without dosing rows, which previously shifted the bin
+  limits ([\#44](https://github.com/stevechoy/MVPapp/issues/44))
+- Data Exploration: Log Y is ignored (with a note) for a box plot whose
+  Y-axis is discrete, instead of failing
+  ([\#44](https://github.com/stevechoy/MVPapp/issues/44))
+- Individual plots with “same scale”: points at TIME 0 or DV 0 are no
+  longer clipped on linear axes; values \<= 0 are left out of the axis
+  range only on log axes
+  ([\#44](https://github.com/stevechoy/MVPapp/issues/44))
+- Summary tables (data summary, NCA and covariate summaries) no longer
+  use scientific notation, and a column without values shows empty cells
+  instead of Inf/-Inf
+  ([\#44](https://github.com/stevechoy/MVPapp/issues/44))
+- The all-individuals PDF builds and draws one page at a time, so its
+  progress bar moves page by page and memory use stays low
+  ([\#83](https://github.com/stevechoy/MVPapp/issues/83))
+- The NCA PDF report no longer has a default file name (which would
+  write to the working directory) or changes the working directory, and
+  restores `options(width)` and the graphical parameters with an
+  immediate [`on.exit()`](https://rdrr.io/r/base/on.exit.html) (CRAN
+  policy). The tests no longer leave an `Rplots.pdf` in the package
+  folder.
 - NCA report failed with `ncar` \>= 0.7.2, which no longer exports its
   PDF helpers ([\#26](https://github.com/stevechoy/MVPapp/issues/26))
 - Static “Show Individual Profiles” plot joined all subjects into one
