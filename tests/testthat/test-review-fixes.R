@@ -526,3 +526,40 @@ test_that("the reproducible bundle plots observations only but keeps dose record
   expect_true(all(env$plot_output$data$evid == 0))     # the example plot shows observations only
   expect_equal(sum(env$plot_output$data$time == 72), 1)
 })
+
+test_that("#44 items: quantile bins, log Y with a discrete Y, same-scale zeros, summary formatting", {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  general <- function(d, ...) {
+    args <- list(nmd = d, filter_cmt = "NULL", color_by = "", med_line = FALSE, med_line_by = "",
+                 num_quantiles = 0, dolm = FALSE, smoother = FALSE, facet_name = "", logx = FALSE,
+                 logy = FALSE, boxplot = FALSE, plot_title = NULL)
+    with_mock_session(do.call(MVPapp:::do_data_page_plot, utils::modifyList(args, list(...))))
+  }
+  # Quantize X-axis: bins come from the observation rows of the selected CMT only
+  d <- data.frame(ID = rep(1:20, each = 3), TIME = rep(c(0, 1, 2), 20), EVID = rep(c(1, 0, 0), 20),
+                  CMT = rep(c(1, 2, 2), 20), DV = rep(c(NA, 5, 3), 20))
+  p <- general(d, x_axis = "TIME", y_axis = "DV", num_quantiles = 2)
+  # the first bin starts at the first observation time (1), not at the dose time (0)
+  expect_true(any(grepl("Q1\n[1-", levels(p$data$Quantile), fixed = TRUE)))
+  expect_false(any(grepl("[0-", levels(p$data$Quantile), fixed = TRUE)))
+  # Log Y with a discrete Y in a box plot is ignored instead of failing
+  d6 <- data.frame(ID = 1:30, GRP = rep(c("A", "B"), 15), SCORE = rep(1:3, 10))
+  expect_no_error(ggplot2::ggplot_build(general(d6, x_axis = "GRP", y_axis = "SCORE", boxplot = TRUE, logy = TRUE)))
+  # "Same scale" individual plots keep TIME 0 and DV 0 on linear axes, but not on log axes
+  ind <- function(logy) with_mock_session(MVPapp:::do_data_page_ind_plot(
+    data.frame(ID = rep(1:2, each = 3), TIME = rep(0:2, 2), DV = c(0, 5, 3, 0, 8, 4), EVID = 0, AMT = 0),
+    rownums = 1, colnums = 2, pagenum = 1, filter_id = "", filter_cmt = "NULL", sort_by = NULL, strat_by = "",
+    highlight_range = "80%", x_axis = "TIME", y_axis = "DV", color_by = "", boxplot = FALSE, dolm = FALSE,
+    logy = logy, logx = FALSE, plot_title = NULL, highlight_var = "", highlight_var_values = "",
+    plot_dosing = FALSE, same_scale = TRUE, dose_col = "AMT", dose_units = ""))
+  expect_equal(ind(FALSE)$coordinates$limits$x, c(0, 2))
+  expect_equal(ind(FALSE)$coordinates$limits$y, c(0, 8))
+  expect_equal(ind(TRUE)$coordinates$limits$y, c(3, 8))
+  # Summary table: no scientific notation, NA (not Inf) for an all-NA column
+  s <- MVPapp:::calc_summary_stats(data.frame(ID = 1:4, A = c(0.0123, 12345, 3, 0.00001234), B = NA_real_),
+                                   dp = 3, sigdig = TRUE)
+  expect_false(any(grepl("e[+-]", s$A)))
+  expect_equal(s$A[s$Statistic %in% c("Min", "Max")], c("0.0000123", "12,300"))
+  expect_true(all(is.na(s$B)))
+})

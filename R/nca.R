@@ -71,6 +71,9 @@ calc_summary_stats <- function(orig_data,
     "gMean CV%" = function(x) gm_mean_cv(x)
   )
   
+  # A column without any value gives NA for every statistic (not Inf/-Inf/NaN)
+  stats_fns <- lapply(stats_fns, function(f) function(x) if (all(is.na(x))) NA_real_ else f(x))
+
   col_names <- names(data)
   
   tmp <- data.table::rbindlist(lapply(names(stats_fns), function(stat_name) {
@@ -94,11 +97,17 @@ calc_summary_stats <- function(orig_data,
     tmp[, (num_cols) := lapply(.SD, round_fn), .SDcols = num_cols]
   }
   
-  # Comma formatting via lapply — avoids for loop
-  if (comma_format) {
-    fmt_cols <- names(tmp)[vapply(tmp, is.numeric, logical(1))]
-    tmp[, (fmt_cols) := lapply(.SD, function(x) format(x, big.mark = ",")), .SDcols = fmt_cols]
+  # Each number formatted on its own, without scientific notation: format() on a
+  # whole column would give every value the same width and notation (e.g.
+  # "1.23e-02" next to "1.23e+04"), undoing the rounding above (#44)
+  fmt_number <- function(x) {
+    vapply(x, function(v) {
+      if (!is.finite(v)) return(NA_character_)
+      format(v, big.mark = if (comma_format) "," else "", scientific = FALSE, trim = TRUE, digits = 15)
+    }, character(1), USE.NAMES = FALSE)
   }
+  fmt_cols <- names(tmp)[vapply(tmp, is.numeric, logical(1))]
+  if (length(fmt_cols)) tmp[, (fmt_cols) := lapply(.SD, fmt_number), .SDcols = fmt_cols]
   
   # Convert to character for display
   tmp <- tmp[, lapply(.SD, as.character)]

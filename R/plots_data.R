@@ -70,7 +70,18 @@ do_data_page_plot <- function(nmd,
   x_label     <- x_axis
   x_axis_orig <- x_axis
   can_quantize <- FALSE
-  
+
+  # ── Filters, before the quantile bins so that dosing rows and other CMTs do
+  #    not shift the bin limits (#44) ────────────────────────────────────────
+  if (filter_cmt != 'NULL')
+    nmd <- dplyr::filter(nmd, CMT %in% filter_cmt)
+
+  if ('EVID' %in% names(nmd)) {
+    nmd <- dplyr::filter(nmd, EVID == 0)
+    shiny::showNotification("Dosing rows (EVID >= 1) are excluded from the general plot.",
+                            type = "message", duration = 10, id = "note_general_plot_evid")
+  }
+
   # ── Quantize: a continuous x-axis becomes quantile bins (shown as boxplots) ──
   if (num_quantiles > 0) {
     if (is.numeric(nmd[[x_axis_orig]])) {
@@ -86,16 +97,6 @@ do_data_page_plot <- function(nmd,
         paste0("ERROR: Cannot quantize ", x_axis_orig, " as it is not a continuous variable"),
         type = "error", duration = 10)
     }
-  }
-  
-  # ── Filters ───────────────────────────────────────────────────────────────
-  if (filter_cmt != 'NULL')
-    nmd <- dplyr::filter(nmd, CMT %in% filter_cmt)
-  
-  if ('EVID' %in% names(nmd)) {
-    nmd <- dplyr::filter(nmd, EVID == 0)
-    shiny::showNotification("Dosing rows (EVID >= 1) are excluded from the general plot.",
-                            type = "message", duration = 10, id = "note_general_plot_evid")
   }
   
   nmd <- handle_blanks(nmd, y_axis)
@@ -133,6 +134,8 @@ do_data_page_plot <- function(nmd,
                discrete_threshold, " unique Y values."),
         type = "warning", duration = 10)
       nmd[[y_axis]] <- as.factor(nmd[[y_axis]])
+      y_is_numeric  <- FALSE # a log scale does not apply to a discrete Y: Log Y is ignored (#44)
+      if (logy) note_log_y_ignored()
     } else {
       nmd[[y_axis]] <- as.numeric(nmd[[y_axis]])
       max_y <- max(nmd[[y_axis]], na.rm = TRUE) # count labels sit just above the highest value
@@ -286,6 +289,18 @@ too_many_categories_plot <- function(threshold, error_text_color, hint = "") {
     ggplot2::labs(title = paste0('ERROR: There are too many X-axis categories (>', threshold, ') for boxplots.', hint)) +
     ggplot2::theme(panel.background = ggplot2::element_blank(),
                    plot.title = ggplot2::element_text(color = error_text_color))
+}
+
+#-------------------------------------------------------------------------------
+#' @name note_log_y_ignored
+#' @title Notification that Log Y is not applied to a discrete Y-axis
+#' @returns NULL, invisibly
+#' @noRd
+#-------------------------------------------------------------------------------
+note_log_y_ignored <- function() {
+  safely_showNotification("Log Y is ignored because the Y-axis is treated as discrete.",
+                          type = "message", duration = 10, id = "note_log_y_discrete")
+  invisible(NULL)
 }
 
 #-------------------------------------------------------------------------------
@@ -520,10 +535,16 @@ do_data_page_ind_plot <- function(nmd,
   x_is_numeric <- is.numeric(nmd[[x_axis]])
   y_is_numeric <- is.numeric(nmd[[y_axis]])
   
-  # ── Axis limits over all subjects (zeros left out), used with same_scale ────
-  non_zero <- function(v) if (is.character(v)) v else v[!is.na(v) & v != 0]
-  x_lim <- range(to_numeric(non_zero(nmd[[x_axis]])), na.rm = TRUE)
-  y_lim <- range(to_numeric(non_zero(nmd[[y_axis]])), na.rm = TRUE)
+  # ── Axis limits over all subjects, used with same_scale. Values <= 0 are
+  #    left out only on a log axis, where they cannot be shown; on a linear axis
+  #    they stay, so points at TIME 0 or DV 0 are not clipped (#44) ─────────────
+  axis_range <- function(v, log_axis) {
+    v <- suppressWarnings(to_numeric(v))
+    if (log_axis) v <- v[!is.na(v) & v > 0]
+    suppressWarnings(range(v, na.rm = TRUE)) # -Inf/Inf for a non-numeric column, as before
+  }
+  x_lim <- axis_range(nmd[[x_axis]], logx)
+  y_lim <- axis_range(nmd[[y_axis]], logy)
   
   # ── Dose bars: heights proportional to the dose, the largest reaching half of
   #    the panel's y range (the whole dataset's with same_scale), drawn from the
@@ -597,6 +618,8 @@ do_data_page_ind_plot <- function(nmd,
                discrete_threshold, " unique Y values."),
         type = "warning", duration = 10)
       nmd[[y_axis]] <- as.factor(nmd[[y_axis]])
+      y_is_numeric  <- FALSE # a log scale does not apply to a discrete Y: Log Y is ignored (#44)
+      if (logy) note_log_y_ignored()
     } else {
       nmd[[y_axis]] <- as.numeric(nmd[[y_axis]])
       max_y         <- max(nmd[[y_axis]], na.rm = TRUE)
