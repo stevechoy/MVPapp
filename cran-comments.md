@@ -16,7 +16,7 @@ This is a resubmission. In response to the review:
 * The app itself (`inst/shiny/app.R`) sets `scipen`, `DT.options` and
   `shiny.maxRequestSize` and the random seed when it starts; `on.exit()` cannot
   be used for a running 'shiny' app, so they are restored with
-  `shiny::onStop()` when the app stops.
+  `shiny::onStop()` when the app stops, including when it stops with an error.
 
 ## Submission
 
