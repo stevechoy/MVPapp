@@ -407,6 +407,25 @@ test_that("NCA dose comes from the first positive dosing record (L51)", {
   expect_equal(MVPapp:::nca_dose_vector(d, d, "ID", "", "DOSE"), c(10, 20))
 })
 
+test_that("NCA dose is found when doses and observations are in different CMTs (M30)", {
+  # Dosing into the depot (CMT 1), observations in the central compartment (CMT 2),
+  # with CMT as the additional NCA key (the default without ATRT/DOSE columns)
+  all_df <- data.frame(ID   = rep(1:2, each = 4),
+                       TIME = rep(c(0, 0, 1, 4), 2),
+                       DV   = c(NA, 0, 5, 2, NA, 0, 8, 3),
+                       AMT  = c(100, 0, 0, 0, 200, 0, 0, 0),
+                       CMT  = rep(c(1, 2, 2, 2), 2),
+                       EVID = rep(c(1, 0, 0, 0), 2))
+  obs <- all_df[all_df$EVID == 0, ]
+  expect_equal(MVPapp:::nca_dose_vector(obs, all_df, "ID", "CMT", "AMT"), c(100, 200))
+  # a key that is on the dosing records too is still used (one dose per period)
+  cross <- rbind(transform(all_df, PER = 1), transform(all_df, PER = 2, AMT = AMT * 2))
+  expect_equal(MVPapp:::nca_dose_vector(cross[cross$EVID == 0, ], cross, "ID", "PER", "AMT"), c(100, 200, 200, 400))
+  # dosing rows filtered out and AMT 0 on observations: 0 with a warning, not a silent 0
+  expect_message(dose <- MVPapp:::nca_dose_vector(obs, obs, "ID", "CMT", "AMT"), "No positive dose found")
+  expect_equal(dose, c(0, 0))
+})
+
 test_that("batch runs work outside Shiny and a zero metric reference falls back to Value (L53, L54)", {
   df <- data.frame(.paramname = c("CL", "V"), Lower = c(1, 2), Upper = c(3, 4))
   p <- suppressMessages(MVPapp:::tornado_plot(df, reference_value = 0, display_as = "Percentage"))
@@ -473,6 +492,18 @@ test_that("mvp_app() is unchanged without branding and honours the brand argumen
   expect_error(MVPapp::mvp_app(brand_logo = "no/such/file.png"), "file not found")
   expect_error(MVPapp::mvp_app(brand_color = "zzz"), "not a valid colour")
   expect_warning(MVPapp::mvp_app(brand_text_color = "white"), "ignored")
+
+  # Only the image itself is served, not the files next to it (M31)
+  site <- tempfile("site_"); dir.create(site)
+  on.exit(unlink(site, recursive = TRUE), add = TRUE)
+  file.copy(logo, file.path(site, "logo.svg"))
+  writeLines("OPENAI_API_KEY=secret", file.path(site, ".Renviron"))
+  url <- MVPapp:::brand_asset_url(file.path(site, "logo.svg"), "mvp-test-logo", "brand_logo")
+  served <- shiny::resourcePaths()[["mvp-test-logo"]]
+  expect_equal(url, "mvp-test-logo/logo.svg")
+  expect_false(normalizePath(served) == normalizePath(site))
+  expect_equal(list.files(served, all.files = TRUE, no.. = TRUE), "logo.svg")
+  shiny::removeResourcePath("mvp-test-logo")
 })
 
 test_that("the reproducible bundle plots observations only but keeps dose records in solved_output", {

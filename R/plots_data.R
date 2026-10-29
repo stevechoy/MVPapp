@@ -295,19 +295,22 @@ too_many_categories_plot <- function(threshold, error_text_color, hint = "") {
 #'
 #' @param p           ggplot object
 #' @param df_stats    labels from lm_eqn() (one row per facet)
-#' @param label_x     x position of the labels
-#' @param label_y     y position of the labels
+#' @param label_x     x position of the labels, or NULL to use `df_stats$.label_x` (one per facet)
+#' @param label_y     y position of the labels, or NULL to use `df_stats$.label_y` (one per facet)
 #' @param label_size  label size; 0 draws no labels
 #'
 #' @returns the ggplot object
 #' @noRd
 #-------------------------------------------------------------------------------
-add_lm_layers <- function(p, df_stats, label_x, label_y, label_size) {
+add_lm_layers <- function(p, df_stats, label_x = NULL, label_y = NULL, label_size) {
   p <- p + ggplot2::stat_smooth(ggplot2::aes(group = NULL), method = "lm", formula = y ~ x, se = FALSE,
                                 colour = "grey", show.legend = FALSE)
   if (label_size > 0) {
+    if (!is.null(label_x)) df_stats$.label_x <- label_x
+    if (!is.null(label_y)) df_stats$.label_y <- label_y
+    df_stats <- df_stats[is.finite(df_stats$.label_x) & is.finite(df_stats$.label_y), , drop = FALSE]
     p <- p + ggplot2::geom_text(data = df_stats,
-                                mapping = ggplot2::aes(label = label, x = label_x, y = label_y, group = NULL, color = NULL),
+                                mapping = ggplot2::aes(label = label, x = .label_x, y = .label_y, group = NULL, color = NULL),
                                 hjust = 0.5, vjust = 1, show.legend = FALSE, size = label_size)
   }
   p
@@ -676,11 +679,24 @@ do_data_page_ind_plot <- function(nmd,
   if (dolm && x_is_numeric && y_is_numeric && !boxplot && !logx && !logy) { # lm label is on the linear scale
     # One label per panel: panels are split by facet_label (one per individual)
     lm_facet <- if (facet_name != "" && facet_name != x_axis) "facet_label" else ""
-    x_range  <- if (same_scale) x_lim else range(nmd[[x_axis]], na.rm = TRUE)
-    a <- add_lm_layers(a, lm_eqn(df = nmd, facet_name = lm_facet, x = x_axis, y = y_axis),
-                       label_x    = sum(x_range) / 2,
-                       label_y    = if (same_scale) y_lim[2] else max(nmd[[y_axis]], na.rm = TRUE),
-                       label_size = label_size)
+    df_stats <- lm_eqn(df = nmd, facet_name = lm_facet, x = x_axis, y = y_axis)
+    if (same_scale || lm_facet == "") {
+      x_range <- if (same_scale) x_lim else range(nmd[[x_axis]], na.rm = TRUE)
+      a <- add_lm_layers(a, df_stats,
+                         label_x    = sum(x_range) / 2,
+                         label_y    = if (same_scale) y_lim[2] else max(nmd[[y_axis]], na.rm = TRUE),
+                         label_size = label_size)
+    } else {
+      # Free scales: each label at the top of its own panel, so that a panel with
+      # smaller values is not stretched to the page-wide maximum (L62)
+      finite_or_na <- function(v) ifelse(is.finite(v), v, NA_real_)
+      label_pos <- nmd %>%
+        dplyr::group_by(facet_label) %>%
+        dplyr::summarise(.label_x = finite_or_na(suppressWarnings(sum(range(.data[[x_axis]], na.rm = TRUE)) / 2)),
+                         .label_y = finite_or_na(suppressWarnings(max(.data[[y_axis]], na.rm = TRUE))),
+                         .groups  = "drop")
+      a <- add_lm_layers(a, dplyr::left_join(df_stats, label_pos, by = "facet_label"), label_size = label_size)
+    }
   }
   
   if (facet_name != "") {
@@ -1666,18 +1682,27 @@ print_ind_pages <- function(plots, rownums, on_page = function(i, n) NULL) {
     list(rows = length(unique(g$layout$t[is_panel])), fixed = fixed_in)
   }
   
-  grobs   <- lapply(plots, ggplot2::ggplotGrob)
-  layouts <- lapply(grobs, page_layout)
-  
-  # A full page is the reference; with only one (short) page nothing to compare
-  full <- Filter(function(l) l$rows >= rownums, layouts)
-  ref_fixed <- if (length(full) > 0) full[[1]]$fixed else NULL
-  
-  for (i in seq_along(grobs)) {
-    on_page(i, length(grobs))
+  # Pages are built and drawn one at a time, so progress moves page by page and
+  # only one page is held in memory (L63). The first full page is the
+  # reference; a short page before any full page looks ahead for one (with only
+  # one, short, page there is nothing to compare).
+  n         <- length(plots)
+  ref_fixed <- NULL
+  looked_ahead <- FALSE
+  for (i in seq_len(n)) {
+    on_page(i, n)
+    g <- ggplot2::ggplotGrob(plots[[i]])
+    l <- page_layout(g)
+    if (is.null(ref_fixed) && l$rows >= rownums) ref_fixed <- l$fixed
+    if (is.null(ref_fixed) && !looked_ahead) {
+      looked_ahead <- TRUE
+      for (j in seq_len(n - i) + i) {
+        lj <- page_layout(ggplot2::ggplotGrob(plots[[j]]))
+        if (lj$rows >= rownums) { ref_fixed <- lj$fixed; break }
+      }
+    }
     if (i > 1) grid::grid.newpage() # a fresh PDF device already starts on page 1
     page_in <- grid::convertHeight(grid::unit(1, "npc"), "inches", valueOnly = TRUE)
-    l <- layouts[[i]]
     height_in <- page_in
     if (!is.null(ref_fixed) && l$rows < rownums) {
       # height of one panel row on a full page, times the rows used here
@@ -1685,7 +1710,7 @@ print_ind_pages <- function(plots, rownums, on_page = function(i, n) NULL) {
       height_in <- min(page_in, l$fixed + l$rows * panel_in)
     }
     grid::pushViewport(grid::viewport(y = 1, just = "top", height = grid::unit(height_in, "inches")))
-    grid::grid.draw(grobs[[i]])
+    grid::grid.draw(g)
     grid::popViewport()
   }
   invisible(plots)

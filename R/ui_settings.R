@@ -403,8 +403,10 @@ brand_contrast_text <- function(bg) {
 #-------------------------------------------------------------------------------
 #' URL for a branding image
 #'
-#' Web (http/https) and data: URLs are used as they are. A local file is served
-#' through a Shiny resource path, so it does not have to be inside the package.
+#' Web (http/https) and data: URLs are used as they are. A local file is copied
+#' into a temporary folder of its own, which is served through a Shiny resource
+#' path: serving the file's own folder would make every file next to it (such
+#' as app.R or .Renviron) downloadable, without the app's access code (M31).
 #' @param path file path or URL
 #' @param prefix resource path prefix for a local file
 #' @param arg argument name, for the error message
@@ -419,8 +421,12 @@ brand_asset_url <- function(path, prefix, arg) {
   if (!file.exists(path) || dir.exists(path)) {
     stop("`", arg, "` file not found: ", path, call. = FALSE)
   }
-  path <- normalizePath(path, winslash = "/", mustWork = TRUE)
-  shiny::addResourcePath(prefix, dirname(path))
+  serve_dir <- tempfile(paste0(prefix, "-"))
+  dir.create(serve_dir)
+  if (!file.copy(path, file.path(serve_dir, basename(path)))) {
+    stop("`", arg, "` could not be read: ", path, call. = FALSE)
+  }
+  shiny::addResourcePath(prefix, serve_dir)
   paste0(prefix, "/", utils::URLencode(basename(path)))
 }
 

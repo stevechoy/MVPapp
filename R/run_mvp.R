@@ -18,9 +18,9 @@
 #' @param insert_watermark Logical. Default TRUE. Set to FALSE to remove the "For Internal Use Only" watermark from simulation plots and NCA reports.
 #' @param max_dataset_size Numeric. Default 200. Maximum upload dataset size in MB.
 #' @param authentication_code Character. Default NA_character_. Provide a string (e.g., password) to password-lock the entire app.
-#' @param internal_version Logical. Default TRUE. Set to FALSE when hosting the app on a server (e.g. AWS) where the working
-#'   directory is not writable: NCA reports are then written to the session's temporary directory, and the help text for
-#'   locked models points to GitHub instead. For internal deployments, it also selects the external Apollo endpoint.
+#' @param internal_version Logical. Default TRUE. Set to FALSE when hosting the app outside an internal deployment
+#'   (e.g. on AWS or shinyapps.io): the help text for locked models then points to GitHub instead, and it
+#'   selects the external Apollo endpoint (internal deployments only).
 #' @param pw_models_path Character. Default NA_character_. Path to an R file defining password-gated models
 #'   (see `system.file("shiny/passworded_models_example.R", package = "MVPapp")` and `vignette("supply-passwords")`).
 #' @param llm_choices Character vector of LLM providers offered in the app; the first one is selected by default.

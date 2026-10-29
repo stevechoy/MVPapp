@@ -28,6 +28,10 @@ First release prepared for CRAN.
 
 ## Bugfixes
 
+* NCA gave every subject a dose of 0 (CL/F and Vz/F of 0, CMAXD of NA) when CMT was the additional NCA key and doses were in another compartment than the observations, as with the default key for datasets without ATRT/DOSE columns. Doses are now looked up again without CMT, then by subject; a profile without any positive dose is flagged with a warning (#78)
+* A local `brand_logo` or `brand_favicon` made every file in its folder downloadable (e.g. `app.R` or a `.Renviron` next to it). Only a copy of the image is served now (#79)
+* Regression equations in faceted plots are formatted per panel (one panel's large values no longer turn the others' into padded scientific notation), and in individual plots each label sits at the top of its own panel (#83)
+* The all-individuals PDF builds and draws one page at a time, so its progress bar moves page by page and memory use stays low (#83)
 * The NCA PDF report no longer has a default file name (which would write to the working directory) or changes the working directory, and restores `options(width)` and the graphical parameters with an immediate `on.exit()` (CRAN policy). The tests no longer leave an `Rplots.pdf` in the package folder.
 * NCA report failed with `ncar` >= 0.7.2, which no longer exports its PDF helpers (#26)
 * Static "Show Individual Profiles" plot joined all subjects into one line; each model's profiles now use that model's color (#27)

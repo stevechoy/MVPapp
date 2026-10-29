@@ -260,6 +260,35 @@ test_that("a short last PDF page keeps the panel size of a full page", {
   expect_equal(seen, 1:2)
   # one PDF page per plot (no blank first page)
   expect_length(list.files(dir, pattern = "\\.pdf$"), 2)
+
+  # pages are built one at a time (L63): page 1 is reported and drawn before a
+  # broken page 2 is built (previously every page was built first)
+  bad <- ggplot2::ggplot(data.frame(x = 1), ggplot2::aes(x, no_such_column)) + ggplot2::geom_point()
+  seen <- integer(0)
+  grDevices::pdf(NULL)
+  expect_error(MVPapp:::print_ind_pages(list(page(1), bad), rownums = 3, on_page = function(i, n) seen <<- c(seen, i)))
+  grDevices::dev.off()
+  expect_equal(seen, 1:2)
+  # a short page before the first full one still finds its reference page
+  grDevices::pdf(NULL)
+  expect_no_error(MVPapp:::print_ind_pages(list(page(2), page(1)), rownums = 3))
+  grDevices::dev.off()
+})
+
+test_that("regression labels are formatted per facet and placed per panel (L62)", {
+  d <- data.frame(g = rep(c("a", "b"), each = 3), x = rep(1:3, 2), y = c(1, 2, 3.1, 1000, 3000, 5200))
+  lab <- MVPapp:::lm_eqn(d, "g", "x", "y")$label
+  expect_false(grepl("e-|  ", lab[1]))      # not scientific or padded because of facet b
+  expect_match(lab[1], "^y = -0.067 \\+ 1")
+  # individual plots with free scales: each label at the top of its own panel
+  ind <- data.frame(ID = rep(1:2, each = 3), TIME = rep(0:2, 2), DV = c(1, 2.5, 3, 100, 320, 500), EVID = 0, AMT = 0)
+  p <- with_mock_session(MVPapp:::do_data_page_ind_plot(
+    ind, rownums = 1, colnums = 2, pagenum = 1, filter_id = "", filter_cmt = "NULL", sort_by = NULL, strat_by = "",
+    highlight_range = "80%", x_axis = "TIME", y_axis = "DV", color_by = "", boxplot = FALSE, dolm = TRUE,
+    logy = FALSE, logx = FALSE, plot_title = NULL, highlight_var = "", highlight_var_values = "",
+    plot_dosing = FALSE, dose_col = "AMT", dose_units = ""))
+  text_layer <- Filter(function(l) inherits(l$geom, "GeomText"), p$layers)[[1]]
+  expect_equal(sort(text_layer$data$.label_y), c(3, 500))
 })
 
 test_that("the watermark is drawn with linear and log axes and left out of plotly", {

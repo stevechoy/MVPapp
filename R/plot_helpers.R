@@ -34,19 +34,23 @@ lm_eqn <- function(df, facet_name, x, y) {
                intercept = unname(stats::coef(fit)[1]))
   }
 
+  # Each number formatted on its own: format() on a whole column would give
+  # every facet's label the same width and notation (L62)
+  fmt <- function(v, digits) vapply(v, function(x) format(x, digits = digits), character(1), USE.NAMES = FALSE)
+
   dplyr::summarise(df, line_stats(.data[[x]], .data[[y]])) %>%
     dplyr::mutate(slope_direction = dplyr::if_else(slope >= 0, " + ", " - "),
                   label = dplyr::case_when(
                     is.na(intercept) ~ "", # no data in this group at all
                     !is.na(slope) ~
                       paste0("y = ",
-                             format(intercept, digits = 2),
+                             fmt(intercept, 2),
                              slope_direction,
-                             format(abs(slope), digits = 2),
+                             fmt(abs(slope), 2),
                              "\u00B7x, R\u00B2 = ",
-                             format(rsq, digits = 3)),
+                             fmt(rsq, 3)),
                     is.na(slope) ~ # only one x value: the intercept is the mean
-                      paste0("y = ", format(intercept, digits = 2), " [mean]")
+                      paste0("y = ", fmt(intercept, 2), " [mean]")
                   ))
 }
 

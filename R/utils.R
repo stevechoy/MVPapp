@@ -5,7 +5,7 @@ utils::globalVariables(c("Upper", "Lower", "delta_upper", "delta_lower", "del", 
                          "Median", "Min", "N", "NADIRPCT", "NAMT", "Quantile", "SAMT", "SEX", "Statistic", "TIME", "TIMEADJ", "cdc.expand", "dYVAR", "dCFB", "dosename", "maximum", "mean_yvar", "facet_label", "gMean", "input", "label", "label_text",
                          "lower05", "lower_yvar", "median_yvar", "min_yvar", "minimum", "nhanes.filtered", "who.expand", "session", "slope", "tad", "upper95", "upper_yvar", ".data", ".SD", ":=", "..count..", "XVAR", "YVAR", "YVARNAME", "YLAG",
                          "XLAG", ".", "TMAX", "TMIN", "WT", "gMean CV%", "name", "value", "splits", "LowerQ1", "LowerQ2", "LowerQ3", "UpperQ1", "UpperQ2", "UpperQ3", "Metric", "desc", "RatioN", "Ratio",
-                         "BMI", "BSA", "USUBJID", "Value", "addl", "cmt", "evid", "ii", "max_dose", "max_yvar", "rate", "scaling_factor"))
+                         "BMI", "BSA", "USUBJID", "Value", "addl", "cmt", "evid", "ii", "max_dose", "max_yvar", "rate", "scaling_factor", ".label_x", ".label_y"))
 
 #-------------------------------------------------------------------------------
 # Package-level state
@@ -279,7 +279,12 @@ rename_stored_models <- function(code, session = NULL) {
 #' positive dosing record (EVID >= 1) when the dataset has an EVID column, so
 #' that an AMT column (0 on observation rows) or a dose column that varies
 #' within a group does not give a wrong or mismatched dose. Falls back to the
-#' first positive value on the observation rows, then to the first value.
+#' first positive value on the observation rows (e.g. a DOSE column).
+#'
+#' A group whose dose is not found with all keys is looked up again without
+#' `CMT` (doses go into a dosing compartment, observations are in another one),
+#' then by subject alone (M30). A group without any positive dose gets 0, with a
+#' warning, as dose-normalised NCA metrics are then not meaningful.
 #'
 #' @param obs_df observation records used for the NCA, in NCA order
 #' @param all_df the dataset before observation filtering (may contain dosing rows)
@@ -294,32 +299,41 @@ nca_dose_vector <- function(obs_df, all_df, subject_col, key_cols, dose_col) {
   if (!is.null(all_df)) all_df <- as.data.frame(all_df)
   keys <- c(subject_col, key_cols)
   keys <- keys[!is.na(keys) & nzchar(keys)]
-  first_pos <- function(df) {
+  res  <- dplyr::distinct(obs_df[, keys, drop = FALSE])
+  out  <- rep(NA_real_, nrow(res))
+
+  # first positive dose per group of `by`, matched onto the NCA groups
+  dose_by <- function(df, by) {
     df <- df[!is.na(df[[dose_col]]) & suppressWarnings(as.numeric(df[[dose_col]])) > 0, , drop = FALSE]
-    df %>%
-      dplyr::group_by(dplyr::across(dplyr::all_of(keys))) %>%
-      dplyr::summarise(.dose = dplyr::first(.data[[dose_col]]), .groups = "drop")
+    d  <- df %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(by))) %>%
+      dplyr::summarise(.dose = suppressWarnings(as.numeric(dplyr::first(.data[[dose_col]]))), .groups = "drop")
+    dplyr::left_join(res[, by, drop = FALSE], d, by = by)$.dose
   }
-  res <- dplyr::distinct(obs_df[, keys, drop = FALSE])
-  
-  if (!is.null(all_df) && "EVID" %in% names(all_df) && all(c(keys, dose_col) %in% names(all_df))) {
-    dosing <- all_df[!is.na(all_df$EVID) & all_df$EVID >= 1, , drop = FALSE]
-    d1 <- first_pos(dosing)
-    names(d1)[names(d1) == ".dose"] <- ".dose_evid"
-    res <- dplyr::left_join(res, d1, by = keys)
-  } else {
-    res$.dose_evid <- NA_real_
+
+  sources <- list()
+  if (!is.null(all_df) && "EVID" %in% names(all_df) && dose_col %in% names(all_df)) {
+    sources$dosing <- all_df[!is.na(all_df$EVID) & all_df$EVID >= 1, , drop = FALSE]
   }
-  d2 <- first_pos(obs_df)
-  names(d2)[names(d2) == ".dose"] <- ".dose_obs"
-  res <- dplyr::left_join(res, d2, by = keys)
-  
-  fallback <- dplyr::distinct(obs_df[, c(keys, dose_col), drop = FALSE])
-  fallback <- fallback[!duplicated(fallback[, keys, drop = FALSE]), , drop = FALSE]
-  res <- dplyr::left_join(res, stats::setNames(fallback, c(keys, ".dose_any")), by = keys)
-  
-  out <- res$.dose_evid
-  out[is.na(out)] <- res$.dose_obs[is.na(out)]
-  out[is.na(out)] <- res$.dose_any[is.na(out)]
-  as.numeric(out)
+  if (dose_col %in% names(obs_df)) sources$observations <- obs_df
+  key_sets <- unique(list(keys, setdiff(keys, "CMT"), subject_col))
+
+  for (src in sources) {
+    for (by in key_sets) {
+      if (!all(by %in% names(src)) || !anyNA(out)) next
+      found <- dose_by(src, by)
+      fill  <- is.na(out) & !is.na(found)
+      out[fill] <- found[fill]
+    }
+  }
+
+  if (anyNA(out)) {
+    safely_showNotification(
+      paste0("WARNING: No positive dose found in '", dose_col, "' for ", sum(is.na(out)), " of ", length(out),
+             " NCA profiles; their dose is set to 0, so dose-normalised metrics (e.g. CL, V, CMAXD) are not meaningful. ",
+             "Please check the dose column."),
+      type = "warning", duration = 15, id = "nca_dose_missing")
+    out[is.na(out)] <- 0
+  }
+  out
 }
