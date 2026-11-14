@@ -10,3 +10,13 @@ bibentry(
   doi     = "10.1002/psp4.70023",
   url     = "https://github.com/stevechoy/MVPapp"
 )
+
+bibentry(
+  bibtype = "Manual",
+  title   = "MVPapp: Interactive Platform for Pharmacometrics Model Visualization and Simulation",
+  author  = c(person("Steve", "Choy"), person("Jin Gyu", "Kim")),
+  year    = "2026",
+  note    = sprintf("R package version %s", meta$Version),
+  doi     = "10.32614/CRAN.package.MVPapp",
+  url     = "https://CRAN.R-project.org/package=MVPapp"
+)

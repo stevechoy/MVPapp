@@ -1,6 +1,6 @@
 Package: MVPapp
 Title: Interactive Platform for Pharmacometrics Model Visualization and Simulation
-Version: 1.0.0
+Version: 1.0.0.9000
 Authors@R: c(
     person("Steve", "Choy", email = "steve.choy@outlook.com", role = c("aut", "cre", "cph")),
     person("Jin Gyu", "Kim", role = "aut"),
@@ -17,6 +17,7 @@ Description: An interactive 'shiny' application for exploring
     (2025) <doi:10.1002/psp4.70023>.
 License: GPL (>= 3)
 URL: https://github.com/stevechoy/MVPapp, https://stevechoy.github.io/MVPapp/
+BugReports: https://github.com/stevechoy/MVPapp/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports: bslib (>= 0.5.1), 

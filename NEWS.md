@@ -1,6 +1,8 @@
+# MVPapp (development version)
+
 # MVPapp 1.0.0
 
-First release prepared for CRAN.
+First CRAN release.
 
 ## Breaking changes
 

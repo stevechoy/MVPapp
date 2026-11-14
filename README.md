@@ -9,6 +9,8 @@ earlier versions of MVPapp (\<= v0.3.3).</strong></span>
 
 <!-- badges: start -->
 
+[![CRAN
+status](https://www.r-pkg.org/badges/version/MVPapp)](https://CRAN.R-project.org/package=MVPapp)
 [![R-CMD-check](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
@@ -51,7 +53,13 @@ internal discussions more efficiently.**
 
 ## Installation
 
-`MVPapp` is not currently on CRAN. Install it via the `pak` R package:
+Install the released version of `MVPapp` from CRAN:
+
+``` r
+install.packages("MVPapp")
+```
+
+Or install the development version from GitHub via the `pak` R package:
 
 ``` r
 ## Install pak first if required

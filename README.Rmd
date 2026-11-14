@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
+[![CRAN status](https://www.r-pkg.org/badges/version/MVPapp)](https://CRAN.R-project.org/package=MVPapp)
 [![R-CMD-check](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/stevechoy/MVPapp/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
@@ -39,7 +40,13 @@ knitr::opts_chunk$set(
 
 ## Installation
 
-`MVPapp` is not currently on CRAN. Install it via the `pak` R package:
+Install the released version of `MVPapp` from CRAN:
+
+``` r
+install.packages("MVPapp")
+```
+
+Or install the development version from GitHub via the `pak` R package:
 
 ``` r
 ## Install pak first if required
