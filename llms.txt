@@ -39,7 +39,14 @@ internal discussions more efficiently.**
 
 ## Installation
 
-`MVPapp` is not currently on CRAN. Install it via the `pak` R package:
+Install the released version of `MVPapp` from CRAN:
+
+``` r
+
+install.packages("MVPapp")
+```
+
+Or install the development version from GitHub via the `pak` R package:
 
 ``` r
 
