@@ -1,12 +1,10 @@
 # Changelog
 
-## MVPapp (development version)
-
 ## MVPapp 1.0.0
 
 CRAN release: 2026-11-13
 
-First CRAN release.
+First release prepared for CRAN.
 
 ### Breaking changes
 
